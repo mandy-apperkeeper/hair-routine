@@ -1785,7 +1785,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 10;
+        const CURRENT_VERSION = 11;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -2011,7 +2011,7 @@
             },
             // Supporting Cast — Humid days
             {
-                id: 'got2b-gel', name: 'Glued Blasting Freeze Spray/Gel', brand: 'Got2b',
+                id: 'got2b-ultra-glued', name: 'Glued Blasting Freeze Spray/Gel', brand: 'Got2b',
                 tier: 'supporting', context: 'curly', usingUp: false,
                 notes: 'Humid-day substitute for NYM gel. Stronger hold.',
                 intelligence: {
@@ -2350,7 +2350,7 @@
                     'pantene-bond-spray': 'leave_in',
                     'marc-anthony-shield': 'heat_protection',
                     'nym-curl-talk-gel': 'styling',
-                    'got2b-gel': 'styling',
+                    'got2b-ultra-glued': 'styling',
                     'garnier-filler-serum': 'finishing',
                     'dove-10in1-serum': 'finishing',
                     'ogx-coconut-oil': 'finishing',
@@ -2573,6 +2573,29 @@
                     });
                 }
                 state.version = 10;
+            }
+
+            // v10 → v11: Unify Got2b product ID (got2b-gel → got2b-ultra-glued)
+            if (state.version < 11) {
+                if (Array.isArray(state.inventory)) {
+                    state.inventory.forEach(function(product) {
+                        if (product.id === 'got2b-gel') {
+                            product.id = 'got2b-ultra-glued';
+                        }
+                    });
+                }
+                if (Array.isArray(state.events)) {
+                    state.events.forEach(function(event) {
+                        if (Array.isArray(event.products)) {
+                            for (var i = 0; i < event.products.length; i++) {
+                                if (event.products[i] === 'got2b-gel') {
+                                    event.products[i] = 'got2b-ultra-glued';
+                                }
+                            }
+                        }
+                    });
+                }
+                state.version = 11;
             }
         }
 
@@ -3569,7 +3592,7 @@
                 var state = StateManager.getState();
                 var inventory = state.inventory || [];
                 for (var i = 0; i < inventory.length; i++) {
-                    if (inventory[i].id === 'nym-curl-talk-gel' || inventory[i].id === 'got2b-gel') {
+                    if (inventory[i].id === 'nym-curl-talk-gel' || inventory[i].id === 'got2b-ultra-glued') {
                         return true;
                     }
                 }
@@ -8103,14 +8126,51 @@
 
     // Service Worker Registration + Update Handling
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('hair-sw.js').then(function(registration) {
-            // Check for updates periodically (every 30 minutes when page is open)
-            setInterval(function() {
-                registration.update();
-            }, 30 * 60 * 1000);
-        }).catch(function(err) {
-            console.warn('Service worker registration failed:', err);
-        });
+        // One-time migration: force unregister old SWs (v5/v6) stuck on some devices
+        // This runs once, sets a flag, then normal registration proceeds
+        var SW_MIGRATION_KEY = 'sw-force-refresh-v7';
+        var swMigrationDone = false;
+        try { swMigrationDone = localStorage.getItem(SW_MIGRATION_KEY) === 'done'; } catch(e) {}
+
+        if (!swMigrationDone) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                var unregisterPromises = registrations.map(function(reg) {
+                    return reg.unregister();
+                });
+                return Promise.all(unregisterPromises);
+            }).then(function() {
+                try { localStorage.setItem(SW_MIGRATION_KEY, 'done'); } catch(e) {}
+                // Clear all old caches
+                return caches.keys();
+            }).then(function(cacheNames) {
+                return Promise.all(
+                    cacheNames.filter(function(name) {
+                        return name.startsWith('hair-routine-');
+                    }).map(function(name) {
+                        return caches.delete(name);
+                    })
+                );
+            }).then(function() {
+                // Now register the fresh SW
+                return navigator.serviceWorker.register('hair-sw.js');
+            }).then(function() {
+                // Reload to get a clean start with the new SW
+                window.location.reload();
+            }).catch(function(err) {
+                console.warn('SW migration failed, proceeding normally:', err);
+                // Still mark as done so we don't loop
+                try { localStorage.setItem(SW_MIGRATION_KEY, 'done'); } catch(e) {}
+            });
+        } else {
+            navigator.serviceWorker.register('hair-sw.js').then(function(registration) {
+                // Check for updates periodically (every 30 minutes when page is open)
+                setInterval(function() {
+                    registration.update();
+                }, 30 * 60 * 1000);
+            }).catch(function(err) {
+                console.warn('Service worker registration failed:', err);
+            });
+        }
 
         // Listen for SW update messages
         navigator.serviceWorker.addEventListener('message', function(event) {
@@ -8136,7 +8196,7 @@
                 });
             }
         });
-    }
+    } // end if ('serviceWorker' in navigator)
     </script>
 </body>
 </html>

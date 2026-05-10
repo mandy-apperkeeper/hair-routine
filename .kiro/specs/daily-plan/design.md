@@ -220,7 +220,7 @@ When user inputs observations, the plan adjusts:
   },
   planAdjusted: true,           // whether user used Adjust flow
   productSwaps: [               // products rotated in by user (tracks overrides)
-    { step: 'styling', from: 'nym-curl-talk-gel', to: 'got2b-gel' }
+    { step: 'styling', from: 'nym-curl-talk-gel', to: 'got2b-ultra-glued' }
   ],
   deferredRating: 4,            // next-day rating (or null)
   deferredRatingDate: '2026-05-11'

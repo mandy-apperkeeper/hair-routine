@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 17)
+**Last updated:** May 10, 2026 (Session 20)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -9,100 +9,88 @@
 ## Current State
 
 ### What's Live & Working
-- **Schema version 9** (OGX Pre-Shampoo → 1-Minute Mask swap)
-- Landing page: single recommended action + "Something else?" toggle
-- Quick-log: **7-group step-based product selection** (Pre-wash | Shampoo | Bond Repair | Condition | Leave-in & Protect | Style | Finishing)
-  - Shampoo has sub-menus: Regular / Clarifying
-  - Condition has sub-menus: Conditioner 🧢 / Deep Conditioner 🧢 / Gloss 🧢
-  - Heat cap badge on Condition group
-  - **Products with `additionalSteps` appear in multiple groups**
-- Post-wash attribution card: mechanism-based "what your routine targeted today"
-- Product inventory: **30 products** with full intelligence metadata
-- Walkthrough engine: curly/blowout/refresh with humidity-based product substitution
-  - **Correct step order:** coconut oil pre-wash → shampoo → bond repair (wet hair) → conditioner → gloss → style
-  - **Product names shown in gold** on each walkthrough step
-- **Humidity auto-detection only** — no manual prompt. Defaults to moderate on failure.
-- Dew point auto-detection via Open-Meteo API
-- History view with export/import
-- Compensation engine (Dove use-up cards, protein/olaplex overdue warnings)
-- Gel gap card (shows if no PQ-69 gel in inventory)
-- Status tracker (compact — reduced padding)
+- **Schema version 10** (per-product experience & results ratings)
+- **Daily Plan view** — replaces lane-selection on landing page for users with history
+  - Auto-generated plan based on dew point, history, seal state, timing
+  - Scrollable step list — no first phase header (starts directly with steps)
+  - Shows both step name AND product brand name on each step
+  - [ℹ] info popup with "Learn more" link to science cards
+  - [swap] button for steps with alternatives in inventory
+  - Science badges are tappable — link directly to Learn section cards
+  - Timer buttons prominent ("⏱ 5 min — tap to start"), counts down cleanly in whole seconds
+  - Adjust overlay (3-layer progressive disclosure) — **auto-closes on Layer 1 selection with confirmation toast**
+  - **Changed steps highlighted with gold border animation after adjustment**
+  - **Frizzy adjustment actually swaps NYM gel → Got2b** (not just a tip)
+  - **"No wash needed" minimal screen** when washed today (with Refresh/Wash Anyway buttons)
+  - **Offline indicator** ("☁️ Weather unavailable") in plan subtitle
+  - Condensed checklist toggle (remembers preference)
+  - End-of-plan rating + deferred next-day rating
+  - Lane override ("Something else?" button)
+  - Compact top spacing (reduced body padding, nav, tracker, headers)
+- **PWA support** — service worker (stale-while-revalidate + network-first for API), manifest.json, Apple meta tags, install capability, update banner
+- **Dew point auto-detection on app load**
+- **Status tracker** renamed: "Protein" → "Bond Repair" for clarity
+- **Learn section** — new cards: Coconut Oil (cortex penetration), Bond Repair, Lamellar Conditioning
+- Quick-log, product inventory (30 products), walkthrough engine, history, compensation, gel gap
 
-### What Was Done This Session (17)
-1. **Updated steering docs** — session-context.md and NEXT_STEPS.md synced to schema v8/v9, all sessions marked complete, Daily Plan added as next phase
-2. **Wrote Daily Plan tasks.md** — 11 tasks, ~30 subtasks, domain-rules-first approach (Bayesian later)
-3. **Inventory fix: OGX Pre-Shampoo → 1-Minute Mask** — Mandy has the mask, not the pre-shampoo. Schema v9 migration swaps it for existing users.
-4. **Fixed walkthrough product display** — each step now shows the actual product name in gold (was only showing ingredient science before)
-5. **Fixed 4 mismatched productIds** — walkthrough steps referenced wrong inventory IDs (everpure-bond-repair, garnier-color-repair, loreal-21-in-1, marc-anthony-blowout)
-6. **Restructured walkthrough step order** — coconut oil pre-wash (dry hair) → shampoo → bond repair (wet clean hair) → conditioner → gloss. Bond repair moved from step 1 to after shampoo (needs wet clean surface).
-7. **Wonder Water promoted to proper Gloss step** — was buried as a tip, now a full step with product ID
-8. **Updated Phase 1 research doc** — replaced OGX Pre-Shampoo references with 1-Minute Mask, updated coverage assessments (protein fill no longer single point of failure, humidity barrier resolved, penetrating oil has standalone coconut oil)
-9. **Updated HAIR_CONSULTATION_HANDOFF.md** — corrected OGX product listing
+### What Was Done This Session (20)
+1. **Adjust overlay UX fix** — auto-closes after Layer 1 selection, shows confirmation toast ("🌊 Adjusted for frizz" etc.)
+2. **Changed step highlighting** — steps modified by adjustment get gold border animation (2s fade)
+3. **Frizzy adjustment upgraded** — actually swaps NYM Curl Talk gel to Got2b Ultra Glued (PQ-69 without glycerin) instead of just adding a tip
+4. **"No wash needed" screen** — shows when washed today and suggestion is refresh. Minimal card with "Refresh plan" and "Wash anyway" buttons
+5. **Offline indicator** — "☁️ Weather unavailable" in plan subtitle when dew point is null
+6. **Accessibility improvements** — role="list"/role="listitem" on plan steps, aria-labels, Escape key closes overlay, focus management, aria-live on toast
+7. **Service worker v7** — switched HTML to network-first (always fresh when online), added controllerchange auto-reload
+8. **Dew point caching** — localStorage cache for 3 hours to avoid repeated geolocation prompts
+9. **Compact UI** — nav buttons (48→36px), header, subtitle, tracker, plan header, first-use buttons (64→48px), welcome section, tip boxes all tightened
+10. **Debugging Safari caching issue** — unresolved, see Known Issues
 
-### What's NOT Done (carry to next session)
+### Known Issues (carry to next session)
 
-#### Architecture: Product Intelligence System
-- IngredientKB + BeliefTracker → pre-wash recommendations → marginal contribution analysis → product discovery form → service worker/PWA
-- See `.kiro/specs/product-intelligence/` for full spec
+#### iPhone Safari not loading latest version — FIXED
+- Added one-time SW migration: on first load, unregisters ALL old service workers, clears all hair-routine caches, re-registers fresh SW, then reloads
+- Uses localStorage flag (`sw-force-refresh-v7`) so it only runs once per device
+- After migration, normal SW registration resumes with periodic update checks
+- Service worker bumped to v8
 
-#### Daily Plan Implementation
-- `tasks.md` is written and ready at `.kiro/specs/daily-plan/tasks.md`
-- Domain-rules-first approach (no Bayesian dependency for launch)
-- Estimated 3-4 build sessions
+#### Service worker caching friction (partially fixed)
+- Switched to network-first for HTML (v7) — new visits will always get fresh content
+- Added `controllerchange` auto-reload — when new SW takes control, page reloads automatically
+- The problem is the OLD SW (v5/v6) on existing devices won't update until it can fetch the new SW file
+
+#### Got2b product ID inconsistency — FIXED
+- Unified to `got2b-ultra-glued` everywhere (inventory, step map, walkthrough, daily plan)
+- Schema v11 migration renames `got2b-gel` → `got2b-ultra-glued` in stored inventory and event history
+
+### What's NOT Done (carry forward)
+
+#### Daily Plan Polish (remaining)
+- Remove dead old UI code (old lane-selection, old walkthrough nav) — deferred: still needed for first-use flow
+- Full end-to-end test on iPad viewport
+- Verify all existing features still work (history, products, settings, export/import)
+
+#### Product Intelligence System
+- IngredientKB + BeliefTracker → smarter product ranking
+- See `.kiro/specs/product-intelligence/`
 
 #### Research Documentation
-- Write up coconut oil and OGX oil research findings into `research/` folder (sources, methodology, conclusions)
+- Write up coconut oil and OGX oil findings into `research/`
 
 ---
 
 ## Schema
 
-**Version:** 9 (live)
-**Intelligence shape (v8+ with additionalSteps, v9 swaps OGX pre-shampoo for mask):**
-```js
-intelligence: {
-    mechanisms: string[],
-    delivery: 'rinse_off' | 'leave_on' | 'unknown',
-    step: 'pre_wash' | 'shampoo' | 'bond_repair' | 'conditioner' | 'deep_condition' | 'gloss' | 'leave_in' | 'heat_protection' | 'styling' | 'finishing',
-    additionalSteps?: string[],  // Optional — product appears in these groups too
-    outcomes: { [key: string]: number },
-    cumulative: boolean,
-    interactions: Array<{ with: string, type: string, note: string }>
-}
-```
+**Version:** 11 (Got2b ID unification)
 
 ---
 
 ## Cumulative Decisions (Do Not Revisit)
 
-### Hair Science
-- Use amodimethicone conditioner EVERY wash. Dove is "using-up" only — never recommend it.
-- OGX oils: volatile silicones + dimethiconol film + trace oil. Reclassified as finishing products (shine/frizz). Weak pre-wash — pure coconut oil is the right tool for that job. Argan oil specifically does NOT penetrate hair cortex (stays in outer 5µm, increases water affinity).
-- No product rotation needed for any category.
-- Dew point is the weather metric (not relative humidity). Auto-detect, don't ask. Default moderate on failure.
-- Abbey Yung 11-step method is the reference model for logging.
-- Hard floors: wash ≥ 1 day, clarify ≥ 3 days, protein ≥ 5 days.
-- "Pre-shampoo treatment" is a marketing term — bond repair products work best on a clean surface (after shampoo) and get sealed in by conditioner.
-- Heat cap benefits all conditioning-step products (conditioner, deep conditioner, gloss).
-- Pantene Miracle Rescue Leave-In is a genuine bond repair product (bis-aminopropyl dimethicone).
-- OGX Bond Protein Repair Sealing Serum is silicone-free protein fill (different tool than Garnier serum).
-
-### Architecture
-- Single-file HTML app, localStorage, no backend, offline-first, GitHub Pages.
-- Schema version 9. Intelligence uses granular `step` values (no subStep). Optional `additionalSteps` array for multi-group products.
-- Treatments are separate from products in the data model.
-- Products CAN appear in multiple activity categories via `additionalSteps` field.
-- No humidity prompt — auto-detect only, silent fallback to moderate.
-- Walkthrough step order: coconut oil pre-wash (dry) → shampoo → bond repair (wet) → conditioner → gloss → style.
-- Bond repair goes AFTER shampoo (needs wet clean surface, gets sealed by conditioner).
-
-### Product
-- "Using-up" protocol: track bottles being finished, explain compensation, remove when empty.
-- Inventory tiers: Primary Rotation, Supporting Cast, Use-Up Queue.
-- Mandy owns: NYM Curl Talk gel, Maui Moisture Curl Smoothie, L'Oréal Elvive Total Repair 5 Balm, OGX Bond Protein Repair Heat Spray, Monday Moisture Leave-In, OGX Bond Protein Repair Sealing Serum, pure coconut oil.
-- Pure coconut oil is the correct pre-wash oil (penetrates cortex, prevents hygral fatigue). OGX oils are finishing products, not pre-wash tools.
-- Elvive Glycolic Gloss 5-Min Lamination = same product as EverPure Glossing Lamination Mask. One entry only.
-- Goal of logging is data gathering for correlations, not minimal taps.
+All previous decisions remain. New this session:
+- **Adjust overlay auto-close:** Layer 1 selection closes overlay immediately (no need to tap "Done")
+- **Confirmation toast:** Green pill at bottom of screen, 2.5s duration, aria-live for screen readers
+- **Frizzy = Got2b swap:** Not just a tip — actually replaces NYM gel in the plan with Got2b Ultra Glued
+- **"No wash needed" threshold:** Shows when washDays === 0 AND suggestion is refresh
 
 ---
 
@@ -110,34 +98,35 @@ intelligence: {
 
 | File | Role |
 |------|------|
-| `index.html` | Live app (~5300 lines, single-file architecture) |
-| `hair-sw.js` | Service worker (not yet registered in v1) |
-| `.kiro/specs/product-intelligence/` | Active spec for intelligence system |
-| `.kiro/specs/adaptive-hair-routine/` | Original spec (complete) |
-| `research/` | 5 research phases + 3 briefs (all complete) |
-| `HAIR_CONSULTATION_HANDOFF.md` | Hair science + product reference |
+| `index.html` | Live app (~7200+ lines) |
+| `hair-sw.js` | Service worker (cache v6) |
+| `manifest.json` | PWA manifest |
+| `icon-192.svg`, `icon-512.svg` | App icons |
+| `.kiro/specs/daily-plan/` | Daily Plan spec (design + tasks) |
+| `.kiro/specs/product-intelligence/` | Intelligence system spec |
 
 ---
 
-## Session History (abbreviated)
+## Session History
 
 | Session | What | Status |
 |---------|------|--------|
 | 1-8 | Core app build | Complete |
-| 9 | Product inventory (24 products, CRUD, tiers) | Complete |
+| 9 | Product inventory | Complete |
 | 10 | Logging UX overhaul | Complete |
-| 11 | Product Intelligence scoping | Complete (design) |
-| 12 | Research briefs + attribution card + spec | Complete |
-| 13 | Schema rename (phase→step, added subStep) | Complete |
-| 14 | Step reorganization planning + new product research | Complete (design) |
-| 15 | **Step reorganization implementation, humidity fix, tracker compact, Pantene research, dedup fix** | Complete |
-| 16 | **Coconut oil research, OGX oil re-evaluation, 4 new products, additionalSteps feature, schema v8** | Complete |
-| 17 | **Doc sync, Daily Plan tasks.md, inventory fix (OGX mask), walkthrough reorder + product display, Phase 1 research update** | Complete |
+| 11-16 | Intelligence + step reorg + research | Complete |
+| 17 | Doc sync, Daily Plan tasks.md, walkthrough fixes | Complete |
+| 18 | Per-product ratings | Complete |
+| 19 | PWA + Daily Plan + UX polish | Complete |
+| 20 | **Daily Plan polish: adjust UX, frizzy upgrade, no-wash, a11y** | Complete |
 
 ---
 
 ## Repo State
 
 - **Branch:** main
-- **Clean:** Uncommitted changes from Session 17 (ready to commit).
-- **GitHub Pages:** Live and working at schema v8 (v9 not yet pushed).
+- **Pushed:** All code changes pushed (commit `4daef9b`)
+- **GitHub Pages:** Verified deployed and serving latest code (confirmed via API fetch from ben-o-matic)
+- **UNRESOLVED:** Ben's iPhone Safari is showing an old cached version despite cache-buster URL, private tab, and clearing site data. The server IS serving the correct file (verified programmatically). This is a client-side caching issue that needs debugging in the next session — possibly iOS Safari's aggressive back-forward cache, or a DNS-level cache.
+- **Uncommitted:** SESSION_HANDOFF.md, NEXT_STEPS.md, .kiro/steering/session-context.md, plus deletions from prior session
+- **Local HTTP server** running on port 8080 (python) — can be used to bypass GitHub Pages caching for testing

@@ -177,6 +177,45 @@ These don't need sessions — they need Mandy to use the app for a few weeks.
 
 ---
 
+## Planned: Per-Product Experience & Results Ratings
+
+**Scope:** Small, self-contained. No spec needed. ~1 session.
+
+### What
+Two subjective ratings per product, accessible from the product inventory view:
+- **Experience** — how much you enjoy using it (smell, texture, ease of application, sensory feel)
+- **Results** — how well you think it works for your hair (your subjective sense, separate from wash-level rating)
+
+Both use the existing 5-point emoji scale (😫 😕 😐 😊 🤩). Ratable anytime, updatable as opinions change. Optional notes field per product.
+
+### Why
+The app currently only has wash-level ratings (correlated to products via BeliefTracker). This adds the user's direct opinion of each product — a different and complementary signal. A product might correlate with good outcomes but feel terrible to use, or vice versa.
+
+### How it influences the app
+- Daily Plan product ranking factors in both objective correlation AND subjective preference
+- Products rated low on experience get flagged: "effective but unpleasant — want to find an alternative?"
+- Products rated high on experience but low on results get a gentle note: "this one's fun but may not be doing much"
+- Products with no rating yet behave as today (no penalty, no boost)
+
+### Implementation shape
+- Two new fields on product data: `experienceRating: number|null`, `resultsRating: number|null`
+- Optional `experienceNote: string|null` and `resultsNote: string|null`
+- Schema migration (additive — new fields default to null)
+- Inventory UI: tap a product → see/set both ratings + notes
+- Wire into Daily Plan's `PlanGenerator.rankProducts()` as a ranking factor
+- Wire into Product Intelligence's `RecommendationEngine` for the "effective but unpleasant" / "fun but ineffective" insights
+
+### Dependencies
+- None for the data model + inventory UI (can build standalone)
+- Daily Plan integration: after Daily Plan task 1.3 is built
+- Intelligence integration: after Product Intelligence task 8.1 is built
+
+### When to build
+- Anytime after the inventory UI exists (it does). Can be done before or after Daily Plan.
+- Recommended: build the data model + inventory UI as a quick win, wire into ranking later.
+
+---
+
 ## Not Planned (explicitly deprioritized)
 
 - **Optional property tests from spec** — 14 tests marked `*`. Value is low given the app works correctly. Revisit if bugs emerge.
