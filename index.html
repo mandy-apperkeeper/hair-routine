@@ -1262,15 +1262,15 @@
                 }
             },
             {
-                id: 'pantene-bond-spray', name: 'Bond Repair Post-Shower Spray', brand: 'Pantene',
-                tier: 'supporting', context: 'as-needed', usingUp: false,
-                notes: '',
+                id: 'pantene-bond-spray', name: 'Miracle Rescue Instant Repair Leave-In', brand: 'Pantene',
+                tier: 'supporting', context: 'every-wash', usingUp: false,
+                notes: 'Bis-aminopropyl dimethicone (bond-bridging silicone) + histidine (amino acid cortex fill). Genuine bond repair leave-in.',
                 intelligence: {
-                    mechanisms: ['conditioning'],
+                    mechanisms: ['bond_repair', 'cuticle_smoothing'],
                     delivery: 'leave_on',
                     step: 'leave_in',
-                    outcomes: { smoothness: 0.4 },
-                    cumulative: false,
+                    outcomes: { strength: 0.6, smoothness: 0.5, shine: 0.4 },
+                    cumulative: true,
                     interactions: []
                 }
             },
@@ -2617,13 +2617,6 @@
                     // Dynamic message handled in getStatements()
                     status: 'Weekly treatment keeps bonds maintained.',
                     hasGap: true
-                },
-                {
-                    id: 'garnier-serum-only',
-                    trigger: function(products) { return products.includes('garnier-filler-serum') && !products.includes('loreal-21-in-1'); },
-                    message: 'Garnier Filler Serum today (concentrated amodimethicone). Stronger cuticle repair than the spray, but no conditioning hold. Best for repair-focused days.',
-                    status: 'Different strengths — both valid options.',
-                    hasGap: false
                 }
             ];
 
