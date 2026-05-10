@@ -1682,7 +1682,8 @@
             <div class="adjust-layer visible" id="adjust-layer-1">
                 <div class="adjust-options" id="adjust-quick-options">
                     <button class="adjust-option" data-value="frizzy">🌊 Frizzy / poofy</button>
-                    <button class="adjust-option" data-value="flat">🪨 Flat / limp</button>
+                    <button class="adjust-option" data-value="flat">🪨 Flat / no volume</button>
+                    <button class="adjust-option" data-value="soft_limp">🧈 Soft / limp</button>
                     <button class="adjust-option" data-value="holding_well">✨ Holding well</button>
                     <button class="adjust-option" data-value="oily">🧴 Oily / heavy</button>
                     <button class="adjust-option" data-value="dry_rough">🌿 Dry / rough</button>
@@ -4578,20 +4579,27 @@
             function adjust(currentPlan, observations) {
                 // Deep-copy the plan
                 var plan = JSON.parse(JSON.stringify(currentPlan));
-                var quick = observations.quick || null;
+                var quick = observations.quick || [];
                 var context = observations.context || [];
                 var detailed = observations.detailed || [];
 
-                // Layer 1: Quick observation adjustments
-                if (quick === 'frizzy') {
+                // Layer 1: Quick observation adjustments (multi-select)
+                if (quick.indexOf('frizzy') !== -1) {
                     applyFrizzyAdjustments(plan);
-                } else if (quick === 'flat') {
+                }
+                if (quick.indexOf('flat') !== -1) {
                     applyFlatAdjustments(plan);
-                } else if (quick === 'oily') {
+                }
+                if (quick.indexOf('oily') !== -1) {
                     applyOilyAdjustments(plan);
-                } else if (quick === 'dry_rough') {
+                }
+                if (quick.indexOf('dry_rough') !== -1) {
                     applyDryRoughAdjustments(plan);
-                } else if (quick === 'holding_well') {
+                }
+                if (quick.indexOf('soft_limp') !== -1) {
+                    applySoftLimpAdjustments(plan);
+                }
+                if (quick.indexOf('holding_well') !== -1) {
                     applyHoldingWellAdjustments(plan);
                 }
 
@@ -4746,6 +4754,49 @@
                             phase: 'STYLE', alternatives: []
                         }
                     ];
+                }
+            }
+
+            function applySoftLimpAdjustments(plan) {
+                // Soft/limp = over-moisturized, needs protein reinforcement
+                // Reduce conditioner time, skip heavy leave-ins, suggest protein treatment
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'conditioner') {
+                        plan.steps[i].instruction = 'Quick application — 2 minutes max, ends only. Hair is over-moisturized.';
+                        plan.steps[i].tip = 'Reduced — soft/limp hair needs less moisture, more protein';
+                        if (plan.steps[i].timer) {
+                            plan.steps[i].timer.duration = 120;
+                            plan.steps[i].timer.label = 'Conditioner (short — soft hair)';
+                        }
+                    }
+                    if (plan.steps[i].stepType === 'leave_in') {
+                        plan.steps[i].instruction = 'Skip or use minimal amount on ends only.';
+                        plan.steps[i].tip = 'Less moisture — hair is already soft/over-conditioned';
+                    }
+                }
+                // Add protein step if not already present
+                var hasProtein = plan.steps.some(function(s) { return s.stepType === 'protein' || s.stepType === 'bond_repair'; });
+                if (!hasProtein) {
+                    // Insert after shampoo
+                    var shampooIdx = -1;
+                    for (var j = 0; j < plan.steps.length; j++) {
+                        if (plan.steps[j].stepType === 'shampoo') { shampooIdx = j; break; }
+                    }
+                    if (shampooIdx !== -1) {
+                        plan.steps.splice(shampooIdx + 1, 0, {
+                            id: 'step-added-protein',
+                            number: 0,
+                            stepType: 'bond_repair',
+                            productId: 'pantene-miracle-rescue',
+                            productName: 'Pantene Miracle Rescue Leave-In',
+                            instruction: 'Apply to wet hair after shampoo. Bis-aminopropyl dimethicone repairs bonds and adds structure.',
+                            scienceBadge: 'BOND REPAIR',
+                            timer: null,
+                            tip: 'Added — soft/limp hair needs protein structure',
+                            phase: 'PREP & WASH',
+                            alternatives: []
+                        });
+                    }
                 }
             }
 
@@ -5351,7 +5402,7 @@
         // ===== Daily Plan Rendering =====
         var detectedDewPoint = null;
         var currentPlan = null;
-        var currentObservations = { quick: null, context: [], detailed: [] };
+        var currentObservations = { quick: [], context: [], detailed: [] };
         var planTimerActive = null; // { stepId, timerId }
 
         function renderDailyPlan() {
@@ -5433,7 +5484,7 @@
                 currentPlan.reason = 'You chose a refresh.';
                 currentPlan.confidence = 'high';
                 currentPlan.productSwaps = [];
-                currentObservations = { quick: null, context: [], detailed: [] };
+                currentObservations = { quick: [], context: [], detailed: [] };
                 renderPlanView(currentPlan);
             });
 
@@ -5443,7 +5494,7 @@
                 currentPlan.reason = 'You chose to wash anyway.';
                 currentPlan.confidence = 'high';
                 currentPlan.productSwaps = [];
-                currentObservations = { quick: null, context: [], detailed: [] };
+                currentObservations = { quick: [], context: [], detailed: [] };
                 renderPlanView(currentPlan);
             });
         }
@@ -5697,7 +5748,7 @@
                 humidity: currentPlan.humidity,
                 rating: rating,
                 observations: currentObservations,
-                planAdjusted: currentObservations.quick !== null || currentObservations.context.length > 0 || currentObservations.detailed.length > 0,
+                planAdjusted: currentObservations.quick.length > 0 || currentObservations.context.length > 0 || currentObservations.detailed.length > 0,
                 productSwaps: currentPlan.productSwaps || []
             };
 
@@ -5714,7 +5765,7 @@
 
             // Reset plan state
             currentPlan = null;
-            currentObservations = { quick: null, context: [], detailed: [] };
+            currentObservations = { quick: [], context: [], detailed: [] };
 
             // Re-render landing
             renderLanding();
@@ -5726,7 +5777,7 @@
 
             // Reset selections to match current observations
             document.querySelectorAll('#adjust-quick-options .adjust-option').forEach(function(btn) {
-                btn.classList.toggle('selected', btn.getAttribute('data-value') === currentObservations.quick);
+                btn.classList.toggle('selected', currentObservations.quick.indexOf(btn.getAttribute('data-value')) !== -1);
             });
             document.querySelectorAll('#adjust-context-options .adjust-option').forEach(function(btn) {
                 btn.classList.toggle('selected', currentObservations.context.indexOf(btn.getAttribute('data-value')) !== -1);
@@ -5735,23 +5786,19 @@
                 btn.classList.toggle('selected', currentObservations.detailed.indexOf(btn.getAttribute('data-value')) !== -1);
             });
 
-            // Wire events
+            // Wire events — Layer 1 is now multi-select (same as Layers 2/3)
             document.querySelectorAll('#adjust-quick-options .adjust-option').forEach(function(btn) {
                 btn.onclick = function() {
                     var val = btn.getAttribute('data-value');
-                    // Single-select: toggle off if already selected
-                    if (currentObservations.quick === val) {
-                        currentObservations.quick = null;
+                    var idx = currentObservations.quick.indexOf(val);
+                    if (idx !== -1) {
+                        currentObservations.quick.splice(idx, 1);
                         btn.classList.remove('selected');
                     } else {
-                        currentObservations.quick = val;
-                        document.querySelectorAll('#adjust-quick-options .adjust-option').forEach(function(b) { b.classList.remove('selected'); });
+                        currentObservations.quick.push(val);
                         btn.classList.add('selected');
                     }
                     applyAdjustments();
-                    // Auto-close overlay after Layer 1 selection and show confirmation
-                    overlay.classList.remove('visible');
-                    showAdjustToast(val ? getAdjustLabel(val) : 'Reset');
                 };
             });
 
@@ -5796,6 +5843,12 @@
             // Close button
             document.getElementById('adjust-close').onclick = function() {
                 overlay.classList.remove('visible');
+                // Show toast summarizing selections
+                var allSelections = currentObservations.quick.concat(currentObservations.context, currentObservations.detailed);
+                if (allSelections.length > 0) {
+                    var labels = allSelections.map(function(v) { return getAdjustLabel(v); });
+                    showAdjustToast('Adjusted: ' + labels.join(', '));
+                }
             };
 
             // Close on backdrop tap
@@ -5819,13 +5872,23 @@
 
         function getAdjustLabel(value) {
             var labels = {
-                'frizzy': '🌊 Adjusted for frizz',
-                'flat': '🪨 Adjusted for flat hair',
-                'holding_well': '✨ Switched to refresh',
-                'oily': '🧴 Adjusted for oily hair',
-                'dry_rough': '🌿 Adjusted for dry hair'
+                'frizzy': '🌊 Frizz',
+                'flat': '🪨 Flat',
+                'soft_limp': '🧈 Soft/limp',
+                'holding_well': '✨ Holding well',
+                'oily': '🧴 Oily',
+                'dry_rough': '🌿 Dry',
+                'exercised': '🏃 Exercised',
+                'short_on_time': '⏰ Short on time',
+                'heat_styling': '🔥 Heat styling',
+                'slept_unprotected': '🌙 Slept unprotected',
+                'tangles': 'Tangles',
+                'shedding': 'Shedding',
+                'curl_dropping': 'Curl dropping',
+                'stiff': 'Stiff',
+                'scalp_itchy': 'Scalp itchy'
             };
-            return labels[value] || 'Plan adjusted';
+            return labels[value] || value;
         }
 
         function showAdjustToast(message) {
@@ -6049,7 +6112,7 @@
                     currentPlan.reason = 'You chose ' + lane + '.';
                     currentPlan.confidence = 'high';
                     currentPlan.productSwaps = [];
-                    currentObservations = { quick: null, context: [], detailed: [] };
+                    currentObservations = { quick: [], context: [], detailed: [] };
                     renderPlanView(currentPlan);
                 });
             });
