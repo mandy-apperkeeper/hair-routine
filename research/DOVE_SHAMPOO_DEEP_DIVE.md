@@ -268,3 +268,72 @@ The older Dove Intensive Repair Shampoo has legitimate safety concerns. Not dang
 14. Beautikue. "The Ultimate Guide to Sulfate-Free Shampoo." 2026. https://www.beautikue.com/sulfate-free-shampoo/
 
 ---
+
+## Self-Critique
+
+### Strengths
+- Full ingredient lists sourced and verified from INCIDecoder
+- Surfactant comparison grounded in classification systems (NaturallyCurly CurlChemist)
+- Safety concerns identified with specific ingredients and regulatory context
+- Acknowledged the 2025 reformulation and its improvements
+- Clear comparison table against primary shampoo
+- Correctly identified that shampoo silicone deposition is less impactful than conditioner silicone deposition
+
+### Weaknesses
+1. **No quantitative data on Sodium C12-13 Pareth Sulfate stripping vs. SCI.** The "harsher" claim is based on surfactant class (sulfate vs. sulfate-free) rather than a direct comparison study of these specific molecules.
+
+2. **The "3-5x more stripping" claim from Remedy's Nutrition** is not peer-reviewed — it's a blog post. The direction is correct (sulfates strip more than sulfate-free) but the specific multiplier is unverified.
+
+3. **BeautyCon source is undated** and the specific study referenced ("studies have found") is not linked. This weakens the "no appreciable buildup" claim.
+
+4. **The NaturallyCurly surfactant classification (2015)** is 11 years old. However, surfactant chemistry hasn't changed — these are the same molecules. The classification remains valid.
+
+5. **Didn't find Reddit-specific user reports** on Dove shampoos for curly/coarse hair. The user experience angle is thinner than in the conditioner deep dive.
+
+### What would change the conclusion
+- A study showing Sodium C12-13 Pareth Sulfate is as gentle as SCI for curly hair
+- Evidence that dimethiconol deposition from shampoo provides lasting benefit without buildup
+- A unique ingredient in either Dove shampoo that addresses a gap in the current routine
+
+None of these were found.
+
+---
+
+## Scorecard
+
+### Dimension Scores
+
+| Dimension | Weight | Score | Detail |
+|-----------|--------|-------|--------|
+| 1. Source Fidelity | 30% | 87% | 4/5 checked sources resolve and contain claimed info. BeautyCon source is undated and study reference is vague = partial PASS. |
+| 2. Factual Currency | 25% | 90% | 2/3 quantitative claims verified current (Glooshi 2025, HairAide 2025). Remedy's Nutrition "3-5x" claim is a blog, not peer-reviewed = partial PASS. |
+| 3. Coverage & Completeness | 20% | 85% | Contradictions named (2). Gaps named (4). Multiple perspectives covered. Limitations stated. User experience angle is thin. |
+| 4. Reasoning Soundness | 10% | 90% | 3 inferences checked: (1) "sulfate harsher than sulfate-free" — supported by surfactant class chemistry + expert classification. (2) "dimethiconol partially self-defeating in shampoo" — logical from surfactant competition + deposition mechanics. (3) "ceramides at trace concentration in rinse-off = negligible" — supported by delivery-format validation principle. All sound. |
+| 5. Tagging Compliance | 5% | 95% | Verified/Inferred tags used throughout. One borderline: "likely what Mandy has" re: older formulation not explicitly tagged as inferred. |
+| 6. Actionability | 7% | 100% | Clear recommendation (no tier change). Explains why shampoo rotation logic isn't needed. Decision criteria explicit. |
+| 7. Presentation Clarity | 3% | 95% | Executive summary standalone. Comparison table clear. Structure logical. |
+
+### Negative Criteria
+- Verified claim lacking source link? **No.**
+- Recommendation despite noted insufficient evidence? **No.** Recommendation maintains status quo, supported by evidence.
+- Inferred claims presented as Verified? **No.**
+
+**Penalties:** 0%
+
+### Composite Score
+
+(0.30 × 87) + (0.25 × 90) + (0.20 × 85) + (0.10 × 90) + (0.05 × 95) + (0.07 × 100) + (0.03 × 95) - 0
+= 26.1 + 22.5 + 17 + 9 + 4.75 + 7 + 2.85
+= **89.2%**
+
+**Rating:** Proceed to final document (≥85%)
+
+### Key Failures
+- BeautyCon source undated, study reference vague (Source Fidelity partial)
+- Remedy's Nutrition "3-5x" claim is blog-level, not peer-reviewed (Currency partial)
+
+### Remediation Applied
+- BeautyCon claim contextualized as applying to standard dimethicone, not dimethiconol specifically
+- Remedy's Nutrition multiplier not used as a key claim — direction (sulfates strip more) is supported by multiple other sources
+
+---
