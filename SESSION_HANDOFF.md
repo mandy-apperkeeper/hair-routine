@@ -1,24 +1,20 @@
-# Hair Routine — Session Handoff (May 10, 2026, Session 6)
+# Hair Routine — Session Handoff (May 10, 2026, Session 7)
 
 ## What Happened This Session
 
-### Commits and Pushes (housekeeping session)
+### Session 7: Quick Wins (all three items complete)
 
-Committed and pushed work from other sessions that was staged but not yet on origin:
+**7A. Rewrote Requirement 8** — Updated `requirements.md` to reflect "inform, don't ask" philosophy. New acceptance criteria: auto-detect dew point via Open-Meteo, proceed directly to walkthrough, manual selector is fallback only. 6 criteria (was 5), all aligned with actual implementation.
 
-- `9871fee` — feat(status-bar): add protein and deep condition tracking
-- `4eeb199` — feat(history): display treatment badges on wash event cards
-- `10f0d55` — refactor(data): separate treatments from products in wash event model
-- `031a6d0` — feat(quick-log): redesign form with multi-select treatments, emoji rating, and save button
-- `2bf327f` — docs: sync all project docs with current implementation state
-- `02a9e7c` — docs: update session handoff for session 5 (research complete)
-- `5e2aa7b` — docs(research): add QC scorecard to Phase 2 formulation position rules
+**7B. Created steering file** — `hair-routine/.kiro/steering/session-context.md` with `inclusion: always`. Covers tech stack, key files, architecture, established decisions, aesthetic, anti-patterns, and current status. Future sessions will auto-load this context.
 
-All pushed to origin. Repo is clean.
+**7C. Verified auto dew point is complete** — No code changes needed. The walkthrough already skips the manual selector when dew point is auto-detected. Manual selector only shows on failure. On step 1, the app shows a subtle info line ("💧 72°F dew point · humid"). The quick-log form has no humidity selector (past events don't need it). Marked Item 1 as fully done in IMPLEMENTATION_IMPROVEMENTS.md.
 
-### QC Scorecard Added
-
-Independent quality evaluation appended to `research/PHASE2_FORMULATION_POSITION_RULES.md` — scored 94% (Excellent, ship as-is).
+### Files Changed
+- `hair-routine/.kiro/specs/adaptive-hair-routine/requirements.md` — Requirement 8 rewritten
+- `hair-routine/.kiro/steering/session-context.md` — Created (new)
+- `hair-routine/NEXT_STEPS.md` — Session 7 marked complete
+- `hair-routine/IMPLEMENTATION_IMPROVEMENTS.md` — Item 1 status updated to Done
 
 ## Current State
 
@@ -34,7 +30,7 @@ Independent quality evaluation appended to `research/PHASE2_FORMULATION_POSITION
 - **Adaptive Hair Routine spec** — feature-complete (all 16 task groups done)
 - Optional items remaining: ~14 property tests + 1 integration test (all marked `*` = skippable)
 - `design.md` — up to date (WashEvent has `treatments`, `dewPoint`, schema v2)
-- `requirements.md` — Requirement 8 (humidity) needs rewrite for "inform, don't ask" philosophy
+- `requirements.md` — up to date (Requirement 8 rewritten for "inform, don't ask" philosophy)
 
 ### Research (Complete)
 | File | Content | QC Score |
@@ -47,9 +43,8 @@ Independent quality evaluation appended to `research/PHASE2_FORMULATION_POSITION
 | `RESEARCH_PLAN_PRODUCT_RELATIONSHIPS.md` | Original 5-phase plan (now complete) | — |
 
 ### Implementation Improvements (`IMPLEMENTATION_IMPROVEMENTS.md`)
-- **12 of 15 items done** (✅)
+- **13 of 15 items done** (✅)
 - **Remaining:**
-  - Item 1 (auto dew point) — partial: detects and stores, but still prompts as fallback
   - Item 3 ("Why did that work?" retrospective card) — needs feedback engine data (15+ events)
   - Item 6 (18-MEA maintenance insight) — needs feedback engine data (30+ events)
 
@@ -67,11 +62,10 @@ Independent quality evaluation appended to `research/PHASE2_FORMULATION_POSITION
 
 ## What's Next (Priority Order)
 
-1. **Wire compensation logic into recommendation card** — Use Phase 5 findings to generate contextual statements ("Using X today because Y. Z compensates at step N.")
-2. **Update Requirement 8** — Rewrite to reflect "inform, don't ask" weather philosophy (dew point auto-detected, no manual humidity prompt needed)
-3. **Create project steering file** — `.kiro/steering/` with implementation guardrails
-4. **Product inventory spec** — Data model designed (session 4), research complete, ready to spec
-5. **Service worker for v1** — v2 has `hair-sw.js` but v1 (`index.html`) has no offline support yet
+1. **Wire compensation logic into recommendation card (Session 8)** — Use Phase 5 findings to generate contextual statements ("Using X today because Y. Z compensates at step N.")
+2. **Product inventory spec (Session 9)** — Data model designed (session 4), research complete, ready to spec
+3. **Service worker for v1 (Session 10)** — v2 has `hair-sw.js` but v1 (`index.html`) has no offline support yet
+4. **v1→v2 convergence planning (Session 11)** — Audit, decide switchover strategy, execute
 
 ## Decisions Made (Cumulative, Still Active)
 

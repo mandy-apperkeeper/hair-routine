@@ -1,0 +1,83 @@
+---
+inclusion: always
+---
+
+# Hair Routine — Session Context
+
+## What This Is
+
+Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed to GitHub Pages. Used on her iPad in the bathroom with wet hands. Science-backed, personalized to her specific hair profile (2C-3A, coarse, very thick, post-TE recovery, weathered cuticle).
+
+**Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
+
+## Tech Stack
+
+- Single HTML file with embedded CSS + JS (no build step, no framework)
+- localStorage for all persistence (schema v2)
+- Open-Meteo API for dew point auto-detection
+- Service worker (`hair-sw.js`) for v2 offline support (v1 has none yet)
+- GitHub Pages deployment (push to main = live)
+- No dependencies, no npm, no bundler
+
+## Key Files
+
+| File | Role |
+|------|------|
+| `index.html` | **Live v1 app** — quick-log, walkthrough, history, status bar, recommendations |
+| `hair-routine-v2.html` | Full spec build (walkthrough engine, learn section, settings) — not yet live |
+| `hair-sw.js` | Service worker for v2 |
+| `NEXT_STEPS.md` | Session plan with prioritized work items |
+| `SESSION_HANDOFF.md` | Current state, decisions, what's next |
+| `IMPLEMENTATION_IMPROVEMENTS.md` | 15-item roadmap (12 done, 3 remaining) |
+| `research/` | 5-phase product relationship research (complete) |
+| `HAIR_CONSULTATION_HANDOFF.md` | Hair science + product reference from original consultation |
+
+## Architecture (v1 — the live app)
+
+`index.html` is organized as:
+1. **CSS** — dark theme, card-based, touch-friendly
+2. **HTML** — semantic sections (landing, walkthrough, history, quick-log)
+3. **JS modules** (IIFEs):
+   - `StateManager` — localStorage CRUD, schema migration
+   - `CooldownSystem` — time-based + state-based warnings
+   - `FeedbackEngine` — interval analysis, correlations, threshold proposals
+   - `WalkthroughEngine` — step sequences per lane, humidity substitutions
+   - `TimerManager` — countdown with visibility-change handling
+4. **UI wiring** — event listeners, view switching, rendering functions
+
+## Established Decisions (do not revisit)
+
+- **Amodimethicone conditioner every wash.** Dove is "using-up" only — never recommend it.
+- **No product rotation.** Research confirmed rotation is a myth. Never build rotation logic.
+- **Dew point, not relative humidity.** Auto-detect via Open-Meteo. Manual selector is fallback only (offline/API failure). The app informs, doesn't ask.
+- **Schema v2:** WashEvent includes `treatments: string[]` and `dewPoint: number | null`
+- **Treatments are separate from products** in the data model (clarify, protein, deep-condition, bond-repair)
+- **OGX oils provide no lasting benefit** (volatile silicones). Don't recommend them.
+- **"Using-up" protocol:** Track bottles being finished, explain compensation, remove when empty.
+- **Hard floors:** wash ≥ 1 day, clarify ≥ 3 days, protein ≥ 5 days — never below these.
+
+## Aesthetic
+
+- Dark color scheme (bathroom glare reduction)
+- Book-feel: serif headings, system-ui body
+- Gold accents for active/important elements
+- Cards with subtle borders, generous padding
+- Large touch targets (48×48dp minimum, 8dp spacing)
+- Emoji-based rating (😫 😕 😐 😊 🤩)
+
+## Anti-Patterns (things that went wrong in past sessions)
+
+- Editing `index.html` without reading the full relevant section first (it's ~3800 lines)
+- Mixing v1 and v2 concerns — they're separate apps until convergence (Session 11)
+- Adding humidity prompts where auto-detection already handles it
+- Recommending Dove conditioner or OGX oils
+- Building product rotation features
+- Using relative humidity instead of dew point
+- Treating the spec's optional property tests as blocking work
+
+## Current Status (update after each session)
+
+- **Spec:** Feature-complete (all 16 task groups done, optional tests skipped)
+- **v1 (live):** Working — quick-log, walkthrough, history, status bar, dew point detection, recommendations
+- **Remaining improvements:** 3 of 15 (Item 1 partial, Items 3 + 6 need usage data)
+- **Next high-value work:** Compensation logic (Session 8), then product inventory (Session 9)

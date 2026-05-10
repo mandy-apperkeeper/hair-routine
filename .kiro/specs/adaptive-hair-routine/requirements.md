@@ -112,15 +112,16 @@ Adaptive Hair Routine is a full rebuild of the existing hair-routine.html into a
 
 ### Requirement 8: Humidity-Aware Product Guidance
 
-**User Story:** As Mandy, I want the app to factor humidity into its product suggestions, so that I avoid glycerin-induced frizz on humid days without having to remember the science myself.
+**User Story:** As Mandy, I want the app to automatically detect humidity conditions and adjust product recommendations without asking me, so that I get the right guidance without extra taps or needing to remember the science myself.
 
 #### Acceptance Criteria
 
-1. WHEN Mandy begins a Walkthrough, THE App SHALL prompt for current humidity level with three options: Dry (<40%), Moderate (40-70%), Humid (>70%)
-2. WHEN humidity is above 70% AND the Curly lane is selected, THE Walkthrough SHALL substitute "Got2b Ultra Glued" for "NYM Curl Talk Gel" in the gel step with explanation: "NYM gel's glycerin pulls excess moisture in humid conditions — Got2b has the same PQ-69 hold without glycerin"
-3. WHEN humidity is above 70% AND the Blowout lane is selected, THE Walkthrough SHALL emphasize the Marc Anthony spray step: "Extra important today — the Polysilicone-29 seal blocks humidity penetration"
-4. THE Tracker SHALL record the humidity level selected for each Wash_Event
-5. WHEN the Feedback_Engine detects that Mandy consistently rates humid-day washes poorly despite product swaps, THE Feedback_Engine SHALL surface this pattern as an insight
+1. WHEN Mandy begins a Walkthrough, THE App SHALL auto-detect the current dew point via geolocation and the Open-Meteo API, classify it into a humidity tier (Dry: dew point <35°F, Moderate: 35–60°F, Humid: >60°F), and proceed directly to the walkthrough without prompting
+2. IF dew point auto-detection fails (geolocation denied, offline, API error, or timeout >3 seconds), THEN THE App SHALL fall back to a manual three-button humidity selector: Dry (<40%), Moderate (40-70%), Humid (>70%)
+3. WHEN humidity is classified as Humid AND the Curly lane is selected, THE Walkthrough SHALL substitute "Got2b Ultra Glued" for "NYM Curl Talk Gel" in the gel step with explanation: "NYM gel's glycerin pulls excess moisture in humid conditions — Got2b has the same PQ-69 hold without glycerin"
+4. WHEN humidity is classified as Humid AND the Blowout lane is selected, THE Walkthrough SHALL emphasize the Marc Anthony spray step: "Extra important today — the Polysilicone-29 seal blocks humidity penetration"
+5. THE Tracker SHALL record the detected dew point value (when available) and the derived humidity tier for each Wash_Event
+6. WHEN the Feedback_Engine detects that Mandy consistently rates humid-day washes poorly despite product swaps, THE Feedback_Engine SHALL surface this pattern as an insight
 
 ### Requirement 9: Wash Event Tracking and History
 

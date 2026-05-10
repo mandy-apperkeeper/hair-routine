@@ -499,7 +499,7 @@ WHAT'S HAPPENING TO YOUR HAIR
 
 | # | Improvement | Effort | Value | Category | Status |
 |---|-------------|--------|-------|----------|--------|
-| 1 | Auto dew point tracking | Low | High | Data accuracy | ✅ Partial (detects, stores, but still prompts as fallback) |
+| 1 | Auto dew point tracking | Low | High | Data accuracy | ✅ Done (auto-detects, stores, manual selector is fallback-only) |
 | 2 | Two-tier science badges | Low | High | Trust/transparency | ✅ Done (v2 build) |
 | 3 | "Why did that work?" card | Medium | High | Insight delivery | Not started |
 | 4 | Glossing Mask warning | Very low | Medium | Safety/accuracy | ✅ Done (v2 build) |

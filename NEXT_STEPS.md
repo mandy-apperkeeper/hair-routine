@@ -6,29 +6,22 @@
 
 ---
 
-## Session 7: Quick Wins + Foundation (est. 1 session)
+## Session 7: Quick Wins + Foundation ✅ (completed May 10, 2026)
 
-These are small, independent items that clear debt and set up future work.
+### 7A. Rewrite Requirement 8 (humidity philosophy) ✅
+- Rewrote to "inform, don't ask" — auto-detect dew point, manual selector is fallback only
+- Updated user story, all 6 acceptance criteria rewritten to match actual implementation
 
-### 7A. Rewrite Requirement 8 (humidity philosophy)
-- **What:** Change from "ask the user" to "inform, don't ask"
-- **Why:** The app already auto-detects dew point. The spec still says "prompt for humidity level with three options" — that's stale.
-- **New philosophy:** Dew point is fetched silently. The app informs ("High humidity today — Got2b recommended") rather than asking. Manual selector is fallback only (offline/API failure).
-- **Touches:** `requirements.md` only (the code already does this)
-- **Effort:** 15 minutes
+### 7B. Create `.kiro/steering/session-context.md` ✅
+- Created at `hair-routine/.kiro/steering/session-context.md` (inclusion: always)
+- Covers: tech stack, key files, architecture, established decisions, aesthetic, anti-patterns, current status
 
-### 7B. Create `.kiro/steering/session-context.md`
-- **What:** Project steering file with implementation guardrails
-- **Content:** Tech stack, key files, aesthetic (book-feel dark), established decisions (no rotation, amodimethicone every wash, dew point not RH, schema v2), anti-patterns from past sessions
-- **Why:** Every new session currently has to re-discover project context from scratch
-- **Effort:** 20 minutes
-
-### 7C. Complete auto dew point (Item 1 finish)
-- **What:** Remove the manual humidity prompt from the quick-log form when dew point was successfully detected
-- **Current state:** Detects and stores dew point, but still shows the manual selector alongside it
-- **Target:** Manual selector hidden when dew point is available; shown only on API failure
-- **Touches:** `index.html` (quick-log form logic)
-- **Effort:** 30 minutes
+### 7C. Complete auto dew point (Item 1 finish) ✅ — already done
+- Verified: the walkthrough already skips the manual selector when dew point is auto-detected
+- Manual selector only shows on failure (geolocation denied, offline, API error, timeout)
+- On step 1, the app shows a subtle info line ("💧 72°F dew point · humid") — inform, don't ask
+- The quick-log form has no humidity selector at all (it's for past events where conditions aren't relevant)
+- **No code changes needed** — the implementation already matches the target behavior
 
 ---
 
