@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hair Routine</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --card: #16213e;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eaeaea;
+            --muted: #a0a0b0;
+            --gold: #f0c27f;
+            --green: #4ecdc4;
+            --border: #2a2a4a;
+            --blue: #4a90d9;
+            --rose: #d4748a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 4rem;
+        }
+        h1 { font-size: 1.4rem; color: var(--gold); margin-bottom: 0.15rem; }
+        .subtitle { color: var(--muted); font-size: 0.8rem; margin-bottom: 1.25rem; }
+        .tabs {
+            display: flex; gap: 0.25rem; margin-bottom: 1rem; flex-wrap: wrap;
+            position: sticky; top: 0; background: var(--bg); padding: 0.5rem 0; z-index: 10;
+        }
+        .tab {
+            padding: 0.4rem 0.6rem; border-radius: 8px; background: var(--card);
+            border: 1px solid var(--border); color: var(--muted); font-size: 0.8rem;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .tab.active { background: var(--accent2); color: white; border-color: var(--accent2); }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem;
+        }
+        .card h3 { font-size: 0.95rem; color: var(--green); margin-bottom: 0.5rem; }
+        .step-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 1.5rem; height: 1.5rem; background: var(--accent); color: white;
+            border-radius: 50%; font-size: 0.75rem; margin-right: 0.5rem; flex-shrink: 0;
+        }
+        .step { display: flex; align-items: flex-start; margin-bottom: 0.75rem; }
+        .step-content { flex: 1; }
+        .product-name { font-weight: 600; }
+        .product-note { font-size: 0.8rem; color: var(--muted); margin-top: 0.15rem; }
+        .badge {
+            display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+            font-size: 0.65rem; font-weight: 600; margin-right: 0.25rem; margin-top: 0.25rem;
+        }
+        .badge-gold { background: var(--gold); color: #1a1a2e; }
+        .badge-green { background: var(--green); color: #1a1a2e; }
+        .badge-purple { background: var(--accent2); color: white; }
+        .badge-red { background: var(--accent); color: white; }
+        .badge-blue { background: var(--blue); color: white; }
+        .section-title {
+            font-size: 1.05rem; color: var(--gold); margin: 1.25rem 0 0.75rem;
+            padding-bottom: 0.25rem; border-bottom: 1px solid var(--border);
+        }
+        .tip {
+            background: #1e3a5f; border-left: 3px solid var(--green);
+            padding: 0.75rem; border-radius: 0 8px 8px 0; margin: 0.75rem 0; font-size: 0.85rem;
+        }
+        .warning {
+            background: #3a1e1e; border-left: 3px solid var(--accent);
+            padding: 0.75rem; border-radius: 0 8px 8px 0; margin: 0.75rem 0; font-size: 0.85rem;
+        }
+        .decision { background: #2a1e3e; border: 1px solid var(--accent2); border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; }
+        .decision h3 { color: var(--gold); margin-bottom: 0.5rem; }
+        .decision-option {
+            background: var(--card); border-radius: 8px; padding: 0.75rem;
+            margin-bottom: 0.5rem; border-left: 3px solid var(--green);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .decision-option:hover { border-left-color: var(--accent); background: #2a1e2e; }
+        .decision-option:active { transform: scale(0.98); }
+        .decision-option strong { color: var(--green); }
+        .back-btn {
+            display: inline-block; padding: 0.4rem 0.75rem; border-radius: 8px;
+            background: var(--card); border: 1px solid var(--border); color: var(--muted);
+            font-size: 0.8rem; cursor: pointer; margin-bottom: 1rem; transition: all 0.2s;
+        }
+        .back-btn:hover { color: var(--text); border-color: var(--green); }
+        .tracker-box {
+            background: #1e2a1e; border: 1px solid #2a4a2a;
+            border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem;
+        }
+        .tracker-box h3 { color: var(--green); margin-bottom: 0.5rem; }
+        .tracker-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem;
+        }
+        .tracker-item:last-child { border-bottom: none; }
+        .tracker-label { color: var(--muted); }
+        .tracker-value { color: var(--text); font-weight: 500; }
+        .tracker-btn {
+            padding: 0.25rem 0.5rem; border-radius: 6px; background: var(--green);
+            color: #1a1a2e; font-size: 0.7rem; font-weight: 600; cursor: pointer;
+            border: none; margin-left: 0.5rem;
+        }
+        .tracker-btn:hover { opacity: 0.8; }
+        .timer-box {
+            background: #2e1e3e; border: 1px solid var(--accent2);
+            border-radius: 12px; padding: 1rem; margin: 0.75rem 0; text-align: center;
+        }
+        .timer-display {
+            font-size: 2.5rem; font-weight: 700; color: var(--gold);
+            font-variant-numeric: tabular-nums; margin: 0.5rem 0;
+        }
+        .timer-label { color: var(--muted); font-size: 0.8rem; }
+        .timer-buttons { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.75rem; }
+        .timer-btn {
+            padding: 0.5rem 1rem; border-radius: 8px; border: none;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .timer-btn-start { background: var(--green); color: #1a1a2e; }
+        .timer-btn-stop { background: var(--accent); color: white; }
+        .timer-btn-reset { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+        .status-dot {
+            display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.4rem;
+        }
+        .status-good { background: var(--green); }
+        .status-due { background: var(--gold); }
+        .status-overdue { background: var(--accent); }
+        .frizz-card { background: #2e2a1e; border: 1px solid #4a3a1e; border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; }
+        .frizz-card h3 { color: var(--gold); }
+        .frizz-option {
+            background: var(--card); border-radius: 8px; padding: 0.75rem;
+            margin-bottom: 0.5rem; border-left: 3px solid var(--border);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .frizz-option:hover { border-left-color: var(--gold); }
+        .frizz-option.selected { border-left-color: var(--gold); background: #3a2e1e; }
+        .frizz-detail { display: none; margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted); padding-top: 0.5rem; border-top: 1px solid var(--border); }
+        .frizz-option.selected .frizz-detail { display: block; }
+        .product-grid { display: grid; gap: 0.5rem; }
+        .product-item {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 8px; padding: 0.75rem;
+        }
+        .product-item .name { font-weight: 600; font-size: 0.9rem; }
+        .product-item .role { color: var(--muted); font-size: 0.8rem; }
+        .product-item .science { color: var(--green); font-size: 0.75rem; margin-top: 0.25rem; }
+        .toggle-section { cursor: pointer; user-select: none; }
+        .toggle-section::after { content: ' ▸'; color: var(--muted); }
+        .toggle-section.open::after { content: ' ▾'; }
+        .collapsible { display: none; }
+        .collapsible.open { display: block; }
+        .weather-box {
+            background: #1e2e3e; border: 1px solid var(--blue); border-radius: 12px;
+            padding: 1rem; margin-bottom: 0.75rem;
+        }
+        .weather-box h3 { color: var(--blue); }
+        .weather-btn {
+            background: var(--card); border-radius: 8px; padding: 0.75rem;
+            margin-bottom: 0.5rem; border-left: 3px solid var(--border);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .weather-btn:hover { border-left-color: var(--blue); }
+        .weather-btn.selected { border-left-color: var(--green); background: #1e3a2e; }
+        .weather-detail { display: none; margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted); padding-top: 0.5rem; border-top: 1px solid var(--border); }
+        .weather-btn.selected .weather-detail { display: block; }
+    </style>
+</head>
+<body>
+    <h1>Hair Routine</h1>
+    <p class="subtitle">2C-3A · Coarse · Very Thick · Ceramide Repair Protocol</p>
+
+    <div class="tabs">
+        <div class="tab active" data-panel="today">Today</div>
+        <div class="tab" data-panel="curly">Curly</div>
+        <div class="tab" data-panel="heat">Blowout</div>
+        <div class="tab" data-panel="refresh">Refresh</div>
+        <div class="tab" data-panel="weekly">Weekly</div>
+        <div class="tab" data-panel="products">Products</div>
+        <div class="tab" data-panel="science">Science</div>
+    </div>
+
+    <!-- TODAY -->
+    <div class="panel active" id="today">
+        <div class="tracker-box">
+            <h3>📊 Status</h3>
+            <div class="tracker-item">
+                <span class="tracker-label">Last wash</span>
+                <span><span class="tracker-value" id="track-wash-display">—</span><button class="tracker-btn" data-track="wash">Done today</button></span>
+            </div>
+            <div class="tracker-item">
+                <span class="tracker-label">Last clarify</span>
+                <span><span class="tracker-value" id="track-clarify-display">—</span><button class="tracker-btn" data-track="clarify">Done today</button></span>
+            </div>
+            <div class="tracker-item">
+                <span class="tracker-label">Last protein</span>
+                <span><span class="tracker-value" id="track-protein-display">—</span><button class="tracker-btn" data-track="protein">Done today</button></span>
+            </div>
+            <div class="tracker-item">
+                <span class="tracker-label">Last deep condition</span>
+                <span><span class="tracker-value" id="track-deep-display">—</span><button class="tracker-btn" data-track="deep">Done today</button></span>
+            </div>
+        </div>
+
+        <div class="decision">
+            <h3>What's today?</h3>
+            <div class="decision-option" data-goto="curly">
+                <strong>🌀 Wash day — curly</strong>
+                <div class="product-note">Gel cast, air dry or diffuse. Natural wave definition.</div>
+            </div>
+            <div class="decision-option" data-goto="heat">
+                <strong>💨 Wash day — blowout</strong>
+                <div class="product-note">Shark FlexStyle + Marc Anthony spray. Smooth + sealed.</div>
+            </div>
+            <div class="decision-option" data-goto="refresh">
+                <strong>😴 Refresh day</strong>
+                <div class="product-note">No wash. Touch up what's there.</div>
+            </div>
+        </div>
+
+        <div class="tip" id="wash-suggestion">
+            <strong>When to wash:</strong> Your hair never feels oily — wash when it feels heavy/stiff from product buildup, when frizz gets unmanageable, or when you want to restyle. Every 3-4 days is a good baseline.
+        </div>
+
+        <div class="weather-box">
+            <h3>☁️ Humidity check</h3>
+            <div class="weather-btn" data-weather="dry">
+                <strong>☀️ Dry (&lt;40% RH)</strong>
+                <span class="weather-detail">Glycerin in NYM gel is fine. Focus on sealing moisture in. 21-in-1 spray is your friend.</span>
+            </div>
+            <div class="weather-btn" data-weather="moderate">
+                <strong>🌤 Moderate (40-70%)</strong>
+                <span class="weather-detail">Everything works. Best styling conditions. NYM gel performs optimally here.</span>
+            </div>
+            <div class="weather-btn" data-weather="humid">
+                <strong>💧 Humid (&gt;70%)</strong>
+                <span class="weather-detail">⚠️ NYM gel's glycerin can pull excess moisture in. If frizz persists despite gel, switch to Got2b Ultra Glued (same PQ-69, no glycerin). Marc Anthony spray is essential for blowouts.</span>
+            </div>
+        </div>
+
+        <div class="frizz-card">
+            <h3>Why am I frizzy?</h3>
+            <div class="frizz-option" data-frizz="barrier">
+                <strong>💧 No humidity barrier</strong>
+                <span class="frizz-detail">You styled without gel (curly) or blowout spray (heat). Without a film-forming polymer, humidity enters the cuticle and breaks hydrogen bonds → frizz. Fix: always finish with NYM gel or Marc Anthony spray.</span>
+            </div>
+            <div class="frizz-option" data-frizz="cuticle">
+                <strong>🔬 Cuticle still weathered</strong>
+                <span class="frizz-detail">Your 18-MEA lipid layer is gone on mid-lengths/ends. Amodimethicone (Garnier conditioner) replaces it over time. Keep using it consistently — cumulative benefit over 2-4 weeks.</span>
+            </div>
+            <div class="frizz-option" data-frizz="friction">
+                <strong>🛏 Overnight friction</strong>
+                <span class="frizz-detail">Cotton pillowcase disrupts curl clumps and lifts cuticle. Silk pillowcase reduces this. For curly days: pineapple (loose high ponytail) on silk.</span>
+            </div>
+            <div class="frizz-option" data-frizz="regrowth">
+                <strong>🌱 TE regrowth halo</strong>
+                <span class="frizz-detail">Short regrowing hairs at hairline/temples. Too short to lie flat — time is the fix (12-18 months to blend). Manage: smooth with a tiny bit of gel in the direction you want them to go.</span>
+            </div>
+            <div class="frizz-option" data-frizz="direction">
+                <strong>↗️ Hair sticking out at angles</strong>
+                <span class="frizz-detail">Coarse hair sets in whatever position it dries in. Without hold product + directional drying, strands go wherever they want. Fix: gel (curly) or blowout spray + FlexStyle with intention (heat). Small sections, direct each one.</span>
+            </div>
+            <div class="frizz-option" data-frizz="buildup">
+                <strong>🧴 Product buildup</strong>
+                <span class="frizz-detail">Hair feels heavy, coated, products sitting on top instead of absorbing. Time to clarify (EverPure Clarifying shampoo + scalp brush).</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CURLY DAY -->
+    <div class="panel" id="curly">
+        <span class="back-btn" data-goto="today">← Today</span>
+        <p class="section-title">Lane 1: Curly Day</p>
+
+        <div class="warning">
+            <strong>⚠️ Lane rule:</strong> If you blew out with Marc Anthony spray last wash, clarify first (EverPure Clarifying shampoo + scalp brush). Polysilicone-29 residue blocks gel from working properly.
+        </div>
+
+        <div class="step">
+            <span class="step-num">1</span>
+            <div class="step-content">
+                <div class="product-name">Pre-shampoo (weekly, alternate)</div>
+                <div class="product-note">Garnier Hair Filler Pre-Shampoo Treatment OR Olaplex 3. Apply to dry hair, leave 10+ min. Skip if done this week.</div>
+                <span class="badge badge-purple">BOND REPAIR</span>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">2</span>
+            <div class="step-content">
+                <div class="product-name">Shampoo</div>
+                <div class="product-note">L'Oréal EverPure Bond Repair (regular) or EverPure Clarifying (weekly reset). Use scalp brush to work it in.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">3</span>
+            <div class="step-content">
+                <div class="product-name">Conditioner — section + comb through</div>
+                <div class="product-note"><strong>Garnier Color Repair</strong> (primary) or L'Oréal EverPure Bond Repair or Dove Intensive Repair (smoothness days). Section into 2-4 parts. Comb through each section with wide-tooth comb.</div>
+                <span class="badge badge-gold">CERAMIDE + AMODIMETHICONE</span>
+            </div>
+        </div>
+
+        <div class="timer-box">
+            <div class="timer-label">Conditioner timer</div>
+            <div class="timer-display" id="timer-cond">5:00</div>
+            <div class="timer-buttons">
+                <button class="timer-btn timer-btn-start" data-timer="cond" data-duration="300">Start 5 min</button>
+                <button class="timer-btn timer-btn-stop" data-timer-stop="cond">Stop</button>
+                <button class="timer-btn timer-btn-reset" data-timer-reset="cond">Reset</button>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">4</span>
+            <div class="step-content">
+                <div class="product-name">Rinse + Wonder Water (optional)</div>
+                <div class="product-note">Rinse conditioner. Optional: L'Oréal 8 Second Wonder Water from spray bottle for extra slip.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">5</span>
+            <div class="step-content">
+                <div class="product-name">Leave-in — pour + rake</div>
+                <div class="product-note">L'Oréal 21-in-1 Leave-In — pour into palm (don't spray), rake through sections on soaking wet hair.</div>
+                <span class="badge badge-green">PQ-37 BARRIER</span>
+                <span class="badge badge-gold">AMODIMETHICONE</span>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">6</span>
+            <div class="step-content">
+                <div class="product-name">NYM Curl Talk Gel — scrunch into soaking hair</div>
+                <div class="product-note">Generous amount. Scrunch upward from ends. Hair should feel coated and crunchy when wet — that's the cast forming. On humid days (>70% RH): swap to Got2b Ultra Glued.</div>
+                <span class="badge badge-red">PQ-69 HUMIDITY BARRIER</span>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">7</span>
+            <div class="step-content">
+                <div class="product-name">Hairline regrowth</div>
+                <div class="product-note">Small amount of gel on TE regrowth hairs. Smooth flat with fingers in the direction you want them to go.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">8</span>
+            <div class="step-content">
+                <div class="product-name">Dry — diffuse or air dry</div>
+                <div class="product-note">Shark FlexStyle diffuser attachment: hover around head on medium heat, don't touch hair. OR air dry. Don't touch until 100% dry.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">9</span>
+            <div class="step-content">
+                <div class="product-name">Scrunch out the crunch</div>
+                <div class="product-note">Once FULLY dry, scrunch the gel cast. Curls become soft with hold intact. Optional: drop of Dove 10-in-1 Serum on palms first for extra shine.</div>
+            </div>
+        </div>
+
+        <div class="tip">
+            <strong>Direction control:</strong> If hair sticks out at angles after drying, you need more gel AND more intentional scrunching direction. Scrunch sections upward and inward toward your head — this trains the curl to fall down rather than out.
+        </div>
+    </div>
+
+    <!-- HEAT / BLOWOUT DAY -->
+    <div class="panel" id="heat">
+        <span class="back-btn" data-goto="today">← Today</span>
+        <p class="section-title">Lane 2: Blowout Day</p>
+
+        <div class="warning">
+            <strong>⚠️ Lane rule:</strong> If you used NYM gel last wash, clarify first (EverPure Clarifying shampoo). Polysilicone-29 can't adhere properly over PQ-69 residue — your blowout won't hold.
+        </div>
+
+        <div class="step">
+            <span class="step-num">1</span>
+            <div class="step-content">
+                <div class="product-name">Shampoo</div>
+                <div class="product-note">EverPure Clarifying (if switching from curly) or Bond Repair (if continuing heat). Scalp brush.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">2</span>
+            <div class="step-content">
+                <div class="product-name">Conditioner — section + comb</div>
+                <div class="product-note"><strong>Garnier Color Repair</strong> in 2-4 sections, wide-tooth comb through each. Rinse after timer.</div>
+                <span class="badge badge-gold">CERAMIDE + AMODIMETHICONE</span>
+            </div>
+        </div>
+
+        <div class="timer-box">
+            <div class="timer-label">Conditioner timer</div>
+            <div class="timer-display" id="timer-cond2">5:00</div>
+            <div class="timer-buttons">
+                <button class="timer-btn timer-btn-start" data-timer="cond2" data-duration="300">Start 5 min</button>
+                <button class="timer-btn timer-btn-stop" data-timer-stop="cond2">Stop</button>
+                <button class="timer-btn timer-btn-reset" data-timer-reset="cond2">Reset</button>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">3</span>
+            <div class="step-content">
+                <div class="product-name">Towel dry to damp</div>
+                <div class="product-note">Microfiber or t-shirt. Squeeze gently — hair should be damp, not dripping.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">4</span>
+            <div class="step-content">
+                <div class="product-name">Leave-in — pour + rake</div>
+                <div class="product-note">L'Oréal 21-in-1 — pour into palm, rake through. Light layer as heat protectant base.</div>
+                <span class="badge badge-green">HEAT PROTECTANT</span>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">5</span>
+            <div class="step-content">
+                <div class="product-name">Marc Anthony Blowout Spray — saturate each section</div>
+                <div class="product-note">Section into 4+ parts. Spray liberally on each section root to tip. Every strand needs coverage — the Polysilicone-29 must be everywhere to form a continuous seal.</div>
+                <span class="badge badge-red">POLYSILICONE-29 HEAT SEAL</span>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">6</span>
+            <div class="step-content">
+                <div class="product-name">Rough dry to 70-80%</div>
+                <div class="product-note">Shark FlexStyle concentrator nozzle. No brush yet — just hands + airflow on medium heat. Flip head for root lift. Remove most moisture before brushing.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">7</span>
+            <div class="step-content">
+                <div class="product-name">Face-framing pieces FIRST</div>
+                <div class="product-note">FlexStyle round brush barrel. Small sections. Direct TOWARD face. The heat + tension activates the Polysilicone-29 into a waterproof seal. Cool shot to lock.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">8</span>
+            <div class="step-content">
+                <div class="product-name">Section + style remaining hair</div>
+                <div class="product-note">Small sections (~1" thick). Wrap around FlexStyle barrel. Direct each section in the direction you want it to fall. Cool shot before releasing. Work bottom layers first, top last.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-num">9</span>
+            <div class="step-content">
+                <div class="product-name">Finishing</div>
+                <div class="product-note">Dove 10-in-1 Serum on ends for shine. Or a drop of oil if ends feel wirey.</div>
+            </div>
+        </div>
+
+        <div class="tip">
+            <strong>Key physics:</strong> Airflow DOWN the shaft (root→tip) seals cuticle flat = smooth + shiny. Cool shot sets hydrogen bonds in new position. The Marc Anthony spray cross-links under heat into a waterproof barrier that lasts 3+ washes. Keep heat on medium — critical damage starts at 140°C (284°F).
+        </div>
+
+        <div class="warning">
+            <strong>Don't apply treatments (Olaplex, protein) while Marc Anthony seal is active.</strong> The silicone barrier blocks absorption. Do treatments on clarifying day, then apply Marc Anthony fresh after.
+        </div>
+    </div>
+
+    <!-- REFRESH -->
+    <div class="panel" id="refresh">
+        <span class="back-btn" data-goto="today">← Today</span>
+        <p class="section-title">Refresh Day (No Wash)</p>
+
+        <div class="card">
+            <h3>After Curly Day</h3>
+            <div class="step">
+                <span class="step-num">1</span>
+                <div class="step-content">
+                    <div class="product-name">Assess</div>
+                    <div class="product-note">Is the gel cast still intact? Are curls just flat or actually frizzy?</div>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-num">2</span>
+                <div class="step-content">
+                    <div class="product-name">Light water mist on frizzy areas only</div>
+                    <div class="product-note">Spray bottle with water. Don't soak — just mist. Scrunch upward to reactivate curl clumps.</div>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-num">3</span>
+                <div class="step-content">
+                    <div class="product-name">Optional: tiny gel on problem areas</div>
+                    <div class="product-note">Pea-size NYM gel + water emulsified in palms. Scrunch into frizzy sections only.</div>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-num">4</span>
+                <div class="step-content">
+                    <div class="product-name">Hairline touch-up</div>
+                    <div class="product-note">Smooth regrowth hairs with damp fingers or tiny bit of gel.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>After Blowout Day</h3>
+            <div class="step">
+                <span class="step-num">1</span>
+                <div class="step-content">
+                    <div class="product-name">Marc Anthony seal is still active</div>
+                    <div class="product-note">The Polysilicone-29 barrier lasts 3+ washes. Your blowout should hold with minimal intervention.</div>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-num">2</span>
+                <div class="step-content">
+                    <div class="product-name">If flat at roots</div>
+                    <div class="product-note">Flip head, blast roots with cool air for 30 seconds. Lift with fingers at the root.</div>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-num">3</span>
+                <div class="step-content">
+                    <div class="product-name">If ends are frizzy</div>
+                    <div class="product-note">Tiny amount of Dove 10-in-1 Serum on ends. Smooth with palms.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tip">
+            <strong>Overnight:</strong> Silk pillowcase reduces friction. Curly days: pineapple (loose high ponytail with soft scrunchie). Blowout days: leave down on silk.
+        </div>
+    </div>
+
+    <!-- WEEKLY -->
+    <div class="panel" id="weekly">
+        <p class="section-title">Weekly Treatments</p>
+
+        <div class="card">
+            <h3>Clarifying Day (1x/week)</h3>
+            <p><strong>L'Oréal EverPure Clarifying Shampoo</strong> + scalp brush. Resets all buildup — silicones, minerals, product residue. Required before switching from curly→blowout lane.</p>
+            <p class="product-note">This is also the day to do protein treatments (clean slate → treat → style fresh).</p>
+        </div>
+
+        <div class="card">
+            <h3>Protein Treatment (every 1-2 weeks, alternate)</h3>
+            <p><strong>Week A:</strong> Garnier Hair Filler Pre-Shampoo Treatment (peptides + citric acid)<br>
+            <strong>Week B:</strong> Olaplex 3 (disulfide bond repair)</p>
+            <p class="product-note">Apply to dry hair before shampooing. Leave 10+ minutes. Don't stack both same wash. Your coarse hair tolerates protein well — overload at normal use levels is a myth (Croda 2025).</p>
+        </div>
+
+        <div class="timer-box">
+            <div class="timer-label">Pre-shampoo treatment timer</div>
+            <div class="timer-display" id="timer-protein">10:00</div>
+            <div class="timer-buttons">
+                <button class="timer-btn timer-btn-start" data-timer="protein" data-duration="600">Start 10 min</button>
+                <button class="timer-btn timer-btn-stop" data-timer-stop="protein">Stop</button>
+                <button class="timer-btn timer-btn-reset" data-timer-reset="protein">Reset</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Deep Conditioning (optional, every 2-3 weeks)</h3>
+            <p><strong>Garnier Color Repair</strong> or <strong>Dove Intensive Repair</strong> — apply generously in sections, cover with shower cap, wrap hot damp towel around cap for 15-20 min. Heat lowers product viscosity for better penetration.</p>
+            <p class="product-note">Optional upgrade, not mandatory. Try it once — if you notice a difference, keep it. If not, regular 5-min conditioning is fine.</p>
+        </div>
+
+        <div class="timer-box">
+            <div class="timer-label">Deep conditioning timer</div>
+            <div class="timer-display" id="timer-deep">15:00</div>
+            <div class="timer-buttons">
+                <button class="timer-btn timer-btn-start" data-timer="deep" data-duration="900">Start 15 min</button>
+                <button class="timer-btn timer-btn-stop" data-timer-stop="deep">Stop</button>
+                <button class="timer-btn timer-btn-reset" data-timer-reset="deep">Reset</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Gloss Treatment (when hair looks dull)</h3>
+            <p><strong>Elvive Glycolic Gloss 5-Min Lamination</strong> — glycolic acid smooths/realigns cuticle scales. Use when hair looks flat and dull despite conditioning.</p>
+            <span class="badge badge-gold">GLYCOLIC ACID</span>
+        </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="panel" id="products">
+        <p class="section-title">Product Roster</p>
+
+        <h3 class="toggle-section open" data-target="tier-star">★ Primary Rotation (Use These)</h3>
+        <div class="collapsible open" id="tier-star">
+            <div class="product-grid">
+                <div class="product-item">
+                    <div class="name">Garnier Hair Filler + Ceramide Color Repair Conditioner</div>
+                    <div class="role">Primary conditioner — use every wash, 3-5 min in sections</div>
+                    <div class="science">Amodimethicone (targeted cuticle repair) + 2-Oleamido-1,3-Octadecanediol (synthetic ceramide replacing missing 18-MEA) + Citric Acid</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">L'Oréal 21-in-1 Leave-In Spray</div>
+                    <div class="role">Leave-in — pour into palm, rake through sections</div>
+                    <div class="science">Amodimethicone + PQ-37 (humidity barrier) + coconut oil. Triple duty: repair + protect + condition.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">NYM Curl Talk Flash Freeze Gel</div>
+                    <div class="role">Curly day hold + humidity barrier</div>
+                    <div class="science">PQ-69 (rigid humidity-resistant film) + PVP + Glycerin + Keratin Amino Acids. Forms cast that blocks atmospheric moisture.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">Marc Anthony Grow Long Anti-Frizz Shield Blowout Spray</div>
+                    <div class="role">Blowout day heat-activated seal</div>
+                    <div class="science">Polysilicone-29 + Silicone Quaternium-8. Cross-links under heat into hydrophobic barrier. Lasts 3+ washes. Same active as Color Wow Dream Coat.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">L'Oréal EverPure Bond Repair Shampoo</div>
+                    <div class="role">Daily shampoo</div>
+                    <div class="science">Sulfate-free, gentle. Amodimethicone in formula.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">L'Oréal EverPure Clarifying Shampoo</div>
+                    <div class="role">Weekly reset + lane-switching</div>
+                    <div class="science">Strips all buildup. Required before blowout if coming from gel days.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">Olaplex 3</div>
+                    <div class="role">Bond repair pre-shampoo (every 2 weeks)</div>
+                    <div class="science">Bis-aminopropyl diglycol dimaleate. Actual disulfide bond repair inside cortex.</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="toggle-section" data-target="tier-solid">✓ Supporting Cast (Use Up, Some Repurchase)</h3>
+        <div class="collapsible" id="tier-solid">
+            <div class="product-grid">
+                <div class="product-item">
+                    <div class="name">Dove Intensive Repair Conditioner</div>
+                    <div class="role">Heavy smoothing — use when hair feels extra rough</div>
+                    <div class="science">Dimethiconol copolymer. Uniform heavy coating. Feels great immediately. Clarify after to prevent buildup. Don't repurchase — Garnier replaces this role long-term.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">L'Oréal EverPure Bond Repair Conditioner</div>
+                    <div class="role">Backup conditioner</div>
+                    <div class="science">Bis-Cetearyl Amodimethicone + Dimethicone. Good but less concentrated than Garnier. Use up.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">L'Oréal 8 Second Wonder Water</div>
+                    <div class="role">Quick slip rinse (spray bottle)</div>
+                    <div class="science">Cationic surfactant deposition. Instant detangling. Use after conditioner if hair still feels tangly.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">Dove 10-in-1 Serum</div>
+                    <div class="role">Finishing serum — ends only</div>
+                    <div class="science">Amodimethicone buried in formula. Shine + end sealing.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">Garnier Hair Filler Pre-Shampoo Treatment</div>
+                    <div class="role">Protein/bond treatment (alternate with Olaplex)</div>
+                    <div class="science">Peptides + Citric Acid + Argan Oil. Internal bond repair.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">Garnier Hair Filler Serum</div>
+                    <div class="role">Leave-in serum alternative</div>
+                    <div class="science">Amodimethicone + Citric Acid. Lightweight finishing.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">Elvive Glycolic Gloss 5-Min Lamination</div>
+                    <div class="role">Gloss treatment (when hair looks dull)</div>
+                    <div class="science">Glycolic acid realigns cuticle scales.</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="toggle-section" data-target="tier-low">↓ Use Up / Don't Repurchase</h3>
+        <div class="collapsible" id="tier-low">
+            <div class="product-grid">
+                <div class="product-item">
+                    <div class="name">Dove Bond Strength Conditioner/Mask</div>
+                    <div class="role">Generic silicone — outclassed by Garnier</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">OGX Miracle Oil / Moroccan Argan Oil</div>
+                    <div class="role">Temporary shine only. Volatile silicones evaporate.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">Pantene Bond Repair Post-Shower Spray</div>
+                    <div class="role">Redundant — 21-in-1 does this better.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">EverPure Glossing 5-Min Lamination Mask</div>
+                    <div class="role">Actually a clarifying treatment (surfactants + glycolic acid), not conditioning. Redundant with clarifying shampoo.</div>
+                </div>
+                <div class="product-item">
+                    <div class="name">OGX Bond Protein Repair Serum</div>
+                    <div class="role">Use up on ends. Don't repurchase.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCIENCE -->
+    <div class="panel" id="science">
+        <p class="section-title">Science Notes</p>
+
+        <div class="card">
+            <h3>Amodimethicone</h3>
+            <p>Amino-modified silicone that selectively binds to damaged (negatively charged) cuticle sites via its positive amine groups. Self-limiting — deposits where needed, stops where hair is healthy. Won't build up like regular dimethicone. Cumulative benefit over weeks. Your best conditioners all have this as a primary ingredient.</p>
+        </div>
+
+        <div class="card">
+            <h3>Ceramide R (2-Oleamido-1,3-Octadecanediol)</h3>
+            <p>Synthetic lipid that mimics the 18-MEA layer — the natural waxy coating on virgin hair that makes it feel silky. Once damaged (by heat, UV, weathering), 18-MEA cannot regenerate. This ceramide physically replaces it. Found in Garnier Color Repair conditioner. L'Oréal patented technology trickling down from Kérastase.</p>
+        </div>
+
+        <div class="card">
+            <h3>PQ-69 (NYM Gel)</h3>
+            <p>Polyquaternium-69. Forms a rigid film that maintains structural integrity in moisture. Specifically engineered for humidity resistance — blocks atmospheric water vapor from entering the hair shaft and breaking hydrogen bonds. Dries weightless after scrunching out the cast.</p>
+        </div>
+
+        <div class="card">
+            <h3>Polysilicone-29 (Marc Anthony Spray)</h3>
+            <p>Heat-activated cross-linking polymer. Under heat + tension (FlexStyle), it forms a hydrophobic (water-repelling) matrix over the cuticle. Water beads up and rolls off. Lasts 3+ washes. Needs clarifying to remove. Blocks other products from absorbing while active — do treatments BEFORE applying, not after.</p>
+        </div>
+
+        <div class="card">
+            <h3>Heat Damage Threshold</h3>
+            <p><strong>140°C (284°F)</strong> = critical temperature for irreversible keratin structural modification (PMID 19467113). Below this: changes are reversible. Above: profound and irreversible damage to protein structure. Keep FlexStyle on medium heat. The tension of the brush does the straightening work — you don't need extreme heat.</p>
+        </div>
+
+        <div class="card">
+            <h3>Glycerin & Humidity</h3>
+            <p><strong>&lt;40% RH:</strong> Glycerin helps retain moisture in hair — beneficial.<br>
+            <strong>40-70% RH:</strong> Works perfectly — balanced moisture exchange.<br>
+            <strong>&gt;70% RH:</strong> Can pull excess moisture INTO hair → swells cortex → frizz.<br><br>
+            NYM gel has glycerin (good most days). Got2b Ultra Glued has PQ-69 without glycerin (backup for extreme humidity).</p>
+        </div>
+
+        <div class="card">
+            <h3>"Moisture" Is Marketing</h3>
+            <p>Hair with more water actually feels rougher (swollen cortex pushes cuticle scales outward). What people perceive as "moisturized" hair = smooth surface coating (cuticle lying flat). Goal: seal the cuticle with targeted silicones and ceramides, not add water.</p>
+        </div>
+
+        <div class="card">
+            <h3>Protein Overload Is Mostly a Myth</h3>
+            <p>At normal product use levels, protein deposition plateaus — it doesn't keep building indefinitely (Croda Beauty R&D, 2025). Only intensive treatments at very high concentrations can cause stiffness. Your coarse, high-porosity hair has high capacity for protein. Use your treatments without fear.</p>
+        </div>
+
+        <div class="card">
+            <h3>The Dual-Lane Conflict</h3>
+            <p>Curly products (PQ-69 gel) and blowout products (Polysilicone-29) use incompatible chemistry. PQ-69 residue prevents Polysilicone-29 from adhering to hair → blowout fails. Always clarify when switching from Lane 1 → Lane 2. Going Lane 2 → Lane 1 is less critical (clarifying removes the silicone seal, then gel works normally).</p>
+        </div>
+
+        <div class="card">
+            <h3>TE Recovery</h3>
+            <p>Telogen effluvium from GLP-1/weight loss: shedding 2-4 months after trigger. Resolution: 6-12 months after weight stabilizes. Regrowth needs 12-18 months to blend with existing hair. The frizzy halo at hairline = short regrowing hairs. Time is the primary fix. Gel + directional smoothing helps cosmetically.</p>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(panelId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            const tab = document.querySelector(`.tab[data-panel="${panelId}"]`);
+            if (tab) tab.classList.add('active');
+            document.getElementById(panelId).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => switchTab(tab.dataset.panel));
+        });
+
+        // Navigation buttons
+        document.querySelectorAll('.decision-option, .back-btn').forEach(btn => {
+            if (btn.dataset.goto) {
+                btn.addEventListener('click', () => switchTab(btn.dataset.goto));
+            }
+        });
+
+        // Weather buttons
+        document.querySelectorAll('.weather-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const wasSelected = btn.classList.contains('selected');
+                document.querySelectorAll('.weather-btn').forEach(b => b.classList.remove('selected'));
+                if (!wasSelected) btn.classList.add('selected');
+            });
+        });
+
+        // Frizz options
+        document.querySelectorAll('.frizz-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                const wasSelected = opt.classList.contains('selected');
+                document.querySelectorAll('.frizz-option').forEach(o => o.classList.remove('selected'));
+                if (!wasSelected) opt.classList.add('selected');
+            });
+        });
+
+        // Collapsible sections
+        document.querySelectorAll('.toggle-section').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('open');
+                document.getElementById(toggle.dataset.target).classList.toggle('open');
+            });
+        });
+
+        // --- TRACKER ---
+        function daysAgo(dateStr) {
+            if (!dateStr) return null;
+            const d = new Date(dateStr);
+            const now = new Date();
+            const diff = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+            if (diff === 0) return 'today';
+            if (diff === 1) return 'yesterday';
+            return diff + ' days ago';
+        }
+
+        function updateTrackerDisplays() {
+            ['wash', 'clarify', 'protein', 'deep'].forEach(key => {
+                const val = localStorage.getItem('hair-track-' + key);
+                const el = document.getElementById('track-' + key + '-display');
+                if (el) el.textContent = val ? daysAgo(val) : '—';
+            });
+        }
+
+        document.querySelectorAll('[data-track]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.track;
+                localStorage.setItem('hair-track-' + key, new Date().toISOString().split('T')[0]);
+                updateTrackerDisplays();
+            });
+        });
+
+        updateTrackerDisplays();
+
+        // --- TIMERS ---
+        const timers = {};
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return m + ':' + String(s).padStart(2, '0');
+        }
+
+        function updateTimerDisplay(id) {
+            const el = document.getElementById('timer-' + id);
+            if (el && timers[id]) el.textContent = formatTime(timers[id].remaining);
+        }
+
+        document.querySelectorAll('[data-timer]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.timer;
+                const duration = parseInt(btn.dataset.duration);
+                if (timers[id] && timers[id].interval) clearInterval(timers[id].interval);
+                timers[id] = { remaining: duration, interval: null };
+                updateTimerDisplay(id);
+                timers[id].interval = setInterval(() => {
+                    timers[id].remaining--;
+                    updateTimerDisplay(id);
+                    if (timers[id].remaining <= 0) {
+                        clearInterval(timers[id].interval);
+                        timers[id].interval = null;
+                        // Alert
+                        const el = document.getElementById('timer-' + id);
+                        if (el) el.style.color = 'var(--green)';
+                        if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+                        alert('Timer done!');
+                    }
+                }, 1000);
+            });
+        });
+
+        document.querySelectorAll('[data-timer-stop]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.timerStop;
+                if (timers[id] && timers[id].interval) {
+                    clearInterval(timers[id].interval);
+                    timers[id].interval = null;
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-timer-reset]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.timerReset;
+                if (timers[id] && timers[id].interval) clearInterval(timers[id].interval);
+                // Find the start button to get original duration
+                const startBtn = document.querySelector(`[data-timer="${id}"]`);
+                const duration = startBtn ? parseInt(startBtn.dataset.duration) : 300;
+                timers[id] = { remaining: duration, interval: null };
+                updateTimerDisplay(id);
+                const el = document.getElementById('timer-' + id);
+                if (el) el.style.color = 'var(--gold)';
+            });
+        });
+    </script>
+</body>
+</html>
