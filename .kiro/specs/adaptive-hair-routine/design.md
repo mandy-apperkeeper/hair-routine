@@ -292,8 +292,10 @@ interface WashEvent {
   id: string;              // UUID
   date: string;            // ISO 8601
   lane: "curly" | "blowout" | "refresh";
+  treatments: string[];    // e.g. ["clarify", "protein", "deep-condition", "bond-repair"]
   products: string[];      // product IDs used
   humidity: "dry" | "moderate" | "humid";
+  dewPoint: number | null; // detected dew point in °F
   rating: 1 | 2 | 3 | 4 | 5 | null;
   intervalDays: number;    // days since previous wash
   overrides: string[];     // warning types that were dismissed
