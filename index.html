@@ -6124,6 +6124,19 @@
 
             if (!navigator.geolocation || !navigator.onLine) return;
 
+            // Only use geolocation if permission is already granted (never trigger the browser prompt)
+            if (navigator.permissions) {
+                navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+                    if (result.state === 'granted') {
+                        fetchDewPointFromGeolocation();
+                    }
+                    // If not granted, silently skip — plan works without weather
+                }).catch(function() { /* Permissions API not supported — skip */ });
+            }
+            // No Permissions API — skip geolocation entirely
+        }
+
+        function fetchDewPointFromGeolocation() {
             navigator.geolocation.getCurrentPosition(
                 function(position) {
                     var lat = position.coords.latitude;
@@ -6172,62 +6185,82 @@
             document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
 
             // Try auto-detection via geolocation + Open-Meteo
-            // If successful, skip the humidity prompt entirely and go straight to walkthrough
-            if (navigator.geolocation && navigator.onLine) {
-                var walkSection = document.getElementById('walkthrough');
-                walkSection.innerHTML = '<div class="card" style="text-align:center;padding:2rem 1.25rem;">' +
-                    '<p style="color:var(--text-secondary);">Detecting conditions…</p></div>';
-
-                var timedOut = false;
-                var timeoutId = setTimeout(function() {
-                    timedOut = true;
-                    showManualHumiditySelector();
-                }, 3000);
-
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        if (timedOut) return;
-                        var lat = position.coords.latitude;
-                        var lon = position.coords.longitude;
-                        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=dew_point_2m&temperature_unit=fahrenheit';
-
-                        fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined })
-                            .then(function(resp) {
-                                if (timedOut) return;
-                                if (!resp.ok) throw new Error('API error');
-                                return resp.json();
-                            })
-                            .then(function(data) {
-                                if (timedOut) return;
-                                clearTimeout(timeoutId);
-                                var dewPoint = data && data.current && data.current.dew_point_2m;
-                                if (dewPoint === undefined || dewPoint === null) {
-                                    showManualHumiditySelector();
-                                    return;
-                                }
-                                detectedDewPoint = Math.round(dewPoint);
-                                if (dewPoint < 35) {
-                                    selectedHumidity = 'dry';
-                                } else if (dewPoint <= 60) {
-                                    selectedHumidity = 'moderate';
-                                } else {
-                                    selectedHumidity = 'humid';
-                                }
-                                // Skip the humidity prompt — go straight to walkthrough
-                                checkWarningsAndStart();
-                            })
-                            .catch(function() {
-                                if (timedOut) return;
-                                clearTimeout(timeoutId);
-                                showManualHumiditySelector();
-                            });
-                    },
-                    function() {
-                        // Geolocation denied or failed
-                        if (timedOut) return;
-                        clearTimeout(timeoutId);
+            // Only attempt if permission is already granted (never show the browser prompt)
+            if (navigator.geolocation && navigator.onLine && navigator.permissions) {
+                navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+                    if (result.state === 'granted') {
+                        attemptGeolocation();
+                    } else {
+                        // Permission not granted — skip silently, default to moderate
                         showManualHumiditySelector();
-                    },
+                    }
+                }).catch(function() {
+                    // Permissions API not supported — skip geolocation
+                    showManualHumiditySelector();
+                });
+            } else if (navigator.geolocation && navigator.onLine) {
+                // No Permissions API available — skip geolocation to avoid prompt
+                showManualHumiditySelector();
+            } else {
+                showManualHumiditySelector();
+            }
+        }
+
+        function attemptGeolocation() {
+            var walkSection = document.getElementById('walkthrough');
+            walkSection.innerHTML = '<div class="card" style="text-align:center;padding:2rem 1.25rem;">' +
+                '<p style="color:var(--text-secondary);">Detecting conditions…</p></div>';
+
+            var timedOut = false;
+            var timeoutId = setTimeout(function() {
+                timedOut = true;
+                showManualHumiditySelector();
+            }, 3000);
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    if (timedOut) return;
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=dew_point_2m&temperature_unit=fahrenheit';
+
+                    fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined })
+                        .then(function(resp) {
+                            if (timedOut) return;
+                            if (!resp.ok) throw new Error('API error');
+                            return resp.json();
+                        })
+                        .then(function(data) {
+                            if (timedOut) return;
+                            clearTimeout(timeoutId);
+                            var dewPoint = data && data.current && data.current.dew_point_2m;
+                            if (dewPoint === undefined || dewPoint === null) {
+                                showManualHumiditySelector();
+                                return;
+                            }
+                            detectedDewPoint = Math.round(dewPoint);
+                            if (dewPoint < 35) {
+                                selectedHumidity = 'dry';
+                            } else if (dewPoint <= 60) {
+                                selectedHumidity = 'moderate';
+                            } else {
+                                selectedHumidity = 'humid';
+                            }
+                            // Skip the humidity prompt — go straight to walkthrough
+                            checkWarningsAndStart();
+                        })
+                        .catch(function() {
+                            if (timedOut) return;
+                            clearTimeout(timeoutId);
+                            showManualHumiditySelector();
+                        });
+                },
+                function() {
+                    // Geolocation denied or failed
+                    if (timedOut) return;
+                    clearTimeout(timeoutId);
+                    showManualHumiditySelector();
+                },
                     { timeout: 3000 }
                 );
             } else {
