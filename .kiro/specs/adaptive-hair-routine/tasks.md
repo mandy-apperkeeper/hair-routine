@@ -8,8 +8,8 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
 
 ## Tasks
 
-- [ ] 1. Project scaffolding and data layer
-  - [ ] 1.1 Create `hair-routine-v2.html` with base HTML structure, CSS custom properties, and empty JS module pattern
+- [-] 1. Project scaffolding and data layer
+  - [-] 1.1 Create `hair-routine-v2.html` with base HTML structure, CSS custom properties, and empty JS module pattern
     - Set up the single-file skeleton: `<!DOCTYPE html>`, meta viewport, dark theme CSS variables (from existing v1), semantic HTML landmarks (`<main>`, `<nav>`, `<section>`), and the IIFE/module pattern for JS
     - Include all CSS from the design: touch targets (48×48dp min), typography (serif headings, system-ui body), dark color scheme, card/badge/timer/warning styles
     - Include the first-use empty state markup (hidden by default)
