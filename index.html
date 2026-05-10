@@ -5002,6 +5002,129 @@
             updateSealState(washEvent);
             FeedbackEngine.analyze();
 
+            // Show post-wash attribution card before returning to landing
+            showPostWashAttribution(washEvent, inventory);
+        }
+
+        // ===== Post-Wash Attribution (Passive Intelligence Layer 1) =====
+        function showPostWashAttribution(washEvent, inventory) {
+            var walkSection = document.getElementById('walkthrough');
+
+            // Build outcome attribution from product mechanisms
+            var outcomeMap = {}; // { shine: [{ product, score }], definition: [...] }
+            var OUTCOME_LABELS = {
+                shine: { label: 'Shine', icon: '\u2728', description: 'cuticle smoothing + light reflection' },
+                smoothness: { label: 'Smoothness', icon: '\uD83E\uDDF4', description: 'cuticle sealing + slip' },
+                definition: { label: 'Definition', icon: '\uD83C\uDF00', description: 'hold + curl pattern' },
+                frizz_control: { label: 'Frizz Control', icon: '\uD83D\uDEE1\uFE0F', description: 'humidity barrier + cuticle seal' },
+                strength: { label: 'Strength', icon: '\uD83D\uDCAA', description: 'bond repair + protein fill' },
+                elasticity: { label: 'Elasticity', icon: '\u27B0', description: 'internal bond structure' },
+                cleanliness: { label: 'Clean Slate', icon: '\uD83D\uDCA7', description: 'buildup removal' }
+            };
+
+            washEvent.products.forEach(function(prodId) {
+                var product = inventory.find(function(p) { return p.id === prodId; });
+                if (!product || !product.intelligence || !product.intelligence.outcomes) return;
+                var outcomes = product.intelligence.outcomes;
+                for (var key in outcomes) {
+                    if (outcomes[key] >= 0.5) { // Only show meaningful contributions
+                        if (!outcomeMap[key]) outcomeMap[key] = [];
+                        outcomeMap[key].push({
+                            name: product.brand + ' ' + product.name,
+                            score: outcomes[key]
+                        });
+                    }
+                }
+            });
+
+            // Sort outcomes by total contribution (strongest first)
+            var sortedOutcomes = Object.keys(outcomeMap).sort(function(a, b) {
+                var totalA = outcomeMap[a].reduce(function(sum, p) { return sum + p.score; }, 0);
+                var totalB = outcomeMap[b].reduce(function(sum, p) { return sum + p.score; }, 0);
+                return totalB - totalA;
+            });
+
+            // If no outcomes detected (no products selected or no intelligence), skip
+            if (sortedOutcomes.length === 0) {
+                returnToLanding();
+                return;
+            }
+
+            var html = '';
+            html += '<div style="margin-bottom:1rem;">';
+            html += '<button class="btn-secondary" id="attribution-done" aria-label="Done, return to home">\u2190 Done</button>';
+            html += '</div>';
+
+            html += '<div class="card" style="border-color:var(--green);">';
+            html += '<h3 style="color:var(--green);margin-bottom:0.75rem;">\u2705 Wash day logged</h3>';
+            html += '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;">Here\u2019s what your routine targeted today:</p>';
+
+            // Show top outcomes (max 4)
+            var shown = Math.min(sortedOutcomes.length, 4);
+            for (var i = 0; i < shown; i++) {
+                var outcomeKey = sortedOutcomes[i];
+                var info = OUTCOME_LABELS[outcomeKey] || { label: outcomeKey, icon: '\u2022', description: '' };
+                var contributors = outcomeMap[outcomeKey];
+
+                html += '<div style="margin-bottom:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--border);">';
+                html += '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + info.icon + ' ' + info.label + '</div>';
+                html += '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem;">' + escapeHtml(info.description) + '</div>';
+                html += '<div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.3rem;">';
+                var productNames = contributors.map(function(c) { return c.name; });
+                html += 'From: ' + escapeHtml(productNames.join(', '));
+                html += '</div>';
+                html += '</div>';
+            }
+
+            if (sortedOutcomes.length > 4) {
+                html += '<div style="font-size:0.78rem;color:var(--muted);">+ ' + (sortedOutcomes.length - 4) + ' more outcome' + (sortedOutcomes.length - 4 > 1 ? 's' : '') + '</div>';
+            }
+
+            // Show interaction notes if any
+            var interactionNotes = [];
+            washEvent.products.forEach(function(prodId) {
+                var product = inventory.find(function(p) { return p.id === prodId; });
+                if (!product || !product.intelligence || !product.intelligence.interactions) return;
+                product.intelligence.interactions.forEach(function(interaction) {
+                    if (interaction.with === '*' || washEvent.products.indexOf(interaction.with) !== -1) {
+                        interactionNotes.push({
+                            type: interaction.type,
+                            note: interaction.note,
+                            from: product.brand + ' ' + product.name
+                        });
+                    }
+                });
+            });
+
+            if (interactionNotes.length > 0) {
+                html += '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">';
+                html += '<div style="font-size:0.8rem;color:var(--gold);font-weight:600;margin-bottom:0.3rem;">\u26A1 Interactions</div>';
+                interactionNotes.forEach(function(note) {
+                    var typeIcon = note.type === 'blocks' ? '\u26A0\uFE0F' : note.type === 'enhances' ? '\u2705' : note.type === 'reduces' ? '\u2B07\uFE0F' : '\u2139\uFE0F';
+                    html += '<div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.25rem;">' + typeIcon + ' ' + escapeHtml(note.note) + '</div>';
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+
+            showView('walkthrough');
+            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+            walkSection.innerHTML = html;
+
+            document.getElementById('attribution-done').addEventListener('click', function() {
+                returnToLanding();
+            });
+
+            // Auto-dismiss after 10 seconds
+            setTimeout(function() {
+                if (walkSection.querySelector('#attribution-done')) {
+                    returnToLanding();
+                }
+            }, 10000);
+        }
+
+        function returnToLanding() {
             showView('landing');
             document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
             document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
