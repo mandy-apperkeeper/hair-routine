@@ -728,19 +728,33 @@
                 <p id="insight-message"></p>
             </div>
 
-            <!-- Primary action buttons -->
-            <button class="btn-primary" id="btn-curly" aria-label="Start curly day walkthrough">Curly</button>
-            <button class="btn-primary" id="btn-blowout" aria-label="Start blowout day walkthrough">Blowout</button>
-            <button class="btn-primary" id="btn-refresh" aria-label="Start refresh day walkthrough">Refresh</button>
+            <!-- Smart recommendation (shown when history exists) -->
+            <div id="smart-recommendation" style="display:none;">
+                <div class="card" id="recommendation-card">
+                    <p class="product-note" id="recommendation-context" style="margin-bottom:0.75rem;"></p>
+                    <button class="btn-primary" id="btn-recommended" aria-label="Start recommended walkthrough"></button>
+                </div>
+                <div id="alternative-lanes" style="text-align:center;margin:0.75rem 0;display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn-secondary btn-alt-lane" data-lane="curly">Curly</button>
+                    <button class="btn-secondary btn-alt-lane" data-lane="blowout">Blowout</button>
+                    <button class="btn-secondary btn-alt-lane" data-lane="refresh">Refresh</button>
+                </div>
+            </div>
+
+            <!-- First-use action buttons (shown when no history) -->
+            <div id="first-use-buttons">
+                <button class="btn-primary" id="btn-curly" aria-label="Start curly day walkthrough">Curly</button>
+                <button class="btn-primary" id="btn-blowout" aria-label="Start blowout day walkthrough">Blowout</button>
+                <button class="btn-primary" id="btn-refresh" aria-label="Start refresh day walkthrough">Refresh</button>
+                <!-- Default guidance for new users -->
+                <div class="tip" id="default-guidance">
+                    <strong>Getting started:</strong> Every 3-4 days is a good baseline. Your hair doesn't get oily — wash when it feels heavy from buildup or when you want to restyle.
+                </div>
+            </div>
 
             <!-- Quick log link -->
             <div style="text-align:center;margin:0.75rem 0;">
                 <button class="btn-secondary" id="btn-quick-log" aria-label="Log a past event">Log past event</button>
-            </div>
-
-            <!-- Default guidance for new users -->
-            <div class="tip" id="default-guidance">
-                <strong>Getting started:</strong> Every 3-4 days is a good baseline. Your hair doesn't get oily — wash when it feels heavy from buildup or when you want to restyle.
             </div>
         </section>
 
@@ -2372,8 +2386,12 @@
             // Status bar
             var lastWashDate = null;
             var lastClarifyDate = null;
+            var lastWashLane = null;
             for (var i = events.length - 1; i >= 0; i--) {
-                if (!lastWashDate) lastWashDate = events[i].date;
+                if (!lastWashDate) {
+                    lastWashDate = events[i].date;
+                    lastWashLane = events[i].lane;
+                }
                 if (!lastClarifyDate && events[i].products && events[i].products.includes('everpure-clarifying')) {
                     lastClarifyDate = events[i].date;
                 }
@@ -2398,10 +2416,39 @@
                 statusSummary.style.display = '';
             }
 
-            // Default guidance (show when < 3 events)
-            var guidance = document.getElementById('default-guidance');
-            if (guidance) {
-                guidance.style.display = events.length < 3 ? '' : 'none';
+            // Smart recommendation vs first-use buttons
+            var smartRec = document.getElementById('smart-recommendation');
+            var firstUseButtons = document.getElementById('first-use-buttons');
+
+            if (events.length > 0) {
+                // Show smart recommendation
+                smartRec.style.display = '';
+                firstUseButtons.style.display = 'none';
+
+                // Determine recommendation
+                var recommendation = getSmartRecommendation(washDays, lastWashLane, sealState, clarifyDays);
+                var recCard = document.getElementById('recommendation-card');
+                var recContext = document.getElementById('recommendation-context');
+                var recBtn = document.getElementById('btn-recommended');
+
+                recContext.textContent = recommendation.context;
+                recBtn.textContent = recommendation.buttonLabel;
+                recBtn.setAttribute('aria-label', 'Start ' + recommendation.lane + ' day walkthrough');
+                recBtn.setAttribute('data-lane', recommendation.lane);
+
+                // Hide the recommended lane from alternatives
+                var altBtns = document.querySelectorAll('.btn-alt-lane');
+                altBtns.forEach(function(btn) {
+                    if (btn.getAttribute('data-lane') === recommendation.lane) {
+                        btn.style.display = 'none';
+                    } else {
+                        btn.style.display = '';
+                    }
+                });
+            } else {
+                // First-use: show three equal buttons
+                smartRec.style.display = 'none';
+                firstUseButtons.style.display = '';
             }
 
             // Insight card (show when 10+ events and insights exist)
@@ -2414,6 +2461,77 @@
             } else {
                 insightCard.classList.remove('active');
             }
+        }
+
+        // ===== Smart Recommendation Logic =====
+        function getSmartRecommendation(washDays, lastWashLane, sealState, clarifyDays) {
+            // Determine the user's typical interval from feedback engine
+            var state = StateManager.getState();
+            var thresholds = state.thresholds || { washMinDays: 2 };
+
+            // Logic:
+            // - If washed today → suggest Refresh tomorrow context
+            // - If 0-1 days since wash → suggest Refresh
+            // - If at or past typical interval (default 3 days) → suggest wash day
+            //   - If last was curly → suggest curly (or blowout if seal is degraded/inactive)
+            //   - If last was blowout → suggest curly (alternating) or blowout
+            //   - Default to curly
+            // - If between min and typical → suggest Refresh
+
+            var typicalInterval = 3; // default
+            // Try to get optimal interval from feedback engine
+            var intervalRatings = FeedbackEngine.getIntervalRatings();
+            if (intervalRatings && Object.keys(intervalRatings).length > 0) {
+                var bestBucket = null;
+                var bestRating = 0;
+                for (var bucket in intervalRatings) {
+                    if (intervalRatings[bucket].avg > bestRating && intervalRatings[bucket].count >= 3) {
+                        bestRating = intervalRatings[bucket].avg;
+                        bestBucket = parseInt(bucket);
+                    }
+                }
+                if (bestBucket) typicalInterval = bestBucket;
+            }
+
+            if (washDays === null) {
+                // No history at all (shouldn't reach here, but safety)
+                return { lane: 'curly', context: 'Ready for your first wash day?', buttonLabel: 'Start Curly Day' };
+            }
+
+            if (washDays === 0) {
+                return { lane: 'refresh', context: 'You washed today. Tomorrow you might want a refresh.', buttonLabel: 'Start Refresh' };
+            }
+
+            if (washDays <= 1) {
+                return { lane: 'refresh', context: 'Day ' + washDays + ' since your wash. A refresh can revive your style.', buttonLabel: 'Start Refresh' };
+            }
+
+            if (washDays >= typicalInterval) {
+                // Time for a wash day
+                var suggestedLane = 'curly'; // default
+                if (lastWashLane === 'blowout') {
+                    suggestedLane = 'curly'; // alternate
+                } else if (lastWashLane === 'curly' && sealState.active === false) {
+                    suggestedLane = 'curly'; // stay curly unless user switches
+                }
+                // If clarify is overdue, mention it
+                var clarifyNote = '';
+                if (clarifyDays !== null && clarifyDays >= (state.thresholds.clarifyMinDays || 5) * 2) {
+                    clarifyNote = ' Consider a clarifying wash.';
+                }
+                return {
+                    lane: suggestedLane,
+                    context: 'Day ' + washDays + ' — ready for a wash day.' + clarifyNote,
+                    buttonLabel: 'Start ' + suggestedLane.charAt(0).toUpperCase() + suggestedLane.slice(1) + ' Day'
+                };
+            }
+
+            // Between min and typical — suggest refresh
+            return {
+                lane: 'refresh',
+                context: 'Day ' + washDays + ' of ' + typicalInterval + '. Your ' + (lastWashLane || 'curly') + ' style might need a refresh.',
+                buttonLabel: 'Start Refresh'
+            };
         }
 
         // ===== Humidity Prompt =====
