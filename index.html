@@ -906,6 +906,43 @@
             display: block;
         }
 
+        /* Adjustment confirmation toast */
+        .adjust-toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            background: var(--green);
+            color: var(--bg);
+            padding: 0.6rem 1.2rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            z-index: 1100;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .adjust-toast.visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Adjusted step highlight (pulse then fade) */
+        .plan-step.adjusted {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 1px rgba(212, 165, 116, 0.3);
+            animation: step-highlight 2s ease-out forwards;
+        }
+
+        @keyframes step-highlight {
+            0% { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.4); }
+            70% { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(212, 165, 116, 0.2); }
+            100% { border-color: var(--border); box-shadow: none; }
+        }
+
         /* Alternatives popup */
         .alternatives-popup {
             display: none;
@@ -1720,6 +1757,9 @@
             <button class="btn-secondary" id="alternatives-close" style="width:100%;margin-top:0.75rem;min-height:48px;">Cancel</button>
         </div>
     </div>
+
+    <!-- Adjustment confirmation toast -->
+    <div class="adjust-toast" id="adjust-toast" aria-live="polite"></div>
 
     <!-- Info popup -->
     <div class="info-popup" id="info-popup" role="dialog" aria-label="Product information" aria-modal="true">
@@ -4614,10 +4654,15 @@
                     }
                 }
 
-                // Upgrade gel to stronger hold if available
+                // Upgrade gel to Got2b for stronger humidity hold
                 for (var j = 0; j < plan.steps.length; j++) {
                     if (plan.steps[j].stepType === 'styling' && plan.steps[j].productId === 'nym-curl-talk-gel') {
-                        plan.steps[j].tip = (plan.steps[j].tip || '') + ' Consider Got2b for stronger hold if frizz persists.';
+                        plan.steps[j].productId = 'got2b-ultra-glued';
+                        plan.steps[j].productName = 'Glued Blasting Freeze Spray/Gel';
+                        plan.steps[j].inventoryName = 'Glued Blasting Freeze Spray/Gel';
+                        plan.steps[j].instruction = 'Apply generously to soaking wet hair. Scrunch upward. Stronger hold — PQ-69 without glycerin for frizz control.';
+                        plan.steps[j].tip = 'Upgraded from NYM — stronger hold for frizzy conditions';
+                        plan.steps[j].scienceBadge = 'PQ-69 HUMIDITY BARRIER';
                     }
                 }
             }
@@ -5378,6 +5423,21 @@
 
             // Generate plan
             var suggestion = PlanGenerator.suggestLane(state, dewPoint);
+
+            // Check for "no wash needed" — washed recently and hair is fine
+            var lastWashDate = null;
+            for (var i = events.length - 1; i >= 0; i--) {
+                if (events[i].lane === 'curly' || events[i].lane === 'blowout') {
+                    lastWashDate = events[i].date;
+                    break;
+                }
+            }
+            var washDays = daysSince(lastWashDate);
+            if (washDays !== null && washDays === 0 && suggestion.lane === 'refresh') {
+                renderNoWashNeeded(washDays, suggestion);
+                return;
+            }
+
             currentPlan = PlanGenerator.buildPlan(suggestion.lane, dewPoint, state);
             currentPlan.reason = suggestion.reason;
             currentPlan.confidence = suggestion.confidence;
@@ -5386,12 +5446,67 @@
             renderPlanView(currentPlan);
         }
 
+        function renderNoWashNeeded(washDays, suggestion) {
+            var container = document.getElementById('daily-plan-container');
+
+            // Calculate next wash suggestion
+            var state = StateManager.getState();
+            var typicalInterval = 3;
+            var intervalRatings = FeedbackEngine.getIntervalRatings();
+            if (intervalRatings && Object.keys(intervalRatings).length > 0) {
+                var bestBucket = null;
+                var bestRating = 0;
+                for (var bucket in intervalRatings) {
+                    if (intervalRatings[bucket].average > bestRating && intervalRatings[bucket].count >= 3) {
+                        bestRating = intervalRatings[bucket].average;
+                        bestBucket = parseInt(bucket);
+                    }
+                }
+                if (bestBucket) typicalInterval = bestBucket;
+            }
+
+            var daysUntilWash = Math.max(1, typicalInterval - washDays);
+            var nextWashText = daysUntilWash === 1 ? 'Tomorrow' : 'In ' + daysUntilWash + ' days';
+
+            var html = '<div class="card" style="text-align:center;padding:2rem 1.5rem;">';
+            html += '<div style="font-size:2.5rem;margin-bottom:0.75rem;">✨</div>';
+            html += '<h2 style="font-size:1.2rem;margin-bottom:0.5rem;">Your hair is doing fine</h2>';
+            html += '<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.25rem;">Washed today. Next wash suggested: <strong style="color:var(--gold);">' + escapeHtml(nextWashText) + '</strong></p>';
+            html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;">';
+            html += '<button class="btn-secondary" id="no-wash-refresh" style="min-height:48px;">🔄 Refresh plan</button>';
+            html += '<button class="btn-secondary" id="no-wash-override" style="min-height:48px;">🚿 Wash anyway</button>';
+            html += '</div>';
+            html += '</div>';
+
+            container.innerHTML = html;
+
+            document.getElementById('no-wash-refresh').addEventListener('click', function() {
+                var state = StateManager.getState();
+                currentPlan = PlanGenerator.buildPlan('refresh', detectedDewPoint, state);
+                currentPlan.reason = 'You chose a refresh.';
+                currentPlan.confidence = 'high';
+                currentPlan.productSwaps = [];
+                currentObservations = { quick: null, context: [], detailed: [] };
+                renderPlanView(currentPlan);
+            });
+
+            document.getElementById('no-wash-override').addEventListener('click', function() {
+                var state = StateManager.getState();
+                currentPlan = PlanGenerator.buildPlan('curly', detectedDewPoint, state);
+                currentPlan.reason = 'You chose to wash anyway.';
+                currentPlan.confidence = 'high';
+                currentPlan.productSwaps = [];
+                currentObservations = { quick: null, context: [], detailed: [] };
+                renderPlanView(currentPlan);
+            });
+        }
+
         function renderPlanView(plan) {
             var container = document.getElementById('daily-plan-container');
             var html = '';
 
             // Header
-            var dewPointStr = plan.dewPoint !== null ? 'Dew point ' + plan.dewPoint + '°F' : 'Weather unavailable';
+            var dewPointStr = plan.dewPoint !== null ? 'Dew point ' + plan.dewPoint + '°F' : '☁️ Weather unavailable';
             var state = StateManager.getState();
             var events = state.events || [];
             var lastWashDate = null;
@@ -5417,6 +5532,7 @@
 
             // Steps grouped by phase
             var currentPhase = null;
+            html += '<div role="list" aria-label="Plan steps">';
             for (var s = 0; s < plan.steps.length; s++) {
                 var step = plan.steps[s];
 
@@ -5424,13 +5540,14 @@
                 if (step.phase !== currentPhase) {
                     if (currentPhase !== null) {
                         // Only render header for 2nd+ phases
-                        html += '<div class="plan-phase-header">' + escapeHtml(step.phase) + '</div>';
+                        html += '<div class="plan-phase-header" role="separator" aria-label="Phase: ' + escapeHtml(step.phase) + '">' + escapeHtml(step.phase) + '</div>';
                     }
                     currentPhase = step.phase;
                 }
 
                 html += renderPlanStep(step);
             }
+            html += '</div>';
 
             // Skip section
             if (plan.skips && plan.skips.length > 0) {
@@ -5465,7 +5582,7 @@
         }
 
         function renderPlanStep(step) {
-            var html = '<div class="plan-step" id="' + step.id + '" data-step-type="' + (step.stepType || '') + '">';
+            var html = '<div class="plan-step" id="' + step.id + '" data-step-type="' + (step.stepType || '') + '" role="listitem" aria-label="Step: ' + escapeHtml(step.productName) + '">';
             html += '<div class="plan-step-header">';
             html += '<div>';
             html += '<p class="plan-step-title">' + escapeHtml(step.stepLabel || step.productName) + '</p>';
@@ -5685,6 +5802,9 @@
                         btn.classList.add('selected');
                     }
                     applyAdjustments();
+                    // Auto-close overlay after Layer 1 selection and show confirmation
+                    overlay.classList.remove('visible');
+                    showAdjustToast(val ? getAdjustLabel(val) : 'Reset');
                 };
             });
 
@@ -5735,10 +5855,46 @@
             overlay.onclick = function(e) {
                 if (e.target === overlay) overlay.classList.remove('visible');
             };
+
+            // Close on Escape key
+            var escHandler = function(e) {
+                if (e.key === 'Escape') {
+                    overlay.classList.remove('visible');
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+
+            // Focus the first option for keyboard accessibility
+            var firstOption = overlay.querySelector('.adjust-option');
+            if (firstOption) firstOption.focus();
+        }
+
+        function getAdjustLabel(value) {
+            var labels = {
+                'frizzy': '🌊 Adjusted for frizz',
+                'flat': '🪨 Adjusted for flat hair',
+                'holding_well': '✨ Switched to refresh',
+                'oily': '🧴 Adjusted for oily hair',
+                'dry_rough': '🌿 Adjusted for dry hair'
+            };
+            return labels[value] || 'Plan adjusted';
+        }
+
+        function showAdjustToast(message) {
+            var toast = document.getElementById('adjust-toast');
+            toast.textContent = message;
+            toast.classList.add('visible');
+            setTimeout(function() {
+                toast.classList.remove('visible');
+            }, 2500);
         }
 
         function applyAdjustments() {
             if (!currentPlan) return;
+            // Capture step IDs before adjustment for comparison
+            var oldStepIds = currentPlan.steps.map(function(s) { return s.id + ':' + s.productId + ':' + (s.tip || ''); });
+
             // Re-generate plan from base, then apply adjustments
             var state = StateManager.getState();
             var suggestion = PlanGenerator.suggestLane(state, detectedDewPoint);
@@ -5748,7 +5904,27 @@
             basePlan.productSwaps = currentPlan.productSwaps || [];
 
             currentPlan = AdjustmentEngine.adjust(basePlan, currentObservations);
+
+            // Mark steps that are new or changed
+            var newStepIds = currentPlan.steps.map(function(s) { return s.id + ':' + s.productId + ':' + (s.tip || ''); });
+            var changedStepIndices = [];
+            for (var i = 0; i < newStepIds.length; i++) {
+                if (oldStepIds.indexOf(newStepIds[i]) === -1) {
+                    changedStepIndices.push(i);
+                }
+            }
+
             renderPlanView(currentPlan);
+
+            // Highlight changed steps
+            if (changedStepIndices.length > 0) {
+                setTimeout(function() {
+                    for (var j = 0; j < changedStepIndices.length; j++) {
+                        var stepEl = document.getElementById(currentPlan.steps[changedStepIndices[j]].id);
+                        if (stepEl) stepEl.classList.add('adjusted');
+                    }
+                }, 50);
+            }
         }
 
         function openInfoPopup(stepId) {
