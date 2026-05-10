@@ -50,6 +50,8 @@ Evidence:
 ### What's NOT Done (carry forward)
 - Same as Session 20 (Daily Plan polish, Product Intelligence, research docs)
 - iPhone caching resolution
+- **Data persistence beyond localStorage** — needs spec. localStorage is per-device and gets wiped by "Clear Website Data." Need cloud sync or backup so wash history survives resets. Options: Supabase, Firebase, GitHub Gist, iCloud, Local Drop.
+- **First-use page removed** — app now always shows Daily Plan (defaults to curly day with no history). No more Welcome/empty state.
 
 ---
 
