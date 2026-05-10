@@ -733,6 +733,11 @@
             <button class="btn-primary" id="btn-blowout" aria-label="Start blowout day walkthrough">Blowout</button>
             <button class="btn-primary" id="btn-refresh" aria-label="Start refresh day walkthrough">Refresh</button>
 
+            <!-- Quick log link -->
+            <div style="text-align:center;margin:0.75rem 0;">
+                <button class="btn-secondary" id="btn-quick-log" aria-label="Log a past event">Log past event</button>
+            </div>
+
             <!-- Default guidance for new users -->
             <div class="tip" id="default-guidance">
                 <strong>Getting started:</strong> Every 3-4 days is a good baseline. Your hair doesn't get oily — wash when it feels heavy from buildup or when you want to restyle.
@@ -888,6 +893,12 @@
                 getSealState() {
                     const state = readFromStorage();
                     return state.sealState;
+                },
+
+                deleteWashEvent(eventId) {
+                    const state = readFromStorage();
+                    state.events = state.events.filter(e => e.id !== eventId);
+                    return writeToStorage(state);
                 },
 
                 setSealState(active) {
@@ -2409,10 +2420,103 @@
         var selectedLane = null;
         var selectedHumidity = null;
 
+        var detectedDewPoint = null;
+
         function showHumidityPrompt(lane) {
             selectedLane = lane;
+            detectedDewPoint = null;
             CooldownSystem.resetSessionOverrides();
 
+            showView('walkthrough');
+            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+
+            // Try auto-detection via geolocation + Open-Meteo
+            if (navigator.geolocation && navigator.onLine) {
+                var walkSection = document.getElementById('walkthrough');
+                walkSection.innerHTML = '<div class="card" style="text-align:center;padding:2rem 1.25rem;">' +
+                    '<p style="color:var(--text-secondary);">Detecting conditions…</p></div>';
+
+                var timedOut = false;
+                var timeoutId = setTimeout(function() {
+                    timedOut = true;
+                    showManualHumiditySelector();
+                }, 3000);
+
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        if (timedOut) return;
+                        var lat = position.coords.latitude;
+                        var lon = position.coords.longitude;
+                        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=dew_point_2m&temperature_unit=fahrenheit';
+
+                        fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined })
+                            .then(function(resp) {
+                                if (timedOut) return;
+                                if (!resp.ok) throw new Error('API error');
+                                return resp.json();
+                            })
+                            .then(function(data) {
+                                if (timedOut) return;
+                                clearTimeout(timeoutId);
+                                var dewPoint = data && data.current && data.current.dew_point_2m;
+                                if (dewPoint === undefined || dewPoint === null) {
+                                    showManualHumiditySelector();
+                                    return;
+                                }
+                                detectedDewPoint = Math.round(dewPoint);
+                                var humidity;
+                                var icon;
+                                if (dewPoint < 35) {
+                                    humidity = 'dry';
+                                    icon = '☀️';
+                                } else if (dewPoint <= 60) {
+                                    humidity = 'moderate';
+                                    icon = '🌤️';
+                                } else {
+                                    humidity = 'humid';
+                                    icon = '💧';
+                                }
+                                showAutoDetectedHumidity(humidity, icon, detectedDewPoint);
+                            })
+                            .catch(function() {
+                                if (timedOut) return;
+                                clearTimeout(timeoutId);
+                                showManualHumiditySelector();
+                            });
+                    },
+                    function() {
+                        // Geolocation denied or failed
+                        if (timedOut) return;
+                        clearTimeout(timeoutId);
+                        showManualHumiditySelector();
+                    },
+                    { timeout: 3000 }
+                );
+            } else {
+                showManualHumiditySelector();
+            }
+        }
+
+        function showAutoDetectedHumidity(humidity, icon, dewPoint) {
+            var walkSection = document.getElementById('walkthrough');
+            var label = humidity.charAt(0).toUpperCase() + humidity.slice(1);
+            walkSection.innerHTML = '<div class="card" style="text-align:center;padding:2rem 1.25rem;">' +
+                '<p style="font-size:1.5rem;margin-bottom:0.5rem;">' + icon + ' ' + label + '</p>' +
+                '<p style="color:var(--text-secondary);margin-bottom:1.25rem;">' + dewPoint + '°F dew point</p>' +
+                '<button class="btn-primary" id="humidity-auto-continue" style="margin-bottom:0.75rem;">Continue</button>' +
+                '<button class="btn-secondary" id="humidity-auto-change" style="width:auto;margin:0 auto;display:block;">Change</button>' +
+                '</div>';
+
+            document.getElementById('humidity-auto-continue').addEventListener('click', function() {
+                selectedHumidity = humidity;
+                checkWarningsAndStart();
+            });
+            document.getElementById('humidity-auto-change').addEventListener('click', function() {
+                showManualHumiditySelector();
+            });
+        }
+
+        function showManualHumiditySelector() {
             var walkSection = document.getElementById('walkthrough');
             walkSection.innerHTML = '<div class="card" style="text-align:center;">' +
                 '<h2>How\'s the humidity?</h2>' +
@@ -2422,13 +2526,10 @@
                 '<button class="btn-primary humidity-btn" data-humidity="humid">💧 Humid (&gt;70%)</button>' +
                 '</div>';
 
-            showView('walkthrough');
-            // Remove nav highlight
-            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
-
             walkSection.querySelectorAll('.humidity-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     selectedHumidity = btn.getAttribute('data-humidity');
+                    detectedDewPoint = null;
                     checkWarningsAndStart();
                 });
             });
@@ -2716,6 +2817,7 @@
                 lane: selectedLane,
                 products: products,
                 humidity: selectedHumidity,
+                dewPoint: detectedDewPoint,
                 rating: rating,
                 intervalDays: intervalDays,
                 overrides: CooldownSystem.getSessionOverrides(),
@@ -2768,8 +2870,9 @@
                 events.forEach(function(ev) {
                     var emoji = ev.rating ? ratingEmojis[ev.rating] : '—';
                     var interval = ev.intervalDays > 0 ? ev.intervalDays + ' days since last wash' : 'First wash';
-                    html += '<div class="card" style="padding:1rem 1.25rem;">';
-                    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                    html += '<div class="card" style="padding:1rem 1.25rem;position:relative;">';
+                    html += '<button class="btn-secondary delete-event-btn" data-event-id="' + ev.id + '" aria-label="Delete wash event from ' + formatDateNice(ev.date) + '" style="position:absolute;top:0.5rem;right:0.5rem;min-height:32px;min-width:32px;padding:0.2rem 0.5rem;font-size:0.75rem;border-color:var(--accent);color:var(--accent);">✕</button>';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding-right:2rem;">';
                     html += '<div>';
                     html += '<strong style="font-size:0.9rem;">' + formatDateNice(ev.date) + '</strong>';
                     html += '<span class="badge badge-purple" style="margin-left:0.5rem;">' + ev.lane + '</span>';
@@ -2826,6 +2929,19 @@
                     reader.readAsText(file);
                 });
             }
+
+            // Wire delete buttons
+            historySection.querySelectorAll('.delete-event-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var eventId = btn.getAttribute('data-event-id');
+                    var dateLabel = btn.getAttribute('aria-label').replace('Delete wash event from ', '');
+                    if (confirm('Delete this wash event from ' + dateLabel + '?')) {
+                        StateManager.deleteWashEvent(eventId);
+                        renderHistory();
+                        renderLanding();
+                    }
+                });
+            });
         }
 
         // ===== Utility: escapeHtml =====
@@ -3215,6 +3331,149 @@
             }
         }
 
+        // ===== Quick Log (Past Event) =====
+        function showQuickLog() {
+            var walkSection = document.getElementById('walkthrough');
+            // Default date: 3 days ago
+            var threeDaysAgo = new Date();
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            var defaultDate = threeDaysAgo.toISOString().slice(0, 10);
+
+            var html = '';
+            html += '<div style="margin-bottom:1rem;">';
+            html += '<button class="btn-secondary" id="quick-log-cancel" aria-label="Cancel and go back">← Cancel</button>';
+            html += '</div>';
+            html += '<div class="card">';
+            html += '<h3 style="color:var(--gold);margin-bottom:1rem;">Log a past event</h3>';
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.4rem;">What day?</label>';
+            html += '<input type="date" id="quick-log-date" value="' + defaultDate + '" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.6rem 0.75rem;font-size:0.9rem;margin-bottom:1.25rem;min-height:48px;">';
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">What did you do?</label>';
+            html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem;">';
+            html += '<button class="btn-secondary quick-type-btn" data-quick="wash">Wash</button>';
+            html += '<button class="btn-secondary quick-type-btn" data-quick="clarify">Clarify</button>';
+            html += '<button class="btn-secondary quick-type-btn" data-quick="protein">Protein</button>';
+            html += '<button class="btn-secondary quick-type-btn" data-quick="deep">Deep condition</button>';
+            html += '</div>';
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Which lane? (if wash)</label>';
+            html += '<div style="display:flex;gap:0.5rem;margin-bottom:1rem;" id="quick-log-lanes">';
+            html += '<button class="btn-secondary quick-lane-btn" data-lane="curly" style="border-color:var(--green);color:var(--green);">Curly</button>';
+            html += '<button class="btn-secondary quick-lane-btn" data-lane="blowout">Blowout</button>';
+            html += '</div>';
+            html += '</div>';
+
+            showView('walkthrough');
+            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+            walkSection.innerHTML = html;
+
+            // State for quick log form
+            var quickLane = 'curly';
+            var quickType = null;
+
+            // Wire cancel
+            document.getElementById('quick-log-cancel').addEventListener('click', function() {
+                showView('landing');
+                document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
+            });
+
+            // Wire lane buttons
+            walkSection.querySelectorAll('.quick-lane-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    quickLane = btn.getAttribute('data-lane');
+                    walkSection.querySelectorAll('.quick-lane-btn').forEach(function(b) {
+                        b.style.borderColor = '';
+                        b.style.color = '';
+                    });
+                    btn.style.borderColor = 'var(--green)';
+                    btn.style.color = 'var(--green)';
+                });
+            });
+
+            // Wire type buttons — selecting a type submits the form
+            walkSection.querySelectorAll('.quick-type-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    quickType = btn.getAttribute('data-quick');
+                    submitQuickLog(quickType, quickLane);
+                });
+            });
+        }
+
+        function submitQuickLog(type, lane) {
+            var dateInput = document.getElementById('quick-log-date');
+            var dateStr = dateInput ? dateInput.value : null;
+            if (!dateStr) {
+                alert('Please select a date.');
+                return;
+            }
+
+            // Build the event date (noon local time to avoid timezone issues)
+            var eventDate = new Date(dateStr + 'T12:00:00');
+
+            // Determine products based on type
+            var products;
+            switch (type) {
+                case 'wash':
+                    products = ['everpure-bond-repair', 'garnier-color-repair', 'loreal-21-in-1'];
+                    break;
+                case 'clarify':
+                    products = ['everpure-clarifying', 'garnier-color-repair'];
+                    break;
+                case 'protein':
+                    products = ['garnier-pre-shampoo', 'everpure-bond-repair', 'garnier-color-repair'];
+                    break;
+                case 'deep':
+                    products = ['garnier-color-repair'];
+                    break;
+                default:
+                    products = [];
+            }
+
+            // Calculate interval days from previous event
+            var state = StateManager.getState();
+            var events = state.events || [];
+            var intervalDays = 0;
+            if (events.length > 0) {
+                // Find the most recent event before this date
+                var prevEvents = events.filter(function(e) {
+                    return new Date(e.date) < eventDate;
+                });
+                if (prevEvents.length > 0) {
+                    var lastPrev = prevEvents[prevEvents.length - 1];
+                    var lastDate = new Date(lastPrev.date);
+                    var diffMs = eventDate.getTime() - lastDate.getTime();
+                    intervalDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+                }
+            }
+
+            var washEvent = {
+                id: generateUUID(),
+                date: eventDate.toISOString(),
+                lane: lane,
+                products: products,
+                humidity: 'moderate',
+                dewPoint: null,
+                rating: null,
+                intervalDays: intervalDays,
+                overrides: [],
+                notes: ''
+            };
+
+            StateManager.saveWashEvent(washEvent);
+
+            // Update seal state if relevant (clarify or blowout with marc-anthony)
+            if (type === 'clarify' || (lane === 'blowout' && products.includes('marc-anthony-blowout'))) {
+                updateSealState(washEvent);
+            }
+
+            FeedbackEngine.analyze();
+
+            // Navigate back to landing
+            showView('landing');
+            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+            document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
+            renderLanding();
+            renderHistory();
+        }
+
         // ===== init() =====
         function init() {
             // Set up navigation
@@ -3237,6 +3496,9 @@
             });
             document.getElementById('btn-refresh').addEventListener('click', function() {
                 showHumidityPrompt('refresh');
+            });
+            document.getElementById('btn-quick-log').addEventListener('click', function() {
+                showQuickLog();
             });
         }
 
