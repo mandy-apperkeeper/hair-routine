@@ -3,9 +3,10 @@
  * Cache-first strategy for offline capability.
  */
 
-var CACHE_NAME = 'hair-routine-v2-cache-v1';
+var CACHE_NAME = 'hair-routine-v2-cache-v2';
 var ASSETS_TO_CACHE = [
-    'hair-routine-v2.html'
+    './',
+    'index.html'
 ];
 
 // Install: cache the HTML file

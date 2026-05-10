@@ -598,6 +598,24 @@
             padding-left: 0.25rem;
         }
 
+        /* ===== Alternative Lane Buttons ===== */
+        .btn-alt-lane {
+            min-height: 44px;
+            min-width: 44px;
+            padding: 0.5rem 1rem;
+            font-size: 0.82rem;
+        }
+
+        #recommendation-card {
+            text-align: center;
+            padding: 1.5rem 1.25rem;
+        }
+
+        #recommendation-card .btn-primary {
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+
         /* ===== Responsive Layout ===== */
         @media (min-width: 768px) {
             body {
@@ -2485,8 +2503,8 @@
                 var bestBucket = null;
                 var bestRating = 0;
                 for (var bucket in intervalRatings) {
-                    if (intervalRatings[bucket].avg > bestRating && intervalRatings[bucket].count >= 3) {
-                        bestRating = intervalRatings[bucket].avg;
+                    if (intervalRatings[bucket].average > bestRating && intervalRatings[bucket].count >= 3) {
+                        bestRating = intervalRatings[bucket].average;
                         bestBucket = parseInt(bucket);
                     }
                 }
@@ -2549,6 +2567,7 @@
             document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
 
             // Try auto-detection via geolocation + Open-Meteo
+            // If successful, skip the humidity prompt entirely and go straight to walkthrough
             if (navigator.geolocation && navigator.onLine) {
                 var walkSection = document.getElementById('walkthrough');
                 walkSection.innerHTML = '<div class="card" style="text-align:center;padding:2rem 1.25rem;">' +
@@ -2582,19 +2601,15 @@
                                     return;
                                 }
                                 detectedDewPoint = Math.round(dewPoint);
-                                var humidity;
-                                var icon;
                                 if (dewPoint < 35) {
-                                    humidity = 'dry';
-                                    icon = '☀️';
+                                    selectedHumidity = 'dry';
                                 } else if (dewPoint <= 60) {
-                                    humidity = 'moderate';
-                                    icon = '🌤️';
+                                    selectedHumidity = 'moderate';
                                 } else {
-                                    humidity = 'humid';
-                                    icon = '💧';
+                                    selectedHumidity = 'humid';
                                 }
-                                showAutoDetectedHumidity(humidity, icon, detectedDewPoint);
+                                // Skip the humidity prompt — go straight to walkthrough
+                                checkWarningsAndStart();
                             })
                             .catch(function() {
                                 if (timedOut) return;
@@ -2613,25 +2628,6 @@
             } else {
                 showManualHumiditySelector();
             }
-        }
-
-        function showAutoDetectedHumidity(humidity, icon, dewPoint) {
-            var walkSection = document.getElementById('walkthrough');
-            var label = humidity.charAt(0).toUpperCase() + humidity.slice(1);
-            walkSection.innerHTML = '<div class="card" style="text-align:center;padding:2rem 1.25rem;">' +
-                '<p style="font-size:1.5rem;margin-bottom:0.5rem;">' + icon + ' ' + label + '</p>' +
-                '<p style="color:var(--text-secondary);margin-bottom:1.25rem;">' + dewPoint + '°F dew point</p>' +
-                '<button class="btn-primary" id="humidity-auto-continue" style="margin-bottom:0.75rem;">Continue</button>' +
-                '<button class="btn-secondary" id="humidity-auto-change" style="width:auto;margin:0 auto;display:block;">Change</button>' +
-                '</div>';
-
-            document.getElementById('humidity-auto-continue').addEventListener('click', function() {
-                selectedHumidity = humidity;
-                checkWarningsAndStart();
-            });
-            document.getElementById('humidity-auto-change').addEventListener('click', function() {
-                showManualHumiditySelector();
-            });
         }
 
         function showManualHumiditySelector() {
@@ -2709,6 +2705,12 @@
             html += '<button class="btn-secondary" id="wt-back-home" aria-label="Back to Home">← Home</button>';
             html += '<span style="color:var(--muted);font-size:0.82rem;">Step ' + progress.current + ' of ' + progress.total + '</span>';
             html += '</div>';
+
+            // Conditions indicator (shows auto-detected dew point on first step)
+            if (progress.current === 1 && detectedDewPoint !== null) {
+                var condIcon = selectedHumidity === 'dry' ? '☀️' : (selectedHumidity === 'humid' ? '💧' : '🌤️');
+                html += '<p style="color:var(--muted);font-size:0.75rem;text-align:center;margin-bottom:0.5rem;">' + condIcon + ' ' + detectedDewPoint + '°F dew point · ' + selectedHumidity + '</p>';
+            }
 
             // Phase label
             html += '<p class="phase-label">' + (step.phase || '') + '</p>';
@@ -3605,7 +3607,7 @@
             renderLearn();
             renderSettings();
 
-            // Wire action buttons
+            // Wire first-use action buttons
             document.getElementById('btn-curly').addEventListener('click', function() {
                 showHumidityPrompt('curly');
             });
@@ -3615,6 +3617,22 @@
             document.getElementById('btn-refresh').addEventListener('click', function() {
                 showHumidityPrompt('refresh');
             });
+
+            // Wire smart recommendation button
+            document.getElementById('btn-recommended').addEventListener('click', function() {
+                var lane = this.getAttribute('data-lane');
+                showHumidityPrompt(lane);
+            });
+
+            // Wire alternative lane buttons
+            document.querySelectorAll('.btn-alt-lane').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var lane = this.getAttribute('data-lane');
+                    showHumidityPrompt(lane);
+                });
+            });
+
+            // Wire quick log
             document.getElementById('btn-quick-log').addEventListener('click', function() {
                 showQuickLog();
             });
