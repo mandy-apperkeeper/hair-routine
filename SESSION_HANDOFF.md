@@ -1,40 +1,22 @@
-# Hair Routine — Session Handoff (May 10, 2026, Session 7+8)
+# Hair Routine — Session Handoff (May 10, 2026, Session 9)
 
 ## What Happened This Session
 
-### Session 7: Quick Wins (all three items complete)
+### Session 9: Product Inventory (complete)
 
-**7A. Rewrote Requirement 8** — Updated `requirements.md` to reflect "inform, don't ask" philosophy. New acceptance criteria: auto-detect dew point via Open-Meteo, proceed directly to walkthrough, manual selector is fallback only. 6 criteria (was 5), all aligned with actual implementation.
+**9A. Product inventory feature** — Schema v3 migration seeds 24 products from consultation. InventoryManager module with full CRUD. UI grouped by tier (Primary Rotation → Supporting Cast → Use-Up Queue) and sub-grouped by routine context. Tap-to-expand with notes and action buttons. Add product form. "Products" nav button.
 
-**7B. Created steering file** — `hair-routine/.kiro/steering/session-context.md` with `inclusion: always`. Covers tech stack, key files, architecture, established decisions, aesthetic, anti-patterns, and current status. Future sessions will auto-load this context.
+**9B. Gel gap / inventory integration** — `hasGelInInventory()` now checks actual product inventory (not just wash history). Gel gap card shows "I have this — add to inventory" button that adds NYM gel and dismisses the warning.
 
-**7C. Verified auto dew point is complete** — No code changes needed. Implementation already matches target behavior. Marked Item 1 as fully done.
-
-### Session 8: Compensation Logic (complete)
-
-**8A. CompensationEngine module** — Added between FeedbackEngine and WalkthroughEngine. Encodes Phase 5 research as 5 compensation rules:
-- Dove Bond Strength → L'Oréal 21-in-1 compensates (no gap)
-- Dove Intensive Repair → L'Oréal 21-in-1 compensates (no gap)
-- Protein overdue (14+ days) → uncompensated gap warning
-- Olaplex overdue (14+ days) → uncompensated gap warning
-- Garnier Serum alternative → different strengths, both valid
-
-**8B. Compensation card on landing screen** — Renders between insight card and recommendation card. Shows contextual statements based on last wash event's products. Green status for compensated, orange for gaps.
-
-**8C. Gel gap reminder** — Persistent card shown when no PQ-69 gel has been used. Dismissable for 7 days, then resurfaces. Disappears permanently once gel is used in a wash.
-
-**Note:** Mandy confirmed she HAS the NYM Curl Talk gel. The gel gap reminder will disappear after her first curly day walkthrough with it. The proper fix is the inventory feature (Session 9).
-
-### Sky Guide Design Research
-
-Analyzed Sky Guide's UX for principles applicable to the product inventory feature. Added 7 design principles to the steering file with an efficacy test: evaluate after Session 9 whether they reduced friction vs. standard CRUD.
+### Feedback Captured (for Session 10)
+- Landing page feels "choice rather than guide" — presents equal options instead of recommending
+- Quick-log needs product selection (multi-select from inventory)
+- Clarifying is a sub-type of wash, not a separate treatment category
+- These three form a coherent "make logging actually work" improvement
 
 ### Files Changed
-- `hair-routine/index.html` — CompensationEngine module, compensation card HTML/CSS, renderLanding wiring
-- `hair-routine/.kiro/specs/adaptive-hair-routine/requirements.md` — Requirement 8 rewritten
-- `hair-routine/.kiro/steering/session-context.md` — Created + updated with design principles
-- `hair-routine/NEXT_STEPS.md` — Sessions 7+8 marked complete
-- `hair-routine/IMPLEMENTATION_IMPROVEMENTS.md` — Item 1 status updated
+- `hair-routine/index.html` — Schema v3, DEFAULT_INVENTORY, InventoryManager module, inventory view UI, gel gap integration, nav button
+- `hair-routine/NEXT_STEPS.md` — Session 9 marked complete, Session 10 reprioritized
 - `hair-routine/SESSION_HANDOFF.md` — This file
 
 ## Current State
@@ -84,15 +66,15 @@ Analyzed Sky Guide's UX for principles applicable to the product inventory featu
 
 ## What's Next (Priority Order)
 
-1. **Product inventory spec + build (Session 9)** — Data model designed (session 4), research complete, Sky Guide design principles ready to apply
-2. **Service worker for v1 (Session 10)** — v2 has `hair-sw.js` but v1 (`index.html`) has no offline support yet
-3. **v1→v2 convergence planning (Session 11)** — Audit, decide switchover strategy, execute
+1. **Logging UX overhaul (Session 10)** — Landing page guides instead of presenting equal choices. Quick-log gets product selection from inventory. Clarifying becomes a wash subtype, not a treatment toggle. This is the highest priority because the app can't build useful history without usable logging.
+2. **Service worker for v1 (Session 11)** — Offline support for the live app (bathroom use case)
+3. **v1→v2 convergence planning (Session 12)** — Audit, decide switchover strategy, execute
 
-### Session 9 Pending Decisions (proposed answers, need confirmation)
+### Session 10 Design Decisions (need confirmation at session start)
 
-1. **Storage key:** Same localStorage key (add `inventory: []` to existing state, bump to schema v3). One export = full backup.
-2. **Pre-population:** Pre-populate with known products from consultation handoff. Mandy subtracts what she doesn't have. NYM gel included (confirmed owned).
-3. **Scope:** Add/remove + tier assignment + using-up status. Skip "bottles remaining estimate" for v1.
+1. **Landing page model:** Single recommended action prominent, alternatives behind "Something else?" link? Or contextual guidance with soft recommendation?
+2. **Product selection in quick-log:** Multi-select from inventory (grouped by context)? Or simplified "which shampoo + which conditioner" approach?
+3. **Clarifying wash:** Radio button "Regular / Clarifying" as part of lane selection? Or auto-detect from product selection (if clarifying shampoo is selected, mark as clarify)?
 
 ## Decisions Made (Cumulative, Still Active)
 
@@ -102,8 +84,10 @@ Analyzed Sky Guide's UX for principles applicable to the product inventory featu
 - "Using-up" protocol: track bottles being finished, explain compensation, remove when empty.
 - Treatments are separate from products in the data model (clarify, protein, deep-condition, bond-repair).
 - Dew point is the weather metric (not relative humidity). Auto-detect, don't ask.
-- Schema version 2: WashEvent includes `treatments: string[]` and `dewPoint: number | null`.
+- Schema version 3: WashEvent includes `treatments: string[]` and `dewPoint: number | null`. State includes `inventory: Product[]`.
 - Mandy owns NYM Curl Talk gel (confirmed May 10, 2026).
+- Product inventory: full list stored in localStorage (not sparse overlay). Pre-populated from consultation, user modifies directly.
+- Inventory tiers: Primary Rotation, Supporting Cast, Use-Up Queue. Context tags: every-wash, curly, blowout, weekly, as-needed.
 
 ## Open Questions
 

@@ -78,9 +78,9 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 ## Current Status (update after each session)
 
 - **Spec:** Feature-complete (all 16 task groups done, optional tests skipped)
-- **v1 (live):** Working — quick-log, walkthrough, history, status bar, dew point detection, recommendations, compensation logic
+- **v1 (live):** Working — quick-log, walkthrough, history, status bar, dew point detection, recommendations, compensation logic, product inventory
 - **Remaining improvements:** 2 of 15 (Items 3 + 6 need usage data)
-- **Next high-value work:** Product inventory (Session 9), then service worker (Session 10)
+- **Next high-value work:** Logging UX overhaul (Session 10), then service worker (Session 11)
 
 ## Design Principles (testing here first, generalize if effective)
 

@@ -52,47 +52,79 @@ The highest-value feature that's fully ready to build.
 
 ---
 
-## Session 9: Product Inventory Spec (est. 1 session)
+## Session 9: Product Inventory ✅ (completed May 10, 2026)
 
-### 9A. Write the spec
-- **What:** Formal spec for product inventory management in the app
-- **Scope:** Add/remove products, track "using-up" status, bottles remaining estimate, tier assignment (Primary/Supporting/Use-Up), routine context tags (every-wash, curly-only, blowout-only, weekly)
-- **Data model:** Already designed in session 4, research validates it
-- **Decision needed:** localStorage key — same as wash events or separate?
+### 9A. Built product inventory feature ✅
+- Schema v3 migration seeds 24 products from consultation handoff
+- InventoryManager module (add, remove, update tier/using-up, reset to defaults)
+- Inventory view grouped by tier (Primary Rotation → Supporting Cast → Use-Up Queue)
+- Sub-grouped by routine context (Every Wash, Curly Days, Blowout Days, Weekly, As Needed)
+- Tap-to-expand with notes and action buttons (move tier, mark using-up, remove)
+- Add product form, reset to defaults button
+- "Products" nav button added
 
-### 9B. Build it
-- **What:** Product inventory UI in `index.html` with CRUD operations
-- **Depends on:** Spec approval (9A)
+### 9B. Fixed gel gap / inventory integration ✅
+- `hasGelInInventory()` now checks actual product inventory (not just wash history)
+- Gel gap card shows "I have this — add to inventory" button
+- Tapping it adds NYM gel to inventory and dismisses the warning
+
+### Feedback from Mandy (captured for Session 10)
+- Landing page feels "choice rather than guide" — should recommend, not present equal options
+- Quick-log needs product selection (multi-select from inventory, not just lane + treatments)
+- Clarifying is a sub-type of wash, not a separate treatment category
 
 ---
 
-## Session 10: v1 Service Worker + PWA (est. 1 session)
+## Session 10: Logging UX Overhaul (est. 1 session)
 
-### 10A. Create `sw.js` for v1
+Priority shifted from service worker to making logging actually usable. These three issues form a coherent "make the app work for real usage" improvement.
+
+### 10A. Landing page: guide, don't choose
+- Single prominent recommended action ("It's been 4 days — time for a curly wash")
+- Alternatives tucked behind "Something else?" or visually de-emphasized
+- First-use: brief explanation of each lane, not three equal buttons
+- Apply Sky Guide principle: "Immediate value on open"
+
+### 10B. Quick-log product selection
+- Add multi-select product picker populated from inventory
+- User can select which products they actually used (shampoo, conditioner, mask, serum, etc.)
+- This feeds the feedback engine's product correlation analysis
+
+### 10C. Clarifying as wash subtype
+- Remove "Clarify" from the treatments multi-select
+- Add wash type: "Regular wash" / "Clarifying wash" (single-select, part of lane choice)
+- A clarifying wash still records the `clarify` treatment in the data model for cooldown tracking
+- Status bar "Last clarify" still works — it just reads from the wash type field instead
+
+---
+
+## Session 11: Service Worker + PWA (est. 1 session)
+
+### 11A. Create `sw.js` for v1
 - **What:** Cache-first service worker for `index.html`
 - **Why:** v2 has `hair-sw.js` but v1 (the live app) has no offline support. Mandy uses this in the bathroom.
 - **Scope:** Cache HTML + any external API responses (Open-Meteo), versioned cache, graceful update
 
-### 10B. Add install prompt
+### 11B. Add install prompt
 - **What:** PWA manifest + "Add to Home Screen" support
 - **Why:** Native-feeling app on iPad/iPhone without App Store
 
 ---
 
-## Session 11: v1→v2 Convergence Planning (est. 1 session, mostly decisions)
+## Session 12: v1→v2 Convergence Planning (est. 1 session, mostly decisions)
 
-### 11A. Audit v2 against v1
+### 12A. Audit v2 against v1
 - **What:** Compare what v2 (`hair-routine-v2.html`) has vs what v1 (`index.html`) has. Identify gaps in both directions.
 - **Key question:** Does v2 have the quick-log? Does it have the treatments model? Does it have dew point detection?
 
-### 11B. Decide switchover strategy
+### 12B. Decide switchover strategy
 - **Options:**
   - A) Port v1 features into v2, then swap (clean cut)
   - B) Port v2 features into v1 incrementally (evolutionary)
   - C) Merge into a single file taking best of both
 - **Decision criteria:** Which path gets Mandy the best app fastest with least regression risk?
 
-### 11C. Execute switchover (or plan it across sessions)
+### 12C. Execute switchover (or plan it across sessions)
 
 ---
 
