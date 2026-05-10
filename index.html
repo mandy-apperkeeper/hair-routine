@@ -2179,9 +2179,15 @@
             }
 
             function hasGelInInventory() {
-                // Check if any wash event has used a PQ-69 gel product
-                // If the user has logged a wash with gel, they have it
+                // Check if gel exists in the product inventory
                 var state = StateManager.getState();
+                var inventory = state.inventory || [];
+                for (var i = 0; i < inventory.length; i++) {
+                    if (inventory[i].id === 'nym-curl-talk-gel' || inventory[i].id === 'got2b-gel') {
+                        return true;
+                    }
+                }
+                // Fallback: check if any wash event has used a PQ-69 gel product
                 var events = state.events || [];
                 for (var i = 0; i < events.length; i++) {
                     var prods = events[i].products || [];
@@ -3108,11 +3114,14 @@
                 var gelInfo = CompensationEngine.getGelGapInfo();
                 var gelHtml = '<p class="comp-gap">⚠️ ' + escapeHtml(gelInfo.message) + '</p>';
                 gelHtml += '<p>' + escapeHtml(gelInfo.recommendation) + '</p>';
+                gelHtml += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;">';
+                gelHtml += '<button class="comp-dismiss" id="gel-gap-add" style="color:var(--green);text-decoration:none;font-weight:500;">I have this — add to inventory</button>';
                 gelHtml += '<button class="comp-dismiss" id="gel-gap-dismiss">Dismiss for a week</button>';
+                gelHtml += '</div>';
                 gelGapCard.innerHTML = gelHtml;
                 gelGapCard.classList.add('active');
 
-                // Wire dismiss button (use setTimeout to ensure DOM is ready)
+                // Wire buttons (use setTimeout to ensure DOM is ready)
                 setTimeout(function() {
                     var dismissBtn = document.getElementById('gel-gap-dismiss');
                     if (dismissBtn) {
@@ -3120,6 +3129,29 @@
                             CompensationEngine.dismissGelGap();
                             gelGapCard.classList.remove('active');
                             gelGapCard.innerHTML = '';
+                        });
+                    }
+                    var addBtn = document.getElementById('gel-gap-add');
+                    if (addBtn) {
+                        addBtn.addEventListener('click', function() {
+                            // Add NYM gel to inventory if not already there
+                            var inventory = InventoryManager.getAll();
+                            var hasGel = inventory.some(function(p) { return p.id === 'nym-curl-talk-gel'; });
+                            if (!hasGel) {
+                                InventoryManager.addProduct({
+                                    id: 'nym-curl-talk-gel',
+                                    name: 'Curl Talk Flash Freeze Gel',
+                                    brand: 'Not Your Mother\'s',
+                                    tier: 'primary',
+                                    context: 'curly',
+                                    usingUp: false,
+                                    notes: 'PQ-69 humidity barrier. Scrunch into damp hair.'
+                                });
+                            }
+                            // Re-render landing (gel gap will disappear since inventory now has it)
+                            gelGapCard.classList.remove('active');
+                            gelGapCard.innerHTML = '';
+                            renderInventory();
                         });
                     }
                 }, 0);
