@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1c1a1f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Hair Routine">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.svg">
     <title>Hair Routine</title>
     <style>
         /* ===== CSS Custom Properties ===== */
@@ -787,6 +793,98 @@
             color: var(--accent);
         }
 
+        .inventory-ratings {
+            display: none;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .inventory-item.expanded .inventory-ratings {
+            display: block;
+        }
+
+        .inventory-rating-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .inventory-rating-label {
+            font-size: 0.72rem;
+            color: var(--muted);
+            min-width: 5.5rem;
+            font-weight: 500;
+        }
+
+        .inventory-rating-emojis {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .inventory-rating-emojis button {
+            background: none;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            padding: 0.2rem 0.35rem;
+            cursor: pointer;
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.4;
+            transition: opacity 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+        }
+
+        .inventory-rating-emojis button:hover {
+            opacity: 0.8;
+        }
+
+        .inventory-rating-emojis button.selected {
+            opacity: 1;
+            border-color: var(--gold);
+            transform: scale(1.15);
+        }
+
+        .inventory-rating-note {
+            display: none;
+            margin-top: 0.3rem;
+        }
+
+        .inventory-item.expanded .inventory-rating-note.has-note,
+        .inventory-item.expanded .inventory-rating-note.editing {
+            display: block;
+        }
+
+        .inventory-rating-note textarea {
+            width: 100%;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            font-size: 0.75rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 2.5rem;
+            max-height: 6rem;
+        }
+
+        .inventory-rating-note-display {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            cursor: pointer;
+            padding: 0.2rem 0;
+        }
+
+        .inventory-rating-note-display:hover {
+            color: var(--text);
+        }
+
         .inventory-add-form {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -915,11 +1013,60 @@
             outline: 2px solid var(--text);
             outline-offset: 2px;
         }
+
+        /* ===== SW Update Banner ===== */
+        .sw-update-banner {
+            display: none;
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card);
+            border: 1px solid var(--gold);
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-size: 0.85rem;
+            color: var(--text);
+            z-index: 1000;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            max-width: calc(100vw - 32px);
+        }
+
+        .sw-update-banner.visible {
+            display: block;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .sw-update-banner button {
+            background: var(--gold);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 12px;
+            min-height: 36px;
+            min-width: 36px;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
     <!-- Skip Navigation -->
     <a href="#main-content" class="visually-hidden">Skip to main content</a>
+
+    <!-- SW Update Banner -->
+    <div class="sw-update-banner" id="sw-update-banner" role="status" aria-live="polite">
+        <span>App updated</span>
+        <button id="sw-update-reload">Reload</button>
+    </div>
 
     <!-- Warning Overlay (non-blocking banner) -->
     <div class="warning-overlay" id="warning-overlay" role="alert" aria-live="assertive">
@@ -1040,7 +1187,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 9;
+        const CURRENT_VERSION = 10;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -1815,6 +1962,19 @@
                     }
                 }
                 state.version = 9;
+            }
+
+            // v9 → v10: Add per-product experience and results ratings
+            if (state.version < 10) {
+                if (Array.isArray(state.inventory)) {
+                    state.inventory.forEach(function(product) {
+                        if (!('experienceRating' in product)) product.experienceRating = null;
+                        if (!('resultsRating' in product)) product.resultsRating = null;
+                        if (!('experienceNote' in product)) product.experienceNote = null;
+                        if (!('resultsNote' in product)) product.resultsNote = null;
+                    });
+                }
+                state.version = 10;
             }
         }
 
@@ -2936,6 +3096,10 @@
                         context: product.context || 'as-needed',
                         usingUp: product.usingUp || false,
                         notes: product.notes || '',
+                        experienceRating: product.experienceRating || null,
+                        resultsRating: product.resultsRating || null,
+                        experienceNote: product.experienceNote || null,
+                        resultsNote: product.resultsNote || null,
                         intelligence: product.intelligence || {
                             mechanisms: [],
                             delivery: 'unknown',
@@ -2967,6 +3131,10 @@
                             if ('name' in updates) inventory[i].name = updates.name;
                             if ('brand' in updates) inventory[i].brand = updates.brand;
                             if ('intelligence' in updates) inventory[i].intelligence = updates.intelligence;
+                            if ('experienceRating' in updates) inventory[i].experienceRating = updates.experienceRating;
+                            if ('resultsRating' in updates) inventory[i].resultsRating = updates.resultsRating;
+                            if ('experienceNote' in updates) inventory[i].experienceNote = updates.experienceNote;
+                            if ('resultsNote' in updates) inventory[i].resultsNote = updates.resultsNote;
                             break;
                         }
                     }
@@ -3017,7 +3185,7 @@
                         instruction: 'Apply to dry hair, mid-lengths to ends. Penetrates cortex to prevent protein loss during washing.',
                         productId: 'pure-coconut-oil',
                         scienceBadge: 'CORTEX PENETRATION',
-                        timer: { duration: 600, label: 'Coconut oil pre-wash' },
+                        timer: { duration: 1200, label: 'Coconut oil pre-wash (20 min)' },
                         tip: 'Can leave on longer (up to overnight) for deeper penetration',
                         phase: 'PREP & WASH'
                     },
@@ -3122,7 +3290,7 @@
                         instruction: 'Apply to dry hair, mid-lengths to ends. Penetrates cortex to prevent protein loss during washing.',
                         productId: 'pure-coconut-oil',
                         scienceBadge: 'CORTEX PENETRATION',
-                        timer: { duration: 600, label: 'Coconut oil pre-wash' },
+                        timer: { duration: 1200, label: 'Coconut oil pre-wash (20 min)' },
                         tip: 'Can leave on longer (up to overnight) for deeper penetration',
                         phase: 'PREP & WASH'
                     },
@@ -4436,6 +4604,55 @@
                             html += '<div class="inventory-item-note">' + escapeHtml(prod.notes) + '</div>';
                         }
 
+                        // Ratings (shown on expand)
+                        html += '<div class="inventory-ratings">';
+
+                        // Experience rating
+                        html += '<div class="inventory-rating-row">';
+                        html += '<span class="inventory-rating-label">Experience</span>';
+                        html += '<div class="inventory-rating-emojis" data-rating-type="experience" data-product-id="' + escapeHtml(prod.id) + '">';
+                        var RATING_EMOJIS = ['\uD83D\uDE2B', '\uD83D\uDE15', '\uD83D\uDE10', '\uD83D\uDE0A', '\uD83E\uDD29'];
+                        var RATING_LABELS = ['Hate it', 'Dislike', 'Neutral', 'Like it', 'Love it'];
+                        for (var ri = 0; ri < 5; ri++) {
+                            var expSelected = prod.experienceRating === (ri + 1) ? ' selected' : '';
+                            html += '<button class="' + expSelected.trim() + '" data-value="' + (ri + 1) + '" aria-label="' + RATING_LABELS[ri] + '">' + RATING_EMOJIS[ri] + '</button>';
+                        }
+                        html += '</div>';
+                        html += '</div>';
+
+                        // Results rating
+                        html += '<div class="inventory-rating-row">';
+                        html += '<span class="inventory-rating-label">Results</span>';
+                        html += '<div class="inventory-rating-emojis" data-rating-type="results" data-product-id="' + escapeHtml(prod.id) + '">';
+                        for (var ri2 = 0; ri2 < 5; ri2++) {
+                            var resSelected = prod.resultsRating === (ri2 + 1) ? ' selected' : '';
+                            html += '<button class="' + resSelected.trim() + '" data-value="' + (ri2 + 1) + '" aria-label="' + RATING_LABELS[ri2] + '">' + RATING_EMOJIS[ri2] + '</button>';
+                        }
+                        html += '</div>';
+                        html += '</div>';
+
+                        // Notes for ratings (tap to add/edit)
+                        var hasExpNote = prod.experienceNote ? ' has-note' : '';
+                        html += '<div class="inventory-rating-note' + hasExpNote + '" data-note-type="experience" data-product-id="' + escapeHtml(prod.id) + '">';
+                        if (prod.experienceNote) {
+                            html += '<div class="inventory-rating-note-display" title="Tap to edit">\uD83D\uDCAC ' + escapeHtml(prod.experienceNote) + '</div>';
+                        }
+                        html += '</div>';
+
+                        var hasResNote = prod.resultsNote ? ' has-note' : '';
+                        html += '<div class="inventory-rating-note' + hasResNote + '" data-note-type="results" data-product-id="' + escapeHtml(prod.id) + '">';
+                        if (prod.resultsNote) {
+                            html += '<div class="inventory-rating-note-display" title="Tap to edit">\uD83D\uDCAC ' + escapeHtml(prod.resultsNote) + '</div>';
+                        }
+                        html += '</div>';
+
+                        // Add note button (shown when no notes exist yet and a rating is set)
+                        if ((prod.experienceRating || prod.resultsRating) && !prod.experienceNote && !prod.resultsNote) {
+                            html += '<button class="inv-add-note-btn" data-product-id="' + escapeHtml(prod.id) + '" style="font-size:0.7rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:0.2rem 0;margin-top:0.2rem;">+ Add a note</button>';
+                        }
+
+                        html += '</div>'; // inventory-ratings
+
                         // Actions (shown on expand)
                         html += '<div class="inventory-item-actions">';
                         if (prod.tier !== 'use-up') {
@@ -4507,6 +4724,88 @@
                         InventoryManager.removeProduct(productId);
                     }
                     renderInventory();
+                    return;
+                }
+
+                // Rating emoji buttons
+                var ratingBtn = e.target.closest('.inventory-rating-emojis button');
+                if (ratingBtn) {
+                    e.stopPropagation();
+                    var emojiContainer = ratingBtn.closest('.inventory-rating-emojis');
+                    var ratingType = emojiContainer.getAttribute('data-rating-type');
+                    var ratingProductId = emojiContainer.getAttribute('data-product-id');
+                    var value = parseInt(ratingBtn.getAttribute('data-value'), 10);
+
+                    // Toggle: tap same rating again to clear it
+                    var currentRating = ratingBtn.classList.contains('selected') ? null : value;
+
+                    // Update visual state
+                    emojiContainer.querySelectorAll('button').forEach(function(btn) {
+                        btn.classList.remove('selected');
+                    });
+                    if (currentRating !== null) {
+                        ratingBtn.classList.add('selected');
+                    }
+
+                    // Save to product
+                    var updates = {};
+                    if (ratingType === 'experience') {
+                        updates.experienceRating = currentRating;
+                    } else if (ratingType === 'results') {
+                        updates.resultsRating = currentRating;
+                    }
+                    InventoryManager.updateProduct(ratingProductId, updates);
+                    return;
+                }
+
+                // Rating note display (tap to edit)
+                var noteDisplay = e.target.closest('.inventory-rating-note-display');
+                if (noteDisplay) {
+                    e.stopPropagation();
+                    var noteContainer = noteDisplay.closest('.inventory-rating-note');
+                    var noteType = noteContainer.getAttribute('data-note-type');
+                    var noteProductId = noteContainer.getAttribute('data-product-id');
+                    var inventory = InventoryManager.getAll();
+                    var product = inventory.find(function(p) { return p.id === noteProductId; });
+                    var currentNote = noteType === 'experience' ? (product.experienceNote || '') : (product.resultsNote || '');
+
+                    noteContainer.classList.add('editing');
+                    noteContainer.innerHTML = '<textarea class="inv-rating-note-input" placeholder="' + (noteType === 'experience' ? 'What do you like/dislike about using this?' : 'How well does this work for your hair?') + '">' + escapeHtml(currentNote) + '</textarea>';
+                    var textarea = noteContainer.querySelector('textarea');
+                    textarea.focus();
+                    textarea.addEventListener('blur', function() {
+                        var newNote = textarea.value.trim() || null;
+                        var noteUpdates = {};
+                        if (noteType === 'experience') {
+                            noteUpdates.experienceNote = newNote;
+                        } else {
+                            noteUpdates.resultsNote = newNote;
+                        }
+                        InventoryManager.updateProduct(noteProductId, noteUpdates);
+                        renderInventory();
+                    });
+                    return;
+                }
+
+                // Add note button
+                var addNoteBtn = e.target.closest('.inv-add-note-btn');
+                if (addNoteBtn) {
+                    e.stopPropagation();
+                    var addNoteProductId = addNoteBtn.getAttribute('data-product-id');
+                    var ratingsContainer = addNoteBtn.closest('.inventory-ratings');
+                    var expNoteDiv = ratingsContainer.querySelector('[data-note-type="experience"]');
+
+                    expNoteDiv.classList.add('editing');
+                    expNoteDiv.innerHTML = '<textarea class="inv-rating-note-input" placeholder="What do you like/dislike about using this?"></textarea>';
+                    var noteTextarea = expNoteDiv.querySelector('textarea');
+                    noteTextarea.focus();
+                    noteTextarea.addEventListener('blur', function() {
+                        var newNote = noteTextarea.value.trim() || null;
+                        if (newNote) {
+                            InventoryManager.updateProduct(addNoteProductId, { experienceNote: newNote });
+                        }
+                        renderInventory();
+                    });
                     return;
                 }
 
@@ -5642,10 +5941,35 @@
         };
     })();
 
-    // Service Worker Registration
+    // Service Worker Registration + Update Handling
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('hair-sw.js').catch(function(err) {
+        navigator.serviceWorker.register('hair-sw.js').then(function(registration) {
+            // Check for updates periodically (every 30 minutes when page is open)
+            setInterval(function() {
+                registration.update();
+            }, 30 * 60 * 1000);
+        }).catch(function(err) {
             console.warn('Service worker registration failed:', err);
+        });
+
+        // Listen for SW update messages
+        navigator.serviceWorker.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'SW_UPDATED') {
+                var banner = document.getElementById('sw-update-banner');
+                if (banner) {
+                    banner.classList.add('visible');
+                }
+            }
+        });
+
+        // Reload button
+        document.addEventListener('DOMContentLoaded', function() {
+            var reloadBtn = document.getElementById('sw-update-reload');
+            if (reloadBtn) {
+                reloadBtn.addEventListener('click', function() {
+                    window.location.reload();
+                });
+            }
         });
     }
     </script>
