@@ -4461,12 +4461,23 @@
                         alternatives = rankProducts(stepType, conditions, inventory);
                     }
 
+                    // Look up actual product name from inventory
+                    var displayName = step.title;
+                    if (step.productId) {
+                        for (var p = 0; p < inventory.length; p++) {
+                            if (inventory[p].id === step.productId) {
+                                displayName = inventory[p].name;
+                                break;
+                            }
+                        }
+                    }
+
                     return {
                         id: 'step-' + (index + 1),
                         number: index + 1,
                         stepType: stepType,
                         productId: step.productId,
-                        productName: step.title,
+                        productName: displayName,
                         instruction: step.instruction,
                         scienceBadge: step.scienceBadge || null,
                         timer: step.timer || null,
@@ -5449,7 +5460,7 @@
             if (step.productId) {
                 html += '<div class="plan-step-actions">';
                 html += '<button class="plan-info-btn" data-step-id="' + step.id + '" aria-label="Info about ' + escapeHtml(step.productName) + '">ℹ</button>';
-                if (step.alternatives && step.alternatives.length > 1) {
+                if (step.alternatives && step.alternatives.length > 0) {
                     html += '<button class="plan-rotate-btn" data-step-id="' + step.id + '" aria-label="Alternatives for ' + escapeHtml(step.productName) + '">↻</button>';
                 }
                 html += '</div>';
