@@ -686,16 +686,22 @@
         }
 
         .plan-badge-science {
-            background: rgba(122, 184, 168, 0.15);
+            background: rgba(122, 184, 168, 0.08);
             color: var(--green);
-            border: 1px solid rgba(122, 184, 168, 0.3);
+            border: 1px solid rgba(122, 184, 168, 0.2);
+            font-size: 0.65rem;
+            opacity: 0.7;
         }
 
         .plan-badge-timer {
-            background: rgba(122, 158, 196, 0.15);
+            background: rgba(122, 158, 196, 0.2);
             color: var(--blue);
-            border: 1px solid rgba(122, 158, 196, 0.3);
+            border: 1px solid rgba(122, 158, 196, 0.4);
             cursor: pointer;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 6px;
         }
 
         .plan-badge-timer.active {
@@ -5481,12 +5487,12 @@
             var hasBadges = step.scienceBadge || step.timer;
             if (hasBadges) {
                 html += '<div class="plan-step-badges">';
-                if (step.scienceBadge) {
-                    html += '<span class="plan-badge plan-badge-science">' + escapeHtml(step.scienceBadge) + '</span>';
-                }
                 if (step.timer) {
                     var mins = Math.round(step.timer.duration / 60);
-                    html += '<button class="plan-badge plan-badge-timer" data-step-id="' + step.id + '" data-duration="' + step.timer.duration + '" aria-label="Start ' + mins + ' minute timer">⏱ ' + mins + ' min</button>';
+                    html += '<button class="plan-badge plan-badge-timer" data-step-id="' + step.id + '" data-duration="' + step.timer.duration + '" aria-label="Start ' + mins + ' minute timer">⏱ ' + mins + ' min — tap to start</button>';
+                }
+                if (step.scienceBadge) {
+                    html += '<span class="plan-badge plan-badge-science">' + escapeHtml(step.scienceBadge) + '</span>';
                 }
                 html += '</div>';
             }
