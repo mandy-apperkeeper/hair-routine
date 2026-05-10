@@ -5469,7 +5469,7 @@
                 html += '<div class="plan-step-actions">';
                 html += '<button class="plan-info-btn" data-step-id="' + step.id + '" aria-label="Info about ' + escapeHtml(step.productName) + '">ℹ</button>';
                 if (step.alternatives && step.alternatives.length > 0) {
-                    html += '<button class="plan-rotate-btn" data-step-id="' + step.id + '" aria-label="Alternatives for ' + escapeHtml(step.productName) + '">↻</button>';
+                    html += '<button class="plan-rotate-btn" data-step-id="' + step.id + '" aria-label="Swap product for ' + escapeHtml(step.productName) + '" style="font-size:0.75rem;">swap</button>';
                 }
                 html += '</div>';
             }
