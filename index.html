@@ -4463,10 +4463,11 @@
 
                     // Look up actual product name from inventory
                     var displayName = step.title;
+                    var inventoryName = null;
                     if (step.productId) {
                         for (var p = 0; p < inventory.length; p++) {
                             if (inventory[p].id === step.productId) {
-                                displayName = inventory[p].name;
+                                inventoryName = inventory[p].name;
                                 break;
                             }
                         }
@@ -4477,7 +4478,9 @@
                         number: index + 1,
                         stepType: stepType,
                         productId: step.productId,
-                        productName: displayName,
+                        productName: inventoryName || displayName,
+                        stepLabel: displayName,
+                        inventoryName: inventoryName,
                         instruction: step.instruction,
                         scienceBadge: step.scienceBadge || null,
                         timer: step.timer || null,
@@ -5454,7 +5457,12 @@
         function renderPlanStep(step) {
             var html = '<div class="plan-step" id="' + step.id + '" data-step-type="' + (step.stepType || '') + '">';
             html += '<div class="plan-step-header">';
-            html += '<p class="plan-step-title">' + escapeHtml(step.productName) + '</p>';
+            html += '<div>';
+            html += '<p class="plan-step-title">' + escapeHtml(step.stepLabel || step.productName) + '</p>';
+            if (step.productId && step.inventoryName) {
+                html += '<p style="font-size:0.82rem;color:var(--gold);margin:0.15rem 0 0;font-weight:500;">' + escapeHtml(step.inventoryName) + '</p>';
+            }
+            html += '</div>';
 
             // Action buttons (only for steps with products)
             if (step.productId) {
