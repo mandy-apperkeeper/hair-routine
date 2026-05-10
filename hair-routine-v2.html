@@ -707,31 +707,13 @@
                 <p>After a few washes, you'll start seeing personalized insights about what works best for your hair.</p>
             </div>
 
-            <!-- Status summary (populated by JS) -->
-            <div class="tracker-box" id="status-summary" aria-label="Status summary">
-                <div class="tracker-item">
-                    <span class="tracker-label">Last wash</span>
-                    <span class="tracker-value" id="status-wash">—</span>
-                </div>
-                <div class="tracker-item">
-                    <span class="tracker-label">Last clarify</span>
-                    <span class="tracker-value" id="status-clarify">—</span>
-                </div>
-                <div class="tracker-item">
-                    <span class="tracker-label">Seal state</span>
-                    <span class="tracker-value" id="status-seal">Inactive</span>
-                </div>
-            </div>
+            <!-- Plan card (populated by JS) -->
+            <div id="plan-card"></div>
 
             <!-- Insight card (hidden until feedback engine has data) -->
             <div class="insight-card" id="insight-card" aria-label="Personalized insight">
                 <p id="insight-message"></p>
             </div>
-
-            <!-- Primary action buttons -->
-            <button class="btn-primary" id="btn-curly" aria-label="Start curly day walkthrough">Curly</button>
-            <button class="btn-primary" id="btn-blowout" aria-label="Start blowout day walkthrough">Blowout</button>
-            <button class="btn-primary" id="btn-refresh" aria-label="Start refresh day walkthrough">Refresh</button>
 
             <!-- Quick log link -->
             <div style="text-align:center;margin:0.75rem 0;">
@@ -1739,6 +1721,266 @@
             };
         })();
 
+        // ===== RoutinePlanner =====
+        const RoutinePlanner = (function() {
+            // Product catalog with metadata
+            const PRODUCT_CATALOG = {
+                'everpure-bond-repair': { name: "L'Oréal EverPure Bond Repair Shampoo", category: 'shampoo', lanes: ['curly', 'blowout'], learnId: 'shampoo' },
+                'everpure-clarifying': { name: "L'Oréal EverPure Clarifying Shampoo", category: 'shampoo', lanes: ['curly', 'blowout'], learnId: 'dual-lane' },
+                'garnier-color-repair': { name: "Garnier Color Repair Conditioner", category: 'conditioner', lanes: ['curly', 'blowout'], cumulativeBenefit: { minUses: 8, description: 'Amodimethicone builds cumulatively over 2-4 weeks' }, learnId: 'amodimethicone' },
+                'dove-intensive': { name: "Dove Intensive Repair Conditioner", category: 'conditioner', lanes: ['curly', 'blowout'], learnId: null },
+                'everpure-bond-conditioner': { name: "L'Oréal EverPure Bond Repair Conditioner", category: 'conditioner', lanes: ['curly', 'blowout'], useUp: true, learnId: null },
+                'loreal-21-in-1': { name: "L'Oréal 21-in-1 Leave-In", category: 'leave-in', lanes: ['curly', 'blowout'], learnId: 'pq37' },
+                'nym-curl-talk-gel': { name: "NYM Curl Talk Gel", category: 'gel', lanes: ['curly'], learnId: 'pq69' },
+                'got2b-ultra-glued': { name: "Got2b Ultra Glued", category: 'gel', lanes: ['curly'], humidOnly: true, learnId: 'pq69' },
+                'marc-anthony-blowout': { name: "Marc Anthony Blowout Spray", category: 'heat-protectant', lanes: ['blowout'], learnId: 'polysilicone29' },
+                'olaplex-3': { name: "Olaplex No.3", category: 'treatment', lanes: ['curly', 'blowout'], treatmentType: 'protein', cumulativeBenefit: { minUses: 4, description: 'Bond repair builds over multiple applications' }, learnId: 'olaplex' },
+                'garnier-pre-shampoo': { name: "Garnier Hair Filler Pre-Shampoo", category: 'treatment', lanes: ['curly', 'blowout'], treatmentType: 'protein', cumulativeBenefit: { minUses: 4, description: 'Protein + frizz protection builds over multiple uses' }, learnId: 'protein' },
+                'dove-serum': { name: "Dove 10-in-1 Serum", category: 'finishing', lanes: ['curly', 'blowout'], learnId: null },
+                'garnier-serum': { name: "Garnier Hair Filler Serum", category: 'finishing', lanes: ['curly', 'blowout'], learnId: null }
+            };
+
+            // Conditioner rotation priority (primary first)
+            const CONDITIONER_ROTATION = ['garnier-color-repair', 'garnier-color-repair', 'garnier-color-repair', 'dove-intensive'];
+            // Treatment alternation
+            const TREATMENT_ROTATION = ['garnier-pre-shampoo', 'olaplex-3'];
+
+            function getDaysSinceEvent(events, type) {
+                for (var i = events.length - 1; i >= 0; i--) {
+                    var ev = events[i];
+                    if (type === 'wash' && (ev.lane === 'curly' || ev.lane === 'blowout')) return daysSince(ev.date);
+                    if (type === 'clarify' && ev.products && ev.products.includes('everpure-clarifying')) return daysSince(ev.date);
+                    if (type === 'protein' && ev.products && (ev.products.includes('olaplex-3') || ev.products.includes('garnier-pre-shampoo'))) return daysSince(ev.date);
+                    if (type === 'deep' && ev.notes && ev.notes.includes('deep-condition')) return daysSince(ev.date);
+                }
+                return null;
+            }
+
+            function getLastLane(events) {
+                for (var i = events.length - 1; i >= 0; i--) {
+                    if (events[i].lane === 'curly' || events[i].lane === 'blowout') return events[i].lane;
+                }
+                return null;
+            }
+
+            function getLastProductInCategory(events, category) {
+                for (var i = events.length - 1; i >= 0; i--) {
+                    var products = events[i].products || [];
+                    for (var j = 0; j < products.length; j++) {
+                        var cat = PRODUCT_CATALOG[products[j]];
+                        if (cat && cat.category === category) return products[j];
+                    }
+                }
+                return null;
+            }
+
+            function getLastTreatment(events) {
+                for (var i = events.length - 1; i >= 0; i--) {
+                    var products = events[i].products || [];
+                    if (products.includes('olaplex-3')) return 'olaplex-3';
+                    if (products.includes('garnier-pre-shampoo')) return 'garnier-pre-shampoo';
+                }
+                return null;
+            }
+
+            function getProductRating(events, productId) {
+                var catalog = PRODUCT_CATALOG[productId];
+                var minUses = (catalog && catalog.cumulativeBenefit) ? catalog.cumulativeBenefit.minUses : 0;
+                var uses = 0;
+                var ratings = [];
+                for (var i = 0; i < events.length; i++) {
+                    if ((events[i].products || []).includes(productId)) {
+                        uses++;
+                        if (uses > minUses && events[i].rating !== null) {
+                            ratings.push(events[i].rating);
+                        }
+                    }
+                }
+                if (ratings.length < 3) return null;
+                var sum = 0;
+                for (var j = 0; j < ratings.length; j++) sum += ratings[j];
+                return sum / ratings.length;
+            }
+
+            function suggestDayType(state) {
+                var events = state.events || [];
+                var thresholds = state.thresholds;
+                var sealState = state.sealState;
+
+                var daysSinceWash = getDaysSinceEvent(events, 'wash');
+                var daysSinceClarify = getDaysSinceEvent(events, 'clarify');
+                var daysSinceProtein = getDaysSinceEvent(events, 'protein');
+                var lastLane = getLastLane(events);
+
+                var suggestion = {
+                    dayType: 'refresh',
+                    lane: lastLane || 'curly',
+                    actions: [],
+                    reason: '',
+                    products: {}
+                };
+
+                // Determine if it's a wash day
+                var washInterval = thresholds.washMinDays || 2;
+                var optimalInterval = 4;
+                var intervalRatings = FeedbackEngine.getIntervalRatings();
+                var bestBucket = null;
+                var bestAvg = 0;
+                for (var b in intervalRatings) {
+                    if (intervalRatings[b].average > bestAvg) {
+                        bestAvg = intervalRatings[b].average;
+                        bestBucket = parseInt(b);
+                    }
+                }
+                if (bestBucket) optimalInterval = bestBucket;
+
+                if (daysSinceWash === null || daysSinceWash >= optimalInterval) {
+                    suggestion.dayType = 'wash';
+                    suggestion.reason = daysSinceWash === null ? 'No wash recorded yet' : daysSinceWash + ' days since last wash';
+                    suggestion.actions.push('wash');
+                } else if (daysSinceWash >= optimalInterval - 1) {
+                    suggestion.dayType = 'wash';
+                    suggestion.reason = 'Wash day tomorrow or today \u2014 ' + daysSinceWash + ' days since last wash';
+                    suggestion.actions.push('wash');
+                } else {
+                    suggestion.dayType = 'refresh';
+                    suggestion.reason = 'Day ' + (daysSinceWash + 1) + ' of ' + optimalInterval + ' \u2014 refresh day';
+                }
+
+                // Check if clarify is due (weekly)
+                if (daysSinceClarify === null || daysSinceClarify >= 7) {
+                    if (suggestion.dayType === 'wash') {
+                        suggestion.actions.push('clarify');
+                    }
+                }
+
+                // Check if protein is due
+                if (daysSinceProtein === null || daysSinceProtein >= thresholds.proteinMinDays) {
+                    if (suggestion.dayType === 'wash') {
+                        suggestion.actions.push('protein');
+                    }
+                }
+
+                // Suggest lane
+                if (suggestion.dayType === 'wash') {
+                    if (sealState.active) {
+                        suggestion.lane = 'blowout';
+                        suggestion.reason += ' \u00b7 Seal still active';
+                    } else {
+                        suggestion.lane = lastLane === 'blowout' ? 'curly' : (lastLane === 'curly' ? 'blowout' : 'curly');
+                    }
+                }
+
+                // Build product list
+                suggestion.products = suggestProducts(events, suggestion);
+
+                return suggestion;
+            }
+
+            function suggestProducts(events, suggestion) {
+                var products = {};
+
+                if (suggestion.dayType === 'refresh') {
+                    return products;
+                }
+
+                // Shampoo
+                if (suggestion.actions.includes('clarify')) {
+                    products.shampoo = 'everpure-clarifying';
+                } else {
+                    products.shampoo = 'everpure-bond-repair';
+                }
+
+                // Treatment (if due)
+                if (suggestion.actions.includes('protein')) {
+                    var lastTreatment = getLastTreatment(events);
+                    if (lastTreatment === 'garnier-pre-shampoo') {
+                        products.treatment = 'olaplex-3';
+                    } else {
+                        products.treatment = 'garnier-pre-shampoo';
+                    }
+                }
+
+                // Conditioner — rotate, favor garnier-color-repair (cumulative benefit)
+                var lastConditioner = getLastProductInCategory(events, 'conditioner');
+                if (lastConditioner === 'garnier-color-repair') {
+                    var garnier_streak = 0;
+                    for (var i = events.length - 1; i >= 0; i--) {
+                        if ((events[i].products || []).includes('garnier-color-repair')) garnier_streak++;
+                        else break;
+                    }
+                    products.conditioner = garnier_streak >= 4 ? 'dove-intensive' : 'garnier-color-repair';
+                } else {
+                    products.conditioner = 'garnier-color-repair';
+                }
+
+                // Leave-in
+                products.leaveIn = 'loreal-21-in-1';
+
+                // Lane-specific
+                if (suggestion.lane === 'curly') {
+                    products.gel = 'nym-curl-talk-gel';
+                } else if (suggestion.lane === 'blowout') {
+                    products.heatProtectant = 'marc-anthony-blowout';
+                }
+
+                // Finishing — rotate
+                var lastFinishing = getLastProductInCategory(events, 'finishing');
+                products.finishing = lastFinishing === 'dove-serum' ? 'garnier-serum' : 'dove-serum';
+
+                // Apply feedback-based deprioritization
+                for (var key in products) {
+                    if (!products.hasOwnProperty(key)) continue;
+                    var pid = products[key];
+                    var rating = getProductRating(events, pid);
+                    var catalog = PRODUCT_CATALOG[pid];
+                    if (rating !== null && rating < 3.0 && catalog && !catalog.cumulativeBenefit) {
+                        var alternatives = getAlternatives(pid);
+                        if (alternatives.length > 0) {
+                            products[key] = alternatives[0];
+                        }
+                    }
+                }
+
+                return products;
+            }
+
+            function getAlternatives(productId) {
+                var catalog = PRODUCT_CATALOG[productId];
+                if (!catalog) return [];
+                var alts = [];
+                for (var id in PRODUCT_CATALOG) {
+                    if (id === productId) continue;
+                    var other = PRODUCT_CATALOG[id];
+                    if (other.category === catalog.category && !other.useUp) {
+                        alts.push(id);
+                    }
+                }
+                return alts;
+            }
+
+            return {
+                PRODUCT_CATALOG: PRODUCT_CATALOG,
+                suggestDayType: function() {
+                    var state = StateManager.getState();
+                    return suggestDayType(state);
+                },
+                getAlternatives: getAlternatives,
+                getProductName: function(productId) {
+                    var cat = PRODUCT_CATALOG[productId];
+                    return cat ? cat.name : productId;
+                },
+                getProductLearnId: function(productId) {
+                    var cat = PRODUCT_CATALOG[productId];
+                    return cat ? cat.learnId : null;
+                },
+                getCumulativeInfo: function(productId) {
+                    var cat = PRODUCT_CATALOG[productId];
+                    return cat ? cat.cumulativeBenefit || null : null;
+                }
+            };
+        })();
+
         // ===== WalkthroughEngine =====
         const WalkthroughEngine = (function() {
             // Internal state
@@ -1758,11 +2000,11 @@
                 return [
                     {
                         number: 1,
-                        title: 'Pre-shampoo treatment',
-                        instruction: 'Apply to dry hair before wetting. Focus on mid-lengths and ends. Alternate between Garnier and Olaplex weekly.',
+                        title: 'Bond repair treatment',
+                        instruction: 'Wet hair, squeeze out excess water. Apply generously mid-lengths to ends. Leave 5 min (Garnier) or 3 min (Olaplex). Rinse, then shampoo.',
                         productId: 'garnier-pre-shampoo',
                         scienceBadge: 'BOND REPAIR + FRIZZ PROTECTION',
-                        timer: { duration: 600, label: 'Pre-shampoo treatment' },
+                        timer: { duration: 300, label: 'Bond repair treatment' },
                         tip: 'Skip if done this week',
                         phase: 'PREP & WASH'
                     },
@@ -2055,6 +2297,42 @@
                     currentHumidity = humidity || 'moderate';
                     currentStepIndex = 0;
                     steps = this.getStepsForLane(lane, currentHumidity);
+                    return steps.length > 0 ? steps[0] : null;
+                },
+
+                /**
+                 * Initializes walkthrough with pre-selected products from the plan card.
+                 * productSelections is an object like { conditioner: 'dove-intensive', treatment: 'olaplex-3' }
+                 * Returns the first Step.
+                 */
+                startWithPlan: function(lane, humidity, productSelections) {
+                    currentLane = lane;
+                    currentHumidity = humidity || 'moderate';
+                    currentStepIndex = 0;
+                    steps = this.getStepsForLane(lane, currentHumidity);
+
+                    // Apply product selections to steps
+                    if (productSelections && typeof productSelections === 'object') {
+                        var catalog = RoutinePlanner.PRODUCT_CATALOG;
+                        for (var i = 0; i < steps.length; i++) {
+                            var step = steps[i];
+                            if (!step.productId) continue;
+                            var stepCat = catalog[step.productId];
+                            if (!stepCat) continue;
+
+                            // Find if there's a selection for this product's category
+                            for (var key in productSelections) {
+                                if (!productSelections.hasOwnProperty(key)) continue;
+                                var selectedId = productSelections[key];
+                                var selectedCat = catalog[selectedId];
+                                if (selectedCat && selectedCat.category === stepCat.category) {
+                                    step.productId = selectedId;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     return steps.length > 0 ? steps[0] : null;
                 },
 
@@ -2364,38 +2642,33 @@
         }
 
         // ===== Landing Screen Rendering =====
+        // Session-level product swaps (carries through to walkthrough)
+        var planProductSwaps = {};
+
         function renderLanding() {
             var state = StateManager.getState();
             var events = state.events || [];
             var sealState = state.sealState;
 
-            // Status bar
-            var lastWashDate = null;
-            var lastClarifyDate = null;
-            for (var i = events.length - 1; i >= 0; i--) {
-                if (!lastWashDate) lastWashDate = events[i].date;
-                if (!lastClarifyDate && events[i].products && events[i].products.includes('everpure-clarifying')) {
-                    lastClarifyDate = events[i].date;
-                }
-                if (lastWashDate && lastClarifyDate) break;
-            }
-
-            var washDays = daysSince(lastWashDate);
-            var clarifyDays = daysSince(lastClarifyDate);
-
-            document.getElementById('status-wash').textContent = washDays !== null ? (washDays === 0 ? 'today' : washDays + ' day' + (washDays !== 1 ? 's' : '') + ' ago') : '—';
-            document.getElementById('status-clarify').textContent = clarifyDays !== null ? (clarifyDays === 0 ? 'today' : clarifyDays + ' day' + (clarifyDays !== 1 ? 's' : '') + ' ago') : '—';
-            document.getElementById('status-seal').textContent = sealState.active ? 'Active' : 'Inactive';
-
-            // Empty state vs status summary
+            // Empty state vs plan card
             var emptyState = document.getElementById('empty-state');
-            var statusSummary = document.getElementById('status-summary');
+            var planCard = document.getElementById('plan-card');
+
             if (events.length === 0) {
                 emptyState.classList.add('active');
-                statusSummary.style.display = 'none';
+                planCard.innerHTML = renderEmptyPlanCard();
+                wireEmptyStateButtons();
             } else {
                 emptyState.classList.remove('active');
-                statusSummary.style.display = '';
+                var suggestion = RoutinePlanner.suggestDayType();
+                // Apply any session swaps
+                for (var key in planProductSwaps) {
+                    if (planProductSwaps.hasOwnProperty(key)) {
+                        suggestion.products[key] = planProductSwaps[key];
+                    }
+                }
+                planCard.innerHTML = renderPlanCard(suggestion, state);
+                wirePlanCard(suggestion);
             }
 
             // Default guidance (show when < 3 events)
@@ -2413,6 +2686,361 @@
                 insightMessage.textContent = insights[0].message;
             } else {
                 insightCard.classList.remove('active');
+            }
+        }
+
+        function renderEmptyPlanCard() {
+            var html = '';
+            html += '<button class="btn-primary" id="btn-curly" aria-label="Start curly day walkthrough">Curly</button>';
+            html += '<button class="btn-primary" id="btn-blowout" aria-label="Start blowout day walkthrough">Blowout</button>';
+            html += '<button class="btn-primary" id="btn-refresh" aria-label="Start refresh day walkthrough">Refresh</button>';
+            return html;
+        }
+
+        function wireEmptyStateButtons() {
+            var btnCurly = document.getElementById('btn-curly');
+            var btnBlowout = document.getElementById('btn-blowout');
+            var btnRefresh = document.getElementById('btn-refresh');
+            if (btnCurly) btnCurly.addEventListener('click', function() { showHumidityPrompt('curly'); });
+            if (btnBlowout) btnBlowout.addEventListener('click', function() { showHumidityPrompt('blowout'); });
+            if (btnRefresh) btnRefresh.addEventListener('click', function() { showHumidityPrompt('refresh'); });
+        }
+
+        function renderPlanCard(suggestion, state) {
+            var events = state.events || [];
+            var sealState = state.sealState;
+
+            // Calculate status context values
+            var lastWashDate = null;
+            var lastClarifyDate = null;
+            var lastProteinDate = null;
+            for (var i = events.length - 1; i >= 0; i--) {
+                if (!lastWashDate && (events[i].lane === 'curly' || events[i].lane === 'blowout')) lastWashDate = events[i].date;
+                if (!lastClarifyDate && events[i].products && events[i].products.includes('everpure-clarifying')) lastClarifyDate = events[i].date;
+                if (!lastProteinDate && events[i].products && (events[i].products.includes('olaplex-3') || events[i].products.includes('garnier-pre-shampoo'))) lastProteinDate = events[i].date;
+                if (lastWashDate && lastClarifyDate && lastProteinDate) break;
+            }
+
+            var washDays = daysSince(lastWashDate);
+            var clarifyDays = daysSince(lastClarifyDate);
+            var proteinDays = daysSince(lastProteinDate);
+
+            var html = '';
+            html += '<div class="card" style="padding:1.25rem;">';
+
+            // Status context (compact top line)
+            html += '<div style="display:flex;flex-wrap:wrap;gap:0.4rem 1rem;margin-bottom:1rem;font-size:0.78rem;color:var(--muted);">';
+            if (washDays !== null) {
+                html += '<span>Day ' + (washDays + 1) + '</span>';
+            }
+            if (clarifyDays !== null) {
+                html += '<span class="product-link" data-learn="dual-lane" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);">Clarify: ' + clarifyDays + 'd ago</span>';
+            }
+            if (proteinDays !== null) {
+                html += '<span class="product-link" data-learn="protein" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);">Protein: ' + proteinDays + 'd ago</span>';
+            }
+            html += '<span>Seal: ' + (sealState.active ? 'active' : 'inactive') + '</span>';
+            html += '</div>';
+
+            // Suggestion headline
+            var headline = '';
+            if (suggestion.dayType === 'wash') {
+                var actionParts = [];
+                if (suggestion.actions.includes('wash')) actionParts.push('Wash');
+                if (suggestion.actions.includes('clarify')) actionParts.push('Clarify');
+                if (suggestion.actions.includes('protein')) actionParts.push('Protein');
+                headline = actionParts.join(' + ') + ' day \u2014 ' + suggestion.lane;
+            } else {
+                headline = 'Refresh day';
+            }
+            html += '<h2 style="margin-bottom:0.4rem;font-size:1.2rem;">' + escapeHtml(headline) + '</h2>';
+
+            // Reason line
+            html += '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;">' + escapeHtml(suggestion.reason) + '</p>';
+
+            // Product list (if wash day)
+            if (suggestion.dayType === 'wash' && Object.keys(suggestion.products).length > 0) {
+                var categoryLabels = {
+                    treatment: 'Treatment',
+                    shampoo: 'Shampoo',
+                    conditioner: 'Conditioner',
+                    leaveIn: 'Leave-in',
+                    gel: 'Gel',
+                    heatProtectant: 'Heat protectant',
+                    finishing: 'Finishing'
+                };
+                var categoryOrder = ['treatment', 'shampoo', 'conditioner', 'leaveIn', 'gel', 'heatProtectant', 'finishing'];
+
+                for (var ci = 0; ci < categoryOrder.length; ci++) {
+                    var catKey = categoryOrder[ci];
+                    if (!suggestion.products[catKey]) continue;
+                    var productId = suggestion.products[catKey];
+                    var productName = RoutinePlanner.getProductName(productId);
+                    var learnId = RoutinePlanner.getProductLearnId(productId);
+                    var alternatives = RoutinePlanner.getAlternatives(productId);
+
+                    html += '<div class="tracker-item" style="padding:0.75rem 0;" data-category="' + catKey + '">';
+                    html += '<span>';
+                    html += '<span class="tracker-label">' + escapeHtml(categoryLabels[catKey] || catKey) + '</span> ';
+                    if (learnId) {
+                        html += '<a class="product-link" data-learn="' + escapeHtml(learnId) + '" style="color:var(--text);text-decoration:underline;text-decoration-color:var(--border);cursor:pointer;">' + escapeHtml(productName) + '</a>';
+                    } else {
+                        html += '<span style="color:var(--text);">' + escapeHtml(productName) + '</span>';
+                    }
+                    html += '</span>';
+                    if (alternatives.length > 0) {
+                        html += '<button class="btn-secondary swap-btn" data-category="' + catKey + '" data-product="' + productId + '" style="min-height:36px;min-width:36px;padding:0.3rem 0.6rem;font-size:0.75rem;">swap</button>';
+                    }
+                    html += '</div>';
+                }
+            }
+
+            // Start this plan button
+            html += '<button class="btn-primary" id="btn-start-plan" style="margin-top:1rem;" aria-label="Start this plan">';
+            html += suggestion.dayType === 'wash' ? 'Start this plan' : 'Start refresh';
+            html += '</button>';
+
+            // Do something else link
+            html += '<div style="text-align:center;margin-top:0.5rem;">';
+            html += '<button class="btn-secondary" id="btn-do-something-else" style="width:auto;margin:0 auto;">Do something else</button>';
+            html += '</div>';
+
+            html += '</div>';
+            return html;
+        }
+
+        function wirePlanCard(suggestion) {
+            // Wire "Start this plan" button
+            var startPlanBtn = document.getElementById('btn-start-plan');
+            if (startPlanBtn) {
+                startPlanBtn.addEventListener('click', function() {
+                    selectedLane = suggestion.lane;
+                    planProductSwaps = {};
+                    CooldownSystem.resetSessionOverrides();
+
+                    // Build product selections from suggestion
+                    var productSelections = {};
+                    for (var key in suggestion.products) {
+                        if (suggestion.products.hasOwnProperty(key)) {
+                            productSelections[key] = suggestion.products[key];
+                        }
+                    }
+
+                    showView('walkthrough');
+                    document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+
+                    // Detect humidity then start with plan
+                    startPlanWithHumidityDetection(suggestion.lane, productSelections);
+                });
+            }
+
+            // Wire "Do something else" button
+            var doElseBtn = document.getElementById('btn-do-something-else');
+            if (doElseBtn) {
+                doElseBtn.addEventListener('click', function() {
+                    // Reveal manual buttons
+                    var planCard = document.getElementById('plan-card');
+                    var manualHtml = '';
+                    manualHtml += '<div style="margin-top:0.75rem;">';
+                    manualHtml += '<button class="btn-primary manual-lane-btn" data-lane="curly" aria-label="Start curly day walkthrough">Curly</button>';
+                    manualHtml += '<button class="btn-primary manual-lane-btn" data-lane="blowout" aria-label="Start blowout day walkthrough">Blowout</button>';
+                    manualHtml += '<button class="btn-primary manual-lane-btn" data-lane="refresh" aria-label="Start refresh day walkthrough">Refresh</button>';
+                    manualHtml += '</div>';
+                    doElseBtn.parentElement.innerHTML = manualHtml;
+
+                    // Wire manual buttons
+                    document.querySelectorAll('.manual-lane-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            planProductSwaps = {};
+                            showHumidityPrompt(btn.getAttribute('data-lane'));
+                        });
+                    });
+                });
+            }
+
+            // Wire swap buttons
+            document.querySelectorAll('.swap-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var category = btn.getAttribute('data-category');
+                    var currentProduct = btn.getAttribute('data-product');
+                    var alternatives = RoutinePlanner.getAlternatives(currentProduct);
+                    showSwapOptions(btn, category, currentProduct, alternatives, suggestion);
+                });
+            });
+
+            // Wire product links (contextual navigation to Learn)
+            document.querySelectorAll('#plan-card .product-link[data-learn]').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    var learnId = link.getAttribute('data-learn');
+                    if (learnId) navigateToLearn(learnId);
+                });
+            });
+        }
+
+        function showSwapOptions(btn, category, currentProduct, alternatives, suggestion) {
+            var row = btn.closest('.tracker-item');
+            if (!row) return;
+
+            // Build alternatives list
+            var html = '<div style="padding:0.5rem 0;">';
+            html += '<span class="tracker-label" style="display:block;margin-bottom:0.5rem;">Choose alternative:</span>';
+            for (var i = 0; i < alternatives.length; i++) {
+                var altId = alternatives[i];
+                var altName = RoutinePlanner.getProductName(altId);
+                html += '<button class="btn-secondary alt-choice" data-alt="' + altId + '" style="display:block;width:100%;text-align:left;margin-bottom:0.4rem;min-height:40px;">' + escapeHtml(altName) + '</button>';
+            }
+            // Option to keep current
+            html += '<button class="btn-secondary alt-choice" data-alt="' + currentProduct + '" style="display:block;width:100%;text-align:left;margin-bottom:0;min-height:40px;border-color:var(--green);color:var(--green);">Keep: ' + escapeHtml(RoutinePlanner.getProductName(currentProduct)) + '</button>';
+            html += '</div>';
+
+            row.innerHTML = html;
+
+            // Wire alternative choices
+            row.querySelectorAll('.alt-choice').forEach(function(altBtn) {
+                altBtn.addEventListener('click', function() {
+                    var selectedAlt = altBtn.getAttribute('data-alt');
+                    // Store swap in session
+                    planProductSwaps[category] = selectedAlt;
+                    suggestion.products[category] = selectedAlt;
+                    // Re-render landing to reflect the swap
+                    renderLanding();
+                });
+            });
+        }
+
+        function startPlanWithHumidityDetection(lane, productSelections) {
+            selectedLane = lane;
+            detectedDewPoint = null;
+
+            // Try auto-detection via geolocation + Open-Meteo
+            if (navigator.geolocation && navigator.onLine) {
+                var walkSection = document.getElementById('walkthrough');
+                walkSection.innerHTML = '<div class="card" style="text-align:center;padding:2rem 1.25rem;">' +
+                    '<p style="color:var(--text-secondary);">Detecting conditions\u2026</p></div>';
+
+                var timedOut = false;
+                var timeoutId = setTimeout(function() {
+                    timedOut = true;
+                    showPlanHumiditySelector(productSelections);
+                }, 3000);
+
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        if (timedOut) return;
+                        var lat = position.coords.latitude;
+                        var lon = position.coords.longitude;
+                        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=dew_point_2m&temperature_unit=fahrenheit';
+
+                        fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined })
+                            .then(function(resp) {
+                                if (timedOut) return;
+                                if (!resp.ok) throw new Error('API error');
+                                return resp.json();
+                            })
+                            .then(function(data) {
+                                if (timedOut) return;
+                                clearTimeout(timeoutId);
+                                var dewPoint = data && data.current && data.current.dew_point_2m;
+                                if (dewPoint === undefined || dewPoint === null) {
+                                    showPlanHumiditySelector(productSelections);
+                                    return;
+                                }
+                                detectedDewPoint = Math.round(dewPoint);
+                                var humidity;
+                                var icon;
+                                if (dewPoint < 35) {
+                                    humidity = 'dry';
+                                    icon = '\u2600\uFE0F';
+                                } else if (dewPoint <= 60) {
+                                    humidity = 'moderate';
+                                    icon = '\uD83C\uDF24\uFE0F';
+                                } else {
+                                    humidity = 'humid';
+                                    icon = '\uD83D\uDCA7';
+                                }
+                                selectedHumidity = humidity;
+                                checkWarningsAndStartPlan(productSelections);
+                            })
+                            .catch(function() {
+                                if (timedOut) return;
+                                clearTimeout(timeoutId);
+                                showPlanHumiditySelector(productSelections);
+                            });
+                    },
+                    function() {
+                        if (timedOut) return;
+                        clearTimeout(timeoutId);
+                        showPlanHumiditySelector(productSelections);
+                    },
+                    { timeout: 3000 }
+                );
+            } else {
+                showPlanHumiditySelector(productSelections);
+            }
+        }
+
+        function showPlanHumiditySelector(productSelections) {
+            var walkSection = document.getElementById('walkthrough');
+            walkSection.innerHTML = '<div class="card" style="text-align:center;">' +
+                '<h2>How\'s the humidity?</h2>' +
+                '<p style="color:var(--text-secondary);margin-bottom:1.25rem;">This adjusts product recommendations</p>' +
+                '<button class="btn-primary humidity-btn" data-humidity="dry" style="margin-bottom:0.5rem;">\u2600\uFE0F Dry (&lt;40%)</button>' +
+                '<button class="btn-primary humidity-btn" data-humidity="moderate" style="margin-bottom:0.5rem;">\uD83C\uDF24\uFE0F Moderate (40-70%)</button>' +
+                '<button class="btn-primary humidity-btn" data-humidity="humid">\uD83D\uDCA7 Humid (&gt;70%)</button>' +
+                '</div>';
+
+            walkSection.querySelectorAll('.humidity-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    selectedHumidity = btn.getAttribute('data-humidity');
+                    detectedDewPoint = null;
+                    checkWarningsAndStartPlan(productSelections);
+                });
+            });
+        }
+
+        function checkWarningsAndStartPlan(productSelections) {
+            var warnings = CooldownSystem.checkWarnings(selectedLane, selectedHumidity);
+            if (warnings.length > 0) {
+                showPlanWarningOverlay(warnings[0], productSelections);
+            } else {
+                startWalkthroughWithPlan(productSelections);
+            }
+        }
+
+        function showPlanWarningOverlay(warning, productSelections) {
+            var overlay = document.getElementById('warning-overlay');
+            var msg = document.getElementById('warning-overlay-message');
+            var dismissBtn = document.getElementById('warning-overlay-dismiss');
+
+            msg.textContent = warning.message;
+            overlay.classList.add('active');
+
+            var handler = function() {
+                CooldownSystem.recordOverride(warning.type);
+                overlay.classList.remove('active');
+                dismissBtn.removeEventListener('click', handler);
+                startWalkthroughWithPlan(productSelections);
+            };
+            dismissBtn.addEventListener('click', handler);
+        }
+
+        function startWalkthroughWithPlan(productSelections) {
+            // Handle humidity-based gel swap
+            if (selectedHumidity === 'humid' && productSelections.gel === 'nym-curl-talk-gel') {
+                productSelections.gel = 'got2b-ultra-glued';
+            }
+            WalkthroughEngine.startWithPlan(selectedLane, selectedHumidity, productSelections);
+            renderWalkthroughStep();
+        }
+
+        // ===== Contextual Learn Navigation =====
+        function navigateToLearn(learnId) {
+            showView('learn');
+            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+            document.querySelector('nav button[data-view="learn"]').setAttribute('aria-current', 'true');
+            var target = document.getElementById('learn-' + learnId);
+            if (target) {
+                setTimeout(function() { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
             }
         }
 
@@ -2963,25 +3591,25 @@
             // === How Your Routine Works ===
             html += '<h2>How Your Routine Works</h2>';
 
-            html += '<div class="card"><h3>Amodimethicone (Conditioner)</h3>';
+            html += '<div class="card" id="learn-amodimethicone"><h3>Amodimethicone (Conditioner)</h3>';
             html += '<p>A modified silicone that selectively binds to damaged areas of the cuticle. Unlike dimethicone, it doesn\'t coat uniformly — it fills gaps in weathered cuticle layers (your hair has 8-10 cuticle layers). Cumulative binding means each wash adds more protection.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Bhushan, B. (2010). Biophysics of Human Hair. Springer.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Ceramide R (Conditioner)</h3>';
+            html += '<div class="card" id="learn-ceramide"><h3>Ceramide R (Conditioner)</h3>';
             html += '<p>Intercellular lipid that repairs the cement between cuticle cells. Works synergistically with amodimethicone — ceramide repairs the structure while amodimethicone seals the surface. Found in Garnier Color Repair conditioner.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Robbins, C. (2012). Chemical and Physical Behavior of Human Hair. 5th ed. Springer.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>PQ-69 (Gel)</h3>';
+            html += '<div class="card" id="learn-pq69"><h3>PQ-69 (Gel)</h3>';
             html += '<p>Polyquaternium-69 forms a humidity-resistant film around each curl clump. Creates the "gel cast" that protects curl definition during drying. Once dry, scrunch to break the cast and reveal soft, defined curls. Provides up to 72 hours humidity resistance.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: BASF Care Chemicals technical data sheet, Luvigel Supreme (PQ-69).</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Polysilicone-29 (Blowout Spray)</h3>';
+            html += '<div class="card" id="learn-polysilicone29"><h3>Polysilicone-29 (Blowout Spray)</h3>';
             html += '<p>Heat-activated silicone that cross-links at 140°C+ to form a durable seal. Unlike water-soluble silicones, this persists through 3+ washes until clarified. Blocks humidity penetration and provides thermal protection up to 230°C. Found in Marc Anthony Blowout Spray.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Dow Corning (now Dow) technical literature on heat-activated polysilicones.</p>';
@@ -2990,25 +3618,25 @@
             // === What Can Go Wrong ===
             html += '<h2 style="margin-top:1.5rem;">What Can Go Wrong</h2>';
 
-            html += '<div class="card"><h3>Heat Damage Threshold (140°C)</h3>';
+            html += '<div class="card" id="learn-heat"><h3>Heat Damage Threshold (140°C)</h3>';
             html += '<p>Above 140°C without protection, keratin protein denatures irreversibly. The alpha-helix structure unwinds and cannot be repaired — only cut off. Always use heat protectant (L\'Oréal 21-in-1 or Marc Anthony spray) before any heat tool. FlexStyle operates at safe temperatures when used correctly.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Wortmann, F.J. et al. (2012). DSC investigation of hair keratin. J. Cosmet. Sci.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Glycerin &amp; Humidity</h3>';
+            html += '<div class="card" id="learn-glycerin"><h3>Glycerin &amp; Humidity</h3>';
             html += '<p>Glycerin is a humectant — it pulls moisture from the environment. Below 70% humidity, it pulls moisture INTO hair (good). Above 70%, it pulls EXCESS moisture in, causing swelling and frizz. NYM Curl Talk gel contains glycerin; Got2b Ultra Glued does not. Switch on humid days.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Gavazzoni Dias, M.F. (2015). Hair Cosmetics: An Overview. Int. J. Trichology.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Dual-Lane Conflict</h3>';
+            html += '<div class="card" id="learn-dual-lane"><h3>Dual-Lane Conflict</h3>';
             html += '<p>PQ-69 (curly gel) and Polysilicone-29 (blowout spray) are incompatible. PQ-69 residue blocks Polysilicone-29 from bonding to hair. Polysilicone-29 residue blocks gel from forming a proper cast. Always clarify when switching lanes.</p>';
             html += '<span class="badge badge-best-practice">BEST PRACTICE</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Practitioner-validated through systematic testing.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Protein Overload Myth</h3>';
+            html += '<div class="card" id="learn-protein"><h3>Protein Overload Myth</h3>';
             html += '<p>"Protein overload" from normal-use products is not supported by peer-reviewed research. Protein treatments (like Olaplex 3 or OGX Bond Protein) plateau in effectiveness — more frequent application doesn\'t help, but also doesn\'t harm. The 7-day minimum interval is best practice for cost-effectiveness, not damage prevention.</p>';
             html += '<span class="badge badge-best-practice">BEST PRACTICE</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Croda (2025). Protein deposition studies on damaged hair fibers.</p>';
@@ -3017,13 +3645,13 @@
             // === What's Happening to Your Hair ===
             html += '<h2 style="margin-top:1.5rem;">What\'s Happening to Your Hair</h2>';
 
-            html += '<div class="card"><h3>TE Recovery</h3>';
+            html += '<div class="card" id="learn-te"><h3>TE Recovery</h3>';
             html += '<p>Telogen effluvium (TE) causes synchronized shedding followed by synchronized regrowth. The regrowth hairs are shorter and lighter, creating a "halo" of frizz at the hairline and part. This is temporary — as hairs grow longer, they\'ll blend in. Use hairline gel to smooth them flat during the awkward phase.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Malkud, S. (2015). Telogen Effluvium: A Review. J. Clin. Diagn. Res.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>"Moisture" Is Marketing</h3>';
+            html += '<div class="card" id="learn-moisture"><h3>"Moisture" Is Marketing</h3>';
             html += '<p>Hair doesn\'t need "moisture" in the way skin does. What people call "dry hair" is actually damaged cuticle (rough, porous, light-scattering). The fix is smoothing the cuticle surface (silicones, oils) and filling structural gaps (ceramides, protein), not adding water. Conditioner works by coating, not hydrating.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Robbins, C. (2012). Chemical and Physical Behavior of Human Hair. 5th ed.</p>';
@@ -3487,16 +4115,7 @@
             renderLearn();
             renderSettings();
 
-            // Wire action buttons
-            document.getElementById('btn-curly').addEventListener('click', function() {
-                showHumidityPrompt('curly');
-            });
-            document.getElementById('btn-blowout').addEventListener('click', function() {
-                showHumidityPrompt('blowout');
-            });
-            document.getElementById('btn-refresh').addEventListener('click', function() {
-                showHumidityPrompt('refresh');
-            });
+            // Wire quick-log button
             document.getElementById('btn-quick-log').addEventListener('click', function() {
                 showQuickLog();
             });
@@ -3514,6 +4133,7 @@
             StateManager,
             CooldownSystem,
             FeedbackEngine,
+            RoutinePlanner,
             WalkthroughEngine,
             TimerManager,
             daysSince,
