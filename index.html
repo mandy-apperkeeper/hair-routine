@@ -1612,12 +1612,6 @@
                 <div class="plan-rating-row" id="deferred-rating-row"></div>
             </div>
 
-            <!-- First-use empty state (hidden by default, shown when no wash events) -->
-            <div class="empty-state" id="empty-state" aria-label="Welcome">
-                <h2>Welcome</h2>
-                <p>This app learns from your hair care routine over time. Log what you do, and it'll help you make better decisions.</p>
-            </div>
-
             <!-- Status summary (populated by JS) -->
             <div class="tracker-box" id="status-summary" aria-label="Status summary" style="display:flex;flex-wrap:wrap;gap:0.5rem 1rem;padding:0.5rem 0.75rem;">
                 <span class="tracker-inline"><span class="tracker-label">Wash</span> <span class="tracker-value" id="status-wash">—</span></span>
@@ -1639,34 +1633,6 @@
 
             <!-- Gel gap reminder (persistent until dismissed, resurfaces weekly) -->
             <div class="compensation-card" id="gel-gap-card" aria-label="Uncompensated gap reminder">
-            </div>
-
-            <!-- Legacy recommendation (hidden when daily plan is active) -->
-            <div id="smart-recommendation" style="display:none;">
-                <div class="card" id="recommendation-card">
-                    <p class="product-note" id="recommendation-context" style="margin-bottom:0.75rem;"></p>
-                    <button class="btn-primary" id="btn-recommended" aria-label="Start recommended walkthrough"></button>
-                </div>
-                <button class="btn-secondary" id="btn-something-else" style="width:100%;margin-top:0.5rem;justify-content:center;">Something else?</button>
-                <div id="alternative-lanes" style="display:none;margin-top:0.75rem;">
-                    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
-                        <button class="btn-secondary btn-alt-lane" data-lane="curly">Curly</button>
-                        <button class="btn-secondary btn-alt-lane" data-lane="blowout">Blowout</button>
-                        <button class="btn-secondary btn-alt-lane" data-lane="refresh">Refresh</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- First-use action buttons (shown when no history) -->
-            <div id="first-use-buttons">
-                <p class="product-note" style="margin-bottom:1rem;">What are you doing today?</p>
-                <button class="btn-primary" id="btn-curly" aria-label="Start curly day walkthrough">🌀 Curly day</button>
-                <button class="btn-primary" id="btn-blowout" aria-label="Start blowout day walkthrough">💨 Blowout day</button>
-                <button class="btn-primary" id="btn-refresh" aria-label="Start refresh day walkthrough">✨ Refresh (no wash)</button>
-                <!-- Default guidance for new users -->
-                <div class="tip" id="default-guidance">
-                    <strong>Getting started:</strong> Every 3-4 days is a good baseline. Wash when it feels heavy from buildup or when you want to restyle.
-                </div>
             </div>
 
             <!-- Quick log link -->
@@ -5207,51 +5173,11 @@
             document.getElementById('status-protein').textContent = proteinDays !== null ? (proteinDays === 0 ? 'today' : proteinDays + 'd') : '—';
 
             // Empty state vs status summary
-            var emptyState = document.getElementById('empty-state');
             var statusSummary = document.getElementById('status-summary');
             if (events.length === 0) {
-                emptyState.classList.add('active');
                 statusSummary.style.display = 'none';
             } else {
-                emptyState.classList.remove('active');
                 statusSummary.style.display = '';
-            }
-
-            // Smart recommendation vs first-use buttons
-            var smartRec = document.getElementById('smart-recommendation');
-            var firstUseButtons = document.getElementById('first-use-buttons');
-
-            if (events.length > 0) {
-                // Show smart recommendation
-                smartRec.style.display = '';
-                firstUseButtons.style.display = 'none';
-
-                // Determine recommendation
-                var recommendation = getSmartRecommendation(washDays, lastWashLane, sealState, clarifyDays);
-                var recCard = document.getElementById('recommendation-card');
-                var recContext = document.getElementById('recommendation-context');
-                var recBtn = document.getElementById('btn-recommended');
-
-                recContext.textContent = recommendation.context;
-                recBtn.textContent = recommendation.buttonLabel;
-                recBtn.setAttribute('aria-label', 'Start ' + recommendation.lane + ' day walkthrough');
-                recBtn.setAttribute('data-lane', recommendation.lane);
-
-                // Hide the recommended lane from alternatives, reset toggle
-                var altLanes = document.getElementById('alternative-lanes');
-                altLanes.style.display = 'none';
-                var altBtns = document.querySelectorAll('.btn-alt-lane');
-                altBtns.forEach(function(btn) {
-                    if (btn.getAttribute('data-lane') === recommendation.lane) {
-                        btn.style.display = 'none';
-                    } else {
-                        btn.style.display = '';
-                    }
-                });
-            } else {
-                // First-use: show three equal buttons
-                smartRec.style.display = 'none';
-                firstUseButtons.style.display = '';
             }
 
             // Insight card (show when 10+ events and insights exist)
@@ -5432,23 +5358,18 @@
             var state = StateManager.getState();
             var events = state.events || [];
 
-            // Don't show plan if no history (show first-use buttons instead)
-            if (events.length === 0) {
-                document.getElementById('daily-plan-container').innerHTML = '';
-                document.getElementById('first-use-buttons').style.display = '';
-                document.getElementById('smart-recommendation').style.display = 'none';
-                return;
-            }
-
-            // Hide legacy UI
-            document.getElementById('first-use-buttons').style.display = 'none';
-            document.getElementById('smart-recommendation').style.display = 'none';
+            // Hide legacy UI — always show Daily Plan
 
             // Get dew point (use cached if available, otherwise null)
             var dewPoint = detectedDewPoint;
 
-            // Generate plan
-            var suggestion = PlanGenerator.suggestLane(state, dewPoint);
+            // Generate plan — default to curly day if no history
+            var suggestion;
+            if (events.length === 0) {
+                suggestion = { lane: 'curly', reason: 'Your first wash day — curly is a great default.', confidence: 'high' };
+            } else {
+                suggestion = PlanGenerator.suggestLane(state, dewPoint);
+            }
 
             // Check for "no wash needed" — washed recently and hair is fine
             var lastWashDate = null;
@@ -8064,38 +7985,6 @@
             renderSettings();
 
             // Wire first-use action buttons
-            document.getElementById('btn-curly').addEventListener('click', function() {
-                showHumidityPrompt('curly');
-            });
-            document.getElementById('btn-blowout').addEventListener('click', function() {
-                showHumidityPrompt('blowout');
-            });
-            document.getElementById('btn-refresh').addEventListener('click', function() {
-                showHumidityPrompt('refresh');
-            });
-
-            // Wire smart recommendation button
-            document.getElementById('btn-recommended').addEventListener('click', function() {
-                var lane = this.getAttribute('data-lane');
-                showHumidityPrompt(lane);
-            });
-
-            // Wire "Something else?" toggle
-            document.getElementById('btn-something-else').addEventListener('click', function() {
-                var altLanes = document.getElementById('alternative-lanes');
-                var isHidden = altLanes.style.display === 'none';
-                altLanes.style.display = isHidden ? '' : 'none';
-                this.textContent = isHidden ? 'Never mind' : 'Something else?';
-            });
-
-            // Wire alternative lane buttons
-            document.querySelectorAll('.btn-alt-lane').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var lane = this.getAttribute('data-lane');
-                    showHumidityPrompt(lane);
-                });
-            });
-
             // Wire quick log
             document.getElementById('btn-quick-log').addEventListener('click', function() {
                 showQuickLog();
