@@ -67,6 +67,26 @@ The current `intelligence.step` values are WRONG. Products are mis-categorized. 
 
 **This also involves proper education/research integration** — the app should teach Mandy WHY bond repair goes between shampoo and conditioner (clean surface for absorption, conditioner seals it in).
 
+**HOW TO REBUILD THIS (for next session):**
+The full reorganization was planned in a session that wasn't saved. To reconstruct it properly:
+
+1. Read `research/PHASE1_INGREDIENT_FUNCTION_MAP.md` (what each ingredient does)
+2. Read `research/PHASE3_INTERACTION_MATRIX.md` (sequential interaction rules — what blocks what, what enables what)
+3. Read `research/PHASE5_COMPENSATION_TABLE.md` (what's lost with weaker products)
+4. Read `HAIR_CONSULTATION_HANDOFF.md` section "Recommended Wash Day Order" (the 10-step sequence)
+5. Cross-reference with the Abbey Yung 11-step method
+
+Then derive:
+- The correct step ordering based on MECHANISM (why each step goes where it does in the sequence)
+- Which products belong to which step based on their FUNCTION, not their marketing name
+- How the UI should present this (education + logging)
+- What the Learn section should explain about each step's purpose
+- How the walkthrough should reference the science
+
+The key insight Mandy had: "pre-shampoo treatment" is a marketing term. These products (Olaplex, Garnier Filler) are actually BOND REPAIR that works best on a clean surface (after shampoo) and gets sealed in by conditioner. Calling them "pre-shampoo" and putting them first is following the bottle instructions, not the science.
+
+The reorganization is about making the app reflect the SCIENCE of product ordering, not the MARKETING of product naming. This affects: step labels, product placement, walkthrough order, education content, and the quick-log grouping.
+
 ### Product Intelligence System — Remaining Implementation
 
 Spec at `.kiro/specs/product-intelligence/`. Research complete (3 briefs, all scored 100%). Some implementation already done (attribution card, schema v5, phase-based quick-log). Remaining work:
