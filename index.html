@@ -6162,6 +6162,20 @@
         }
 
         function detectDewPointForPlan() {
+            // Check localStorage cache first (valid for 3 hours)
+            try {
+                var cached = localStorage.getItem('hair_dewpoint_cache');
+                if (cached) {
+                    var parsed = JSON.parse(cached);
+                    var ageHours = (Date.now() - parsed.timestamp) / (1000 * 60 * 60);
+                    if (ageHours < 3 && parsed.dewPoint !== null) {
+                        detectedDewPoint = parsed.dewPoint;
+                        renderDailyPlan();
+                        return;
+                    }
+                }
+            } catch(e) {}
+
             if (!navigator.geolocation || !navigator.onLine) return;
 
             navigator.geolocation.getCurrentPosition(
@@ -6180,7 +6194,13 @@
                             var dewPoint = data && data.current && data.current.dew_point_2m;
                             if (dewPoint !== undefined && dewPoint !== null) {
                                 detectedDewPoint = Math.round(dewPoint);
-                                // Re-render plan with actual dew point
+                                // Cache for 3 hours
+                                try {
+                                    localStorage.setItem('hair_dewpoint_cache', JSON.stringify({
+                                        dewPoint: detectedDewPoint,
+                                        timestamp: Date.now()
+                                    }));
+                                } catch(e) {}
                                 renderDailyPlan();
                             }
                         })
