@@ -5,6 +5,8 @@ fileMatchPattern: "research/**"
 
 # Research Data Adherence — Hair Routine Project
 
+**Extends:** Global Data Adherence rules in `deep-dive-auto.md`. This file adds hair-routine-specific tier criteria.
+
 ## Core Rule
 
 Product tier placement, app recommendations, and compensation logic are driven ONLY by verified evidence. This applies to all research output and any resulting app changes.
