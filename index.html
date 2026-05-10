@@ -5420,10 +5420,13 @@
             for (var s = 0; s < plan.steps.length; s++) {
                 var step = plan.steps[s];
 
-                // Phase header
+                // Phase header — only show on phase CHANGE (skip the first one)
                 if (step.phase !== currentPhase) {
+                    if (currentPhase !== null) {
+                        // Only render header for 2nd+ phases
+                        html += '<div class="plan-phase-header">' + escapeHtml(step.phase) + '</div>';
+                    }
                     currentPhase = step.phase;
-                    html += '<div class="plan-phase-header">' + escapeHtml(currentPhase) + '</div>';
                 }
 
                 html += renderPlanStep(step);
