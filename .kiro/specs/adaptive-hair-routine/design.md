@@ -360,7 +360,7 @@ All data stored under a single key `hair-routine-data` as a JSON object:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "events": [WashEvent, ...],
   "thresholds": CooldownThresholds,
   "sealState": SealState,

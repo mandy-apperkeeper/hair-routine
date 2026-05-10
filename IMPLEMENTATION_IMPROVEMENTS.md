@@ -1,8 +1,8 @@
 # Implementation Improvements — Hair Routine App
 
-**Date:** May 9, 2026  
+**Date:** May 9, 2026 (updated May 10, 2026)  
 **Source:** Insights from Hair Science Verification Report + research deep dive  
-**Status:** Ready to implement. All items fit within existing spec architecture.
+**Status:** Partially implemented. Items marked ✅ are done. Remaining items ready to implement.
 
 ---
 
@@ -497,23 +497,23 @@ WHAT'S HAPPENING TO YOUR HAIR
 
 ## Updated Summary Table (All Items)
 
-| # | Improvement | Effort | Value | Category | Can Ship in v2 First Pass? |
-|---|-------------|--------|-------|----------|---------------------------|
-| 1 | Auto dew point tracking | Low | High | Data accuracy | Needs weather API |
-| 2 | Two-tier science badges | Low | High | Trust/transparency | Yes |
-| 3 | "Why did that work?" card | Medium | High | Insight delivery | Needs feedback engine |
-| 4 | Glossing Mask warning | Very low | Medium | Safety/accuracy | Yes |
-| 5 | Protein frizz protection note | Very low | Medium | Education | Yes |
-| 6 | 18-MEA maintenance insight | Medium | Medium | Long-term engagement | Needs feedback engine |
-| 7 | Factual corrections | Very low | High | Accuracy | Yes |
-| 8 | Reduce tabs from 7 to 5 | Small | High | IA/navigation | Yes |
-| 9 | Chunk routines into phase cards | Small | High | IA/cognitive load | Yes |
-| 10 | Cross-links between steps and science | Small | Medium-High | IA/information scent | Yes |
-| 11 | Conditional disclosure on Today | Medium | High | IA/progressive disclosure | Partially (full version needs tracker data) |
-| 12 | First-use empty state | Small | Medium | IA/onboarding | Yes |
-| 13 | Sub-group products by routine | Small | Low-Medium | IA/categorization | Yes |
-| 14 | Group science cards by question | Small | Low-Medium | IA/mini-IA | Yes |
-| 15 | Expandable containers for growth | Small | Low now / High later | IA/growth planning | Yes (containers only) |
+| # | Improvement | Effort | Value | Category | Status |
+|---|-------------|--------|-------|----------|--------|
+| 1 | Auto dew point tracking | Low | High | Data accuracy | ✅ Partial (detects, stores, but still prompts as fallback) |
+| 2 | Two-tier science badges | Low | High | Trust/transparency | ✅ Done (v2 build) |
+| 3 | "Why did that work?" card | Medium | High | Insight delivery | Not started |
+| 4 | Glossing Mask warning | Very low | Medium | Safety/accuracy | ✅ Done (v2 build) |
+| 5 | Protein frizz protection note | Very low | Medium | Education | ✅ Done (v2 build) |
+| 6 | 18-MEA maintenance insight | Medium | Medium | Long-term engagement | Not started |
+| 7 | Factual corrections | Very low | High | Accuracy | ✅ Done (v2 build) |
+| 8 | Reduce tabs from 7 to 5 | Small | High | IA/navigation | ✅ Done (v2 eliminated tabs entirely) |
+| 9 | Chunk routines into phase cards | Small | High | IA/cognitive load | ✅ Done (v2 walkthrough has phases) |
+| 10 | Cross-links between steps and science | Small | Medium-High | IA/information scent | ✅ Done (v2 build) |
+| 11 | Conditional disclosure on Today | Medium | High | IA/progressive disclosure | ✅ Partial (smart recommendation card) |
+| 12 | First-use empty state | Small | Medium | IA/onboarding | ✅ Done (v2 build) |
+| 13 | Sub-group products by routine | Small | Low-Medium | IA/categorization | ✅ Done (v2 build) |
+| 14 | Group science cards by question | Small | Low-Medium | IA/mini-IA | ✅ Done (v2 build) |
+| 15 | Expandable containers for growth | Small | Low now / High later | IA/growth planning | ✅ Done (insight card container) |
 
 ---
 
