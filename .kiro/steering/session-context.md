@@ -13,7 +13,7 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 ## Tech Stack
 
 - Single HTML file with embedded CSS + JS (no build step, no framework)
-- localStorage for all persistence (schema v2)
+- localStorage for all persistence (schema v3)
 - Open-Meteo API for dew point auto-detection
 - Service worker (`hair-sw.js`) for v2 offline support (v1 has none yet)
 - GitHub Pages deployment (push to main = live)
@@ -50,11 +50,20 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 - **Amodimethicone conditioner every wash.** Dove is "using-up" only — never recommend it.
 - **No product rotation.** Research confirmed rotation is a myth. Never build rotation logic.
 - **Dew point, not relative humidity.** Auto-detect via Open-Meteo. Manual selector is fallback only (offline/API failure). The app informs, doesn't ask.
-- **Schema v2:** WashEvent includes `treatments: string[]` and `dewPoint: number | null`
+- **Schema v3:** WashEvent includes `treatments: string[]` and `dewPoint: number | null`. State includes inventory.
 - **Treatments are separate from products** in the data model (clarify, protein, deep-condition, bond-repair)
 - **OGX oils provide no lasting benefit** (volatile silicones). Don't recommend them.
 - **"Using-up" protocol:** Track bottles being finished, explain compensation, remove when empty.
 - **Hard floors:** wash ≥ 1 day, clarify ≥ 3 days, protein ≥ 5 days — never below these.
+- **Inventory tiers:** Primary Rotation, Supporting Cast, Use-Up Queue.
+- **Mandy owns NYM Curl Talk gel** (confirmed May 10, 2026).
+- **Abbey Yung 11-step method** is the reference model for logging (not a simplified 4-category version).
+- **Goal of logging is data gathering for correlations**, not minimal taps.
+- **Products CAN appear in multiple activity categories.**
+- **Phase-based UI grouping** for quick-log (Pre-wash | Wash | Post-wash | Style).
+- **Product intelligence is a system redesign**, not a quick mapping fix. Each product needs: mechanism, cumulative vs single-use, interactions, outcome contribution.
+- **Offline-first with online product discovery** for new additions.
+- **Both passive and active intelligence surfacing** — post-wash analysis + pre-wash recommendations.
 
 ## Aesthetic
 
@@ -79,8 +88,9 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 
 - **Spec:** Feature-complete (all 16 task groups done, optional tests skipped)
 - **v1 (live):** Working — quick-log, walkthrough, history, status bar, dew point detection, recommendations, compensation logic, product inventory
+- **Known broken:** ACTIVITY_PRODUCTS mapping in quick-log is incorrect — products in wrong categories. Will be fixed as part of Product Intelligence System, not standalone.
 - **Remaining improvements:** 2 of 15 (Items 3 + 6 need usage data)
-- **Next high-value work:** Logging UX overhaul (Session 10), then service worker (Session 11)
+- **What's next:** Draft Product Intelligence System spec (answer open questions, then formal spec with requirements and tasks). Implementation phases: data model → logging UI → passive intelligence → active recommendations → online discovery. Service worker + PWA deferred until after product intelligence lands.
 
 ## Design Principles (testing here first, generalize if effective)
 
