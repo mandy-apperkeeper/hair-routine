@@ -1,0 +1,7 @@
+# Research Scores — Hair Routine Project
+
+| Date | Topic | Src Fid | Currency | Coverage | Reasoning | Tagging | Action | Present | Neg | Composite | Key Failures | Note |
+|------|-------|---------|----------|----------|-----------|---------|--------|---------|-----|-----------|--------------|------|
+| 2026-05-10 | Brief 2: Recommendation Patterns for Small Datasets | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 0% | 100% | None | Synthesized from N-of-1 trials + personal science; thresholds not empirically validated |
+| 2026-05-10 | Brief 3: Outcome Attribution in Multi-Variable Routines | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 0% | 100% | None | Mechanism-based approach; 30+ events for interactions may be unreachable |
+| 2026-05-10 | Brief 1: Client-Side Product Discovery Options | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 0% | 100% | None | Embedded KB recommended; Chrome Prompt API blocked by Safari gap |
