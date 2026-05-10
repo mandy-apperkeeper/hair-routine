@@ -8101,7 +8101,12 @@
             }
         });
 
-        // Reload button
+        // When a new SW takes control, reload automatically to get fresh content
+        navigator.serviceWorker.addEventListener('controllerchange', function() {
+            window.location.reload();
+        });
+
+        // Reload button (manual fallback)
         document.addEventListener('DOMContentLoaded', function() {
             var reloadBtn = document.getElementById('sw-update-reload');
             if (reloadBtn) {
