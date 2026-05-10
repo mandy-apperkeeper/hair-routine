@@ -691,6 +691,7 @@
             border: 1px solid rgba(122, 184, 168, 0.2);
             font-size: 0.65rem;
             opacity: 0.7;
+            cursor: pointer;
         }
 
         .plan-badge-timer {
@@ -5492,7 +5493,7 @@
                     html += '<button class="plan-badge plan-badge-timer" data-step-id="' + step.id + '" data-duration="' + step.timer.duration + '" aria-label="Start ' + mins + ' minute timer">⏱ ' + mins + ' min — tap to start</button>';
                 }
                 if (step.scienceBadge) {
-                    html += '<span class="plan-badge plan-badge-science">' + escapeHtml(step.scienceBadge) + '</span>';
+                    html += '<button class="plan-badge plan-badge-science plan-science-link" data-badge="' + escapeHtml(step.scienceBadge) + '">' + escapeHtml(step.scienceBadge) + '</button>';
                 }
                 html += '</div>';
             }
@@ -5571,6 +5572,33 @@
                     var stepId = btn.getAttribute('data-step-id');
                     var duration = parseInt(btn.getAttribute('data-duration'));
                     startPlanTimer(stepId, duration, btn);
+                });
+            });
+
+            // Science badge links
+            var badgeToLearnId = {
+                'CORTEX PENETRATION': 'learn-coconut-oil',
+                'CERAMIDE + AMODIMETHICONE': 'learn-amodimethicone',
+                'BOND REPAIR': 'learn-bond-repair',
+                'LAMELLAR CONDITIONING': 'learn-lamellar',
+                'PQ-69 HUMIDITY BARRIER': 'learn-pq69',
+                'PQ-37 BARRIER': 'learn-pq69',
+                'POLYSILICONE-29 HEAT SEAL': 'learn-polysilicone29',
+                'HEAT PROTECTANT': 'learn-heat-damage'
+            };
+            document.querySelectorAll('.plan-science-link').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var badge = btn.getAttribute('data-badge');
+                    var targetId = badgeToLearnId[badge];
+                    if (targetId) {
+                        showView('learn');
+                        document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+                        document.querySelector('nav button[data-view="learn"]').setAttribute('aria-current', 'true');
+                        setTimeout(function() {
+                            var card = document.getElementById(targetId);
+                            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                    }
                 });
             });
 
