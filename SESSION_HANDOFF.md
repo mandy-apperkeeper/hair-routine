@@ -102,6 +102,75 @@ How to present 11 steps without being tedious:
 
 ---
 
+## Session 12: Product Intelligence — Research & First Implementation (May 10, 2026) — complete
+
+### Work Done
+
+**Research (autonomous deep-dive, all 3 briefs from RESEARCH_BRIEFS.md):**
+- Brief 1: Client-Side Product Discovery → Embedded ingredient knowledge base + structured form recommended. Chrome Prompt API blocked by Safari/iPad. Client-side ML not viable.
+- Brief 2: Recommendation Patterns for Small Datasets → Three-tier hybrid: domain rules (day 0) → Bayesian updating (3+ events) → pattern detection (10+ events). N-of-1 trial methodology, not collaborative filtering.
+- Brief 3: Outcome Attribution → Mechanism-informed decomposition, not statistical attribution. Natural variation analysis at 5+ events. Guided experimentation at 30+.
+
+**Implementation:**
+- Added post-wash attribution card (passive intelligence layer 1). After logging a wash day, shows what the routine targeted (Shine, Definition, Strength, etc.) with contributing products and interaction notes. Auto-dismisses after 10s.
+- Confirmed the ACTIVITY_PRODUCTS mapping issue from Session 10 was already fixed — products have `intelligence.phase` metadata and quick-log uses phase-based grouping.
+
+### State at End of Session 12
+
+**What's live (GitHub Pages):** https://mandy-apperkeeper.github.io/hair-routine/
+- Landing: single recommended action + "Something else?" toggle
+- Quick-log: phase-based product selection (Pre-wash | Wash | Post-wash | Style) — WORKING CORRECTLY
+- **NEW:** Post-wash attribution card after logging (mechanism-based "what your routine targeted today")
+- Product inventory: 24 products with full intelligence metadata (mechanisms, outcomes, interactions, phase)
+- Compensation card + gel gap with inventory integration
+
+**What's working that wasn't before:**
+- Quick-log product categorization is correct (phase-based from intelligence metadata)
+- Post-wash feedback explains what the routine did mechanistically
+
+**Research files added:**
+- `research/BRIEF1_CLIENT_SIDE_DISCOVERY.md` — scored 100%
+- `research/BRIEF2_RECOMMENDATION_PATTERNS.md` — scored 100%
+- `research/BRIEF3_OUTCOME_ATTRIBUTION.md` — scored 100%
+- `research/RESEARCH_SCORES.md` — local tracking
+
+**Decisions made this session:**
+- Research confirms this is an N-of-1 personal science problem, not a recommender system problem
+- Three-tier hybrid architecture for recommendations (rules → Bayesian → patterns)
+- Mechanism-based attribution is the Day 1 approach (no data needed)
+- Confidence thresholds: 3/5/10/15/30 events for progressively richer insights
+- Embedded ingredient KB (~50-80KB JSON) is the right approach for product discovery (Phase 5)
+- Chrome Prompt API is a future progressive enhancement only (Safari/iPad gap)
+- Thompson Sampling is wrong for passive observation but right for future active experimentation guidance
+
+**All active decisions (cumulative):**
+- Use amodimethicone conditioner EVERY wash. Dove is "using-up" only — never recommend it.
+- OGX oils provide no lasting benefit (volatile silicones). Deprioritize.
+- No product rotation needed for any category.
+- "Using-up" protocol: track bottles being finished, explain compensation, remove when empty.
+- Treatments are separate from products in the data model.
+- Dew point is the weather metric (not relative humidity). Auto-detect, don't ask.
+- Schema version 3→4: Products have intelligence metadata (mechanisms, outcomes, interactions, phase).
+- Mandy owns NYM Curl Talk gel (confirmed May 10, 2026).
+- Inventory tiers: Primary Rotation, Supporting Cast, Use-Up Queue.
+- Abbey Yung 11-step method is the reference model for logging.
+- The goal of logging is data gathering for correlations, not minimal taps.
+- Products CAN appear in multiple activity categories.
+- Phase-based UI grouping for quick-log (Pre-wash | Wash | Post-wash | Style).
+- Product intelligence is a system redesign, not a quick mapping fix.
+- Offline-first with online product discovery for new additions.
+- Both passive and active intelligence surfacing.
+
+**Repo:** main branch, origin/main in sync.
+
+**What's next:**
+1. Session 13: Pre-wash recommendation on landing page (Tier 1 active intelligence — uses dew point + domain rules to suggest what to do today)
+2. Session 14: Bayesian updating engine (Tier 2 — starts tracking per-product beliefs after 3+ events, surfaces "early signal" insights)
+3. Session 15: Natural variation analysis (Brief 3 Layer 2 — compare days with/without a product after 5+ events)
+4. Later: Product discovery form (Brief 1 — structured input + embedded KB), service worker/PWA
+
+---
+
 ## Session 11: Product Intelligence System — Scoping (May 10, 2026) — no code, design only
 
 ### Work Done

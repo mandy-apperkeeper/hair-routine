@@ -87,10 +87,10 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 ## Current Status (update after each session)
 
 - **Spec:** Feature-complete (all 16 task groups done, optional tests skipped)
-- **v1 (live):** Working — quick-log, walkthrough, history, status bar, dew point detection, recommendations, compensation logic, product inventory
-- **Known broken:** ACTIVITY_PRODUCTS mapping in quick-log is incorrect — products in wrong categories. Will be fixed as part of Product Intelligence System, not standalone.
+- **v1 (live):** Working — quick-log (phase-based, correct), walkthrough, history, status bar, dew point detection, recommendations, compensation logic, product inventory with intelligence metadata, post-wash attribution card
+- **Known broken:** Nothing currently broken.
 - **Remaining improvements:** 2 of 15 (Items 3 + 6 need usage data)
-- **What's next:** Draft Product Intelligence System spec (answer open questions, then formal spec with requirements and tasks). Implementation phases: data model → logging UI → passive intelligence → active recommendations → online discovery. Service worker + PWA deferred until after product intelligence lands.
+- **What's next:** Pre-wash recommendation on landing (Tier 1 active intelligence). Then Bayesian updating engine (Tier 2, needs 3+ events). Then natural variation analysis. Product discovery form and PWA deferred.
 
 ## Design Principles (testing here first, generalize if effective)
 
