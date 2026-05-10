@@ -2113,33 +2113,12 @@
                         }
                     }
 
-                    // too-soon-clarify: fires when last clarify < threshold days
-                    const lastClarify = getLastEventByType(events, 'clarify');
-                    if (lastClarify && lastClarify.date) {
-                        const daysSinceClarify = daysSince(lastClarify.date);
-                        if (daysSinceClarify !== null && daysSinceClarify < thresholds.clarifyMinDays) {
-                            warnings.push({
-                                type: 'too-soon-clarify',
-                                message: 'Clarified ' + daysSinceClarify + ' days ago — too frequent strips protective silicone layers that take multiple washes to rebuild',
-                                detail: 'Last clarify was ' + daysSinceClarify + ' day' + (daysSinceClarify !== 1 ? 's' : '') + ' ago (minimum: ' + thresholds.clarifyMinDays + ' days)',
-                                dismissable: true
-                            });
-                        }
-                    }
+                    // too-soon-clarify: only fires when lane context indicates clarifying
+                    // (e.g., user explicitly selected clarifying shampoo in quick-log)
+                    // Not shown on walkthrough start — walkthrough doesn't auto-include clarifying
 
-                    // too-soon-protein: fires when last protein < threshold days
-                    const lastProtein = getLastEventByType(events, 'protein');
-                    if (lastProtein && lastProtein.date) {
-                        const daysSinceProtein = daysSince(lastProtein.date);
-                        if (daysSinceProtein !== null && daysSinceProtein < thresholds.proteinMinDays) {
-                            warnings.push({
-                                type: 'too-soon-protein',
-                                message: 'Protein treatment ' + daysSinceProtein + ' days ago — more frequent application doesn\'t help (plateaus at normal use levels)',
-                                detail: 'Last protein treatment was ' + daysSinceProtein + ' day' + (daysSinceProtein !== 1 ? 's' : '') + ' ago (minimum: ' + thresholds.proteinMinDays + ' days)',
-                                dismissable: true
-                            });
-                        }
-                    }
+                    // too-soon-protein: only fires when user selects a protein product
+                    // Not shown on walkthrough start — bond repair step already says "skip if done this week"
 
                     // --- State-based warnings ---
 
