@@ -87,6 +87,7 @@ All previous decisions remain, plus:
 - **Texture/softness is NOT a plan adjustment** — it's a long-term tracking concern for post-wash feedback.
 - **Geolocation never prompts** — only uses if permission already granted via Permissions API check.
 - **Use-up rotation should be automatic** — the plan cycles use-up products in with compensation, not manual swapping.
+- **Dove deep dive confirms use-up tier** — no unique benefit found for 2C-3A coarse hair. Dimethiconol inferior to amodimethicone (buildup, interaction penalty). SH-Polypeptide-121 too large (~105 kDa) for hair penetration. Non-selective frizz coating unnecessary given PQ-69 gel.
 - **Mandy's core hair concerns:** frizz, dryness, reduced curl retention/styling hold. Hairstylist attributed to dryness.
 
 ---
