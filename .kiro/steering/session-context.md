@@ -94,13 +94,11 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 ## Current Status (update after each session)
 
 - **Spec:** Original spec complete. Product Intelligence spec partially implemented. Daily Plan spec has design.md (no tasks.md yet).
-- **v1 (live):** Working — 7-group step-based quick-log with sub-menus + heat cap badges + additionalSteps support, walkthrough, history, status bar, dew point auto-detection (no manual prompt), recommendations, compensation logic, product inventory (30 products) with full intelligence metadata, post-wash attribution card, deep-condition auto-detection.
-- **Schema:** Version 8. Intelligence uses granular `step` values + optional `additionalSteps` array for multi-group products.
+- **v1 (live):** Working — 7-group step-based quick-log with sub-menus + heat cap badges + multi-group products via additionalSteps, walkthrough, history, status bar, dew point auto-detection (no manual prompt), recommendations, compensation logic, product inventory (30 products) with full intelligence metadata, post-wash attribution card, deep-condition auto-detection.
+- **Schema:** Version 8. Intelligence uses granular `step` values + optional `additionalSteps` array.
 - **Known broken:** Nothing currently broken.
-- **What's next:** IngredientKB + BeliefTracker → pre-wash recommendations → marginal contribution analysis → product discovery form → service worker/PWA.
-- **Pending research:** Coconut oil as pre-wash (science), OGX oils dual-use re-evaluation, product tier decisions for Monday/OGX serum.
-- **Pending design decision:** Products in multiple steps (array step vs separate entries vs additionalSteps field).
-- **What's next:** Daily Plan spec tasks.md → then implementation. Product Intelligence spec (IngredientKB, BeliefTracker) feeds into Daily Plan's recommendation engine.
+- **Pending:** Research documentation write-up (coconut oil + OGX oil findings into research/ folder).
+- **What's next:** Daily Plan spec tasks.md → then implementation. Product Intelligence spec (IngredientKB, BeliefTracker) feeds into Daily Plan's recommendation engine. Service worker/PWA independent.
 
 ## Design Principles (testing here first, generalize if effective)
 

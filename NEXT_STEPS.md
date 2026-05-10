@@ -75,34 +75,50 @@ The highest-value feature that's fully ready to build.
 
 ---
 
-## Session 10: Logging UX Overhaul (est. 1 session)
+## Session 10: Logging UX Overhaul ✅ (completed)
 
-Priority shifted from service worker to making logging actually usable. These three issues form a coherent "make the app work for real usage" improvement.
+### 10A. Landing page: guide, don't choose ✅
+- Single prominent recommended action + "Something else?" toggle
+- First-use empty state
 
-### 10A. Landing page: guide, don't choose
-- Single prominent recommended action ("It's been 4 days — time for a curly wash")
-- Alternatives tucked behind "Something else?" or visually de-emphasized
-- First-use: brief explanation of each lane, not three equal buttons
-- Apply Sky Guide principle: "Immediate value on open"
+### 10B. Quick-log product selection ✅
+- 7-group step-based product selection with sub-menus and heat cap badges
+- Multi-select from inventory, feeds feedback engine
 
-### 10B. Quick-log product selection
-- Add multi-select product picker populated from inventory
-- User can select which products they actually used (shampoo, conditioner, mask, serum, etc.)
-- This feeds the feedback engine's product correlation analysis
-
-### 10C. Clarifying as wash subtype
-- Remove "Clarify" from the treatments multi-select
-- Add wash type: "Regular wash" / "Clarifying wash" (single-select, part of lane choice)
-- A clarifying wash still records the `clarify` treatment in the data model for cooldown tracking
-- Status bar "Last clarify" still works — it just reads from the wash type field instead
+### 10C. Clarifying as wash subtype ✅
+- Shampoo group has sub-menus: Regular / Clarifying
 
 ---
 
-## Session 11: Service Worker + PWA (est. 1 session)
+## Sessions 11–16: Product Intelligence + Step Reorganization + Research ✅
+
+### What was done (Sessions 11–16):
+- Product Intelligence spec scoped and partially implemented (phase-based quick-log, attribution card)
+- Research briefs completed (3 briefs, 5 phases)
+- Schema renamed phase→step, added subStep (v4→v5)
+- Full step reorganization: replaced step+subStep with 10 granular step values (v6)
+- Added 2 new products (Maui Moisture Curl Smoothie, L'Oréal Elvive Total Repair 5 Balm)
+- Replaced 4-phase quick-log with 7-group system + sub-menus + heat cap badges
+- Removed humidity manual prompt (silent default to moderate on failure)
+- Compacted status tracker
+- Researched and updated Pantene spray (genuine bond repair)
+- Schema v7: inventory deduplication fix
+- Updated lane detection (checks both styling and heat_protection)
+- Added deep-condition treatment auto-detection in quick-log save
+- Coconut oil pre-wash research (peer-reviewed: Rele & Mohile 2003, Ruetsch 2001, Lourenço 2024)
+- OGX oils re-evaluation — reclassified as finishing products (dimethiconol delivery, not pre-wash)
+- Added 4 new products (OGX Heat Spray, Monday Leave-In, OGX Serum, Pure Coconut Oil)
+- Implemented `additionalSteps` field — products appear in multiple quick-log groups
+- Schema v8: new products + additionalSteps + OGX oil reclassification
+- **30 products total in inventory**
+
+---
+
+## Session 11: Service Worker + PWA (not yet started)
 
 ### 11A. Create `sw.js` for v1
 - **What:** Cache-first service worker for `index.html`
-- **Why:** v2 has `hair-sw.js` but v1 (the live app) has no offline support. Mandy uses this in the bathroom.
+- **Why:** The live app has no offline support. Mandy uses this in the bathroom.
 - **Scope:** Cache HTML + any external API responses (Open-Meteo), versioned cache, graceful update
 
 ### 11B. Add install prompt
@@ -111,20 +127,38 @@ Priority shifted from service worker to making logging actually usable. These th
 
 ---
 
-## Session 12: v1→v2 Convergence Planning (est. 1 session, mostly decisions)
+## Next Major Phase: Daily Plan
 
-### 12A. Audit v2 against v1
-- **What:** Compare what v2 (`hair-routine-v2.html`) has vs what v1 (`index.html`) has. Identify gaps in both directions.
-- **Key question:** Does v2 have the quick-log? Does it have the treatments model? Does it have dew point detection?
+**Spec:** `.kiro/specs/daily-plan/design.md` (complete)  
+**Tasks:** Not yet written — this is the next planning step.
 
-### 12B. Decide switchover strategy
-- **Options:**
-  - A) Port v1 features into v2, then swap (clean cut)
-  - B) Port v2 features into v1 incrementally (evolutionary)
-  - C) Merge into a single file taking best of both
-- **Decision criteria:** Which path gets Mandy the best app fastest with least regression risk?
+### What it is
+The app opens and immediately shows today's hair plan — a complete, scrollable walkthrough generated from dew point, history, seal state, and timing. No lane selection required. User can follow as-is or tap "Adjust" to input observations for a refined plan.
 
-### 12C. Execute switchover (or plan it across sessions)
+### What it replaces
+- The 3-button lane selection on landing
+- The one-step-at-a-time walkthrough navigation (→ scrollable single-page)
+- The humidity prompt (→ auto-detection + Adjust flow)
+
+### Dependencies
+- **Product Intelligence spec** (IngredientKB, BeliefTracker, RecommendationEngine) — the daily plan USES these for product ranking. Can be built in parallel or sequentially.
+- **Step reorganization** — ✅ complete (schema v8, granular steps + additionalSteps)
+- **New products** — ✅ complete (30 products in inventory)
+- **Multi-step architecture** — ✅ resolved via `additionalSteps` field (schema v8)
+- **Coconut oil research** — ✅ complete (confirmed cortex penetration, added as primary pre-wash product)
+- **OGX oils re-evaluation** — ✅ complete (reclassified as finishing products, weak pre-wash)
+
+### Open decisions (need Mandy input before tasks.md)
+1. Should condensed view be default on repeat visits?
+2. How to handle "no wash needed" days — minimal screen or refresh plan?
+3. Timer UX in scrollable view — sticky bar or inline?
+4. Animation when plan adjusts after observation input?
+
+---
+
+## Session 12: v1→v2 Convergence (SUPERSEDED)
+
+The v1→v2 convergence question is now moot. v1 (`index.html`) is the live app and has evolved well past v2. The Daily Plan redesign will be built directly into v1. v2 (`hair-routine-v2.html`) is archived reference only.
 
 ---
 
@@ -147,14 +181,18 @@ These don't need sessions — they need Mandy to use the app for a few weeks.
 
 - **Optional property tests from spec** — 14 tests marked `*`. Value is low given the app works correctly. Revisit if bugs emerge.
 - **Integration test suite** — Same reasoning. Manual testing + real usage is the validation path.
-- **OGX oils in product recommendations** — Research confirmed volatile silicones provide no lasting benefit. Don't recommend them.
 - **Product rotation logic** — Research confirmed rotation is a myth. Never build this.
+
+## Pending Research
+
+- **Research documentation** — Write up coconut oil and OGX oil findings into `research/` folder (sources, methodology, conclusions). Not blocking anything, just good hygiene.
 
 ---
 
 ## How to Use This Plan
 
-- Each session is independent — you can do them in any order (except 11 depends on having 8-10 done first)
-- Sessions 7-8 are the highest leverage right now
 - Start each session by reading `SESSION_HANDOFF.md` and this file
 - After each session, update `SESSION_HANDOFF.md` with what was done
+- The Daily Plan is the next major feature — needs tasks.md written before implementation begins
+- Service Worker (Session 11) can be done independently at any time
+- Product Intelligence spec tasks feed into Daily Plan but can be built in parallel

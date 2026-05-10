@@ -1050,7 +1050,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 8;
+        const CURRENT_VERSION = 9;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -1196,15 +1196,15 @@
                 }
             },
             {
-                id: 'ogx-bond-protein-pre', name: 'Bond Protein Repair Pre-Shampoo', brand: 'OGX',
+                id: 'ogx-bond-repair-mask', name: 'Bond Protein Repair 1-Minute Mask', brand: 'OGX',
                 tier: 'supporting', context: 'weekly', usingUp: false,
-                notes: 'Hydrolyzed keratin + wheat protein. Protein fill, no silicone.',
+                notes: 'Amodimethicone + wheat protein + bond plex film-formers. Rinse-off mask with both cuticle smoothing and protein fill. 1 minute application.',
                 intelligence: {
-                    mechanisms: ['protein_fill', 'humectant'],
+                    mechanisms: ['cuticle_smoothing', 'protein_fill', 'conditioning'],
                     delivery: 'rinse_off',
-                    step: 'bond_repair',
-                    outcomes: { strength: 0.7, elasticity: 0.5 },
-                    cumulative: false,
+                    step: 'deep_condition',
+                    outcomes: { smoothness: 0.7, strength: 0.5, shine: 0.5 },
+                    cumulative: true,
                     interactions: []
                 }
             },
@@ -1602,7 +1602,7 @@
                 var stepMigration = {
                     'olaplex-3': 'bond_repair',
                     'garnier-pre-shampoo': 'bond_repair',
-                    'ogx-bond-protein-pre': 'bond_repair',
+                    'ogx-bond-repair-mask': 'deep_condition',
                     'everpure-bond-pre': 'bond_repair',
                     'garnier-color-repair-cond': 'conditioner',
                     'everpure-bond-conditioner': 'conditioner',
@@ -1803,6 +1803,29 @@
                 }
                 state.version = 8;
             }
+
+            // v8 → v9: Replace OGX Bond Protein Pre-Shampoo with OGX Bond Repair 1-Minute Mask
+            if (state.version < 9) {
+                if (Array.isArray(state.inventory)) {
+                    var preIdx = state.inventory.findIndex(function(p) { return p.id === 'ogx-bond-protein-pre'; });
+                    if (preIdx !== -1) {
+                        state.inventory[preIdx] = {
+                            id: 'ogx-bond-repair-mask', name: 'Bond Protein Repair 1-Minute Mask', brand: 'OGX',
+                            tier: 'supporting', context: 'weekly', usingUp: false,
+                            notes: 'Amodimethicone + wheat protein + bond plex film-formers. Rinse-off mask with both cuticle smoothing and protein fill. 1 minute application.',
+                            intelligence: {
+                                mechanisms: ['cuticle_smoothing', 'protein_fill', 'conditioning'],
+                                delivery: 'rinse_off',
+                                step: 'deep_condition',
+                                outcomes: { smoothness: 0.7, strength: 0.5, shine: 0.5 },
+                                cumulative: true,
+                                interactions: []
+                            }
+                        };
+                    }
+                }
+                state.version = 9;
+            }
         }
 
         const StateManager = (function() {
@@ -1991,7 +2014,7 @@
             const products = event.products || [];
             const treatments = event.treatments || [];
 
-            if (event.lane === 'blowout' && products.includes('marc-anthony-blowout')) {
+            if (event.lane === 'blowout' && products.includes('marc-anthony-shield')) {
                 // Activate seal
                 state.sealState.active = true;
                 state.sealState.appliedDate = event.date || new Date().toISOString();
@@ -2028,14 +2051,14 @@
             // Product IDs for reference
             const PRODUCTS = {
                 NYM_GEL: 'nym-curl-talk-gel',
-                MARC_ANTHONY: 'marc-anthony-blowout',
+                MARC_ANTHONY: 'marc-anthony-shield',
                 EVERPURE_CLARIFYING: 'everpure-clarifying',
                 GOT2B: 'got2b-ultra-glued',
                 OLAPLEX: 'olaplex-3',
                 GARNIER_PRESHAMPOO: 'garnier-pre-shampoo',
-                GARNIER_CONDITIONER: 'garnier-color-repair',
-                LOREAL_LEAVE_IN: 'loreal-21-in-1',
-                EVERPURE_BOND: 'everpure-bond-repair'
+                GARNIER_CONDITIONER: 'garnier-color-repair-cond',
+                LOREAL_LEAVE_IN: 'loreal-21in1',
+                EVERPURE_BOND: 'everpure-bond-shampoo'
             };
 
             // PQ-69 products (gel products that conflict with blowout)
@@ -3021,19 +3044,19 @@
                 return [
                     {
                         number: 1,
-                        title: 'Pre-shampoo treatment',
-                        instruction: 'Apply to dry hair before wetting. Focus on mid-lengths and ends. Alternate between Garnier and Olaplex weekly.',
-                        productId: 'garnier-pre-shampoo',
-                        scienceBadge: 'BOND REPAIR + FRIZZ PROTECTION',
-                        timer: { duration: 600, label: 'Pre-shampoo treatment' },
-                        tip: 'Skip if done this week',
+                        title: 'Coconut oil pre-wash',
+                        instruction: 'Apply to dry hair, mid-lengths to ends. Penetrates cortex to prevent protein loss during washing.',
+                        productId: 'pure-coconut-oil',
+                        scienceBadge: 'CORTEX PENETRATION',
+                        timer: { duration: 600, label: 'Coconut oil pre-wash' },
+                        tip: 'Can leave on longer (up to overnight) for deeper penetration',
                         phase: 'PREP & WASH'
                     },
                     {
                         number: 2,
                         title: 'Shampoo',
                         instruction: 'Focus on scalp. Let suds run through lengths — don\'t pile hair on top of head.',
-                        productId: 'everpure-bond-repair',
+                        productId: 'everpure-bond-shampoo',
                         scienceBadge: null,
                         timer: null,
                         tip: null,
@@ -3041,36 +3064,46 @@
                     },
                     {
                         number: 3,
+                        title: 'Bond repair',
+                        instruction: 'Apply to wet clean hair. Works best on a clean surface — gets sealed in by conditioner. Alternate between Garnier and Olaplex weekly.',
+                        productId: 'garnier-pre-shampoo',
+                        scienceBadge: 'BOND REPAIR',
+                        timer: { duration: 300, label: 'Bond repair' },
+                        tip: 'Skip if done this week',
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 4,
                         title: 'Conditioner',
                         instruction: 'Section hair into 4+ parts. Apply generously to each section, mid-lengths to ends. Detangle with wide-tooth comb or fingers.',
-                        productId: 'garnier-color-repair',
+                        productId: 'garnier-color-repair-cond',
                         scienceBadge: 'CERAMIDE + AMODIMETHICONE',
                         timer: { duration: 300, label: 'Conditioner' },
                         tip: null,
                         phase: 'PREP & WASH'
                     },
                     {
-                        number: 4,
-                        title: 'Rinse + Wonder Water',
-                        instruction: 'Rinse conditioner thoroughly with cool water. Squeeze out excess.',
-                        productId: null,
-                        scienceBadge: null,
+                        number: 5,
+                        title: 'Gloss',
+                        instruction: 'Spray onto freshly rinsed hair. Lamellar conditioning — deposits uniformly on wet cuticle.',
+                        productId: 'loreal-wonder-water',
+                        scienceBadge: 'LAMELLAR CONDITIONING',
                         timer: null,
-                        tip: 'Optional: L\'Oréal 8 Second Wonder Water from spray bottle',
+                        tip: null,
                         phase: 'PREP & WASH'
                     },
                     {
-                        number: 5,
+                        number: 6,
                         title: 'Leave-in',
                         instruction: 'Pour into palm (don\'t spray), rake through sections on soaking wet hair.',
-                        productId: 'loreal-21-in-1',
+                        productId: 'loreal-21in1',
                         scienceBadge: 'PQ-37 BARRIER',
                         timer: null,
                         tip: null,
                         phase: 'STYLE'
                     },
                     {
-                        number: 6,
+                        number: 7,
                         title: 'Gel',
                         instruction: gelInstruction,
                         productId: gelProductId,
@@ -3080,7 +3113,7 @@
                         phase: 'STYLE'
                     },
                     {
-                        number: 7,
+                        number: 8,
                         title: 'Hairline regrowth',
                         instruction: 'Small amount of gel on TE regrowth hairs. Smooth flat with fingers.',
                         productId: null,
@@ -3090,7 +3123,7 @@
                         phase: 'STYLE'
                     },
                     {
-                        number: 8,
+                        number: 9,
                         title: 'Dry',
                         instruction: 'Shark FlexStyle diffuser: hover on medium heat, don\'t touch. OR air dry. Don\'t touch until 100% dry.',
                         productId: null,
@@ -3100,7 +3133,7 @@
                         phase: 'DRY & FINISH'
                     },
                     {
-                        number: 9,
+                        number: 10,
                         title: 'Scrunch out the crunch',
                         instruction: 'Once FULLY dry, scrunch the gel cast. Optional: drop of Dove 10-in-1 Serum.',
                         productId: null,
@@ -3116,26 +3149,46 @@
                 return [
                     {
                         number: 1,
+                        title: 'Coconut oil pre-wash',
+                        instruction: 'Apply to dry hair, mid-lengths to ends. Penetrates cortex to prevent protein loss during washing.',
+                        productId: 'pure-coconut-oil',
+                        scienceBadge: 'CORTEX PENETRATION',
+                        timer: { duration: 600, label: 'Coconut oil pre-wash' },
+                        tip: 'Can leave on longer (up to overnight) for deeper penetration',
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 2,
                         title: 'Shampoo',
                         instruction: 'Focus on scalp. If switching from curly lane, use clarifying shampoo to remove PQ-69 residue.',
-                        productId: 'everpure-bond-repair',
+                        productId: 'everpure-bond-shampoo',
                         scienceBadge: null,
                         timer: null,
                         tip: null,
                         phase: 'PREP & WASH'
                     },
                     {
-                        number: 2,
+                        number: 3,
+                        title: 'Bond repair',
+                        instruction: 'Apply to wet clean hair. Works best on a clean surface — gets sealed in by conditioner. Alternate between Garnier and Olaplex weekly.',
+                        productId: 'garnier-pre-shampoo',
+                        scienceBadge: 'BOND REPAIR',
+                        timer: { duration: 300, label: 'Bond repair' },
+                        tip: 'Skip if done this week',
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 4,
                         title: 'Conditioner',
                         instruction: 'Section hair into 4+ parts. Apply generously to each section, mid-lengths to ends. Detangle with wide-tooth comb or fingers.',
-                        productId: 'garnier-color-repair',
+                        productId: 'garnier-color-repair-cond',
                         scienceBadge: 'CERAMIDE + AMODIMETHICONE',
                         timer: { duration: 300, label: 'Conditioner' },
                         tip: null,
                         phase: 'PREP & WASH'
                     },
                     {
-                        number: 3,
+                        number: 5,
                         title: 'Towel dry',
                         instruction: 'Microfiber or t-shirt. Squeeze gently — hair should be damp, not dripping.',
                         productId: null,
@@ -3145,27 +3198,27 @@
                         phase: 'PREP & WASH'
                     },
                     {
-                        number: 4,
+                        number: 6,
                         title: 'Leave-in',
                         instruction: 'Apply evenly through damp hair, focusing on mid-lengths and ends.',
-                        productId: 'loreal-21-in-1',
+                        productId: 'loreal-21in1',
                         scienceBadge: 'HEAT PROTECTANT',
                         timer: null,
                         tip: null,
                         phase: 'PROTECT'
                     },
                     {
-                        number: 5,
-                        title: 'Marc Anthony Blowout Spray',
+                        number: 7,
+                        title: 'Heat Protection Spray',
                         instruction: 'Section into 4+ parts. Spray liberally root to tip. Every strand needs coverage.' + (humidity === 'humid' ? ' Extra important today — the Polysilicone-29 seal blocks humidity penetration.' : ''),
-                        productId: 'marc-anthony-blowout',
+                        productId: 'marc-anthony-shield',
                         scienceBadge: 'POLYSILICONE-29 HEAT SEAL',
                         timer: null,
                         tip: null,
                         phase: 'PROTECT'
                     },
                     {
-                        number: 6,
+                        number: 8,
                         title: 'Rough dry',
                         instruction: 'FlexStyle concentrator nozzle. No brush yet — hands + airflow on medium heat. Flip head for root lift.',
                         productId: null,
@@ -3175,7 +3228,7 @@
                         phase: 'STYLE'
                     },
                     {
-                        number: 7,
+                        number: 9,
                         title: 'Face-framing pieces',
                         instruction: 'FlexStyle round brush barrel. Small sections. Direct TOWARD face. Cool shot to lock.',
                         productId: null,
@@ -3185,7 +3238,7 @@
                         phase: 'STYLE'
                     },
                     {
-                        number: 8,
+                        number: 10,
                         title: 'Section + style',
                         instruction: 'Small sections (~1" thick). Wrap around barrel. Direct each section. Cool shot before releasing. Bottom layers first.',
                         productId: null,
@@ -3195,7 +3248,7 @@
                         phase: 'STYLE'
                     },
                     {
-                        number: 9,
+                        number: 11,
                         title: 'Finishing',
                         instruction: 'Dove 10-in-1 Serum on ends for shine. Or a drop of oil if ends feel wirey.',
                         productId: null,
@@ -4042,6 +4095,16 @@
             // Step card
             html += '<div class="card">';
             html += '<h3 style="color:var(--text);font-size:1.05rem;margin-bottom:0.5rem;">' + escapeHtml(step.title) + '</h3>';
+
+            // Show product name from inventory if productId is set
+            if (step.productId) {
+                var inv = StateManager.getState().inventory || [];
+                var matchedProduct = inv.find(function(p) { return p.id === step.productId; });
+                if (matchedProduct) {
+                    html += '<p style="color:var(--gold);font-size:0.9rem;margin-bottom:0.5rem;font-weight:600;">' + escapeHtml(matchedProduct.brand + ' ' + matchedProduct.name) + '</p>';
+                }
+            }
+
             html += '<p style="margin-bottom:0.75rem;">' + escapeHtml(step.instruction) + '</p>';
 
             if (step.scienceBadge) {

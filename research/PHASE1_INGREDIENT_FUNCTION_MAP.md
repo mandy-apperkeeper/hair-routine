@@ -54,14 +54,14 @@ Based on research from Lab Muffin (Wong 2024), Robbins (Chemical and Physical Be
 **Ingredients in Mandy's inventory:**
 | Ingredient | Products | Mechanism |
 |-----------|----------|-----------|
-| Hydrolyzed keratin | OGX Bond Protein Pre-Shampoo | Penetrates cortex, fills structural gaps |
-| Hydrolyzed wheat protein | OGX Bond Protein Pre-Shampoo | Similar penetration, slightly different amino acid profile |
+| Triticum Vulgare (Wheat) Protein | OGX Bond Protein Repair 1-Minute Mask, OGX Bond Protein Repair Sealing Serum | Penetrates cortex, fills structural gaps |
+| Hydrolyzed Keratin | OGX Bond Protein Repair Sealing Serum | Similar penetration, slightly different amino acid profile |
 | SH-Polypeptide-121 | Dove Bond Strength Conditioner/Mask | Surface-level peptide, likely high MW (limited penetration) |
 
 **Coverage assessment:**
-- **Deep-penetrating protein:** 1 product (OGX Bond Protein Pre-Shampoo) — SINGLE POINT OF FAILURE
+- **Deep-penetrating protein:** 2 products (OGX 1-Minute Mask, OGX Sealing Serum) — adequate coverage
 - **Surface protein:** 2 products (Dove) — supplementary only
-- **Gap:** No standalone protein treatment with verified low-MW keratin for deep cortex repair
+- **No longer a single point of failure** — two OGX products provide protein fill via different delivery (rinse-off mask vs leave-on serum)
 
 ---
 
@@ -74,14 +74,13 @@ Based on research from Lab Muffin (Wong 2024), Robbins (Chemical and Physical Be
 **Ingredients in Mandy's inventory:**
 | Ingredient | Products | Mechanism |
 |-----------|----------|-----------|
+| PQ-69 | NYM Curl Talk Flash Freeze Gel, Got2b Ultra Glued Gel | True humidity-resistant film, maintains integrity in moisture |
 | PQ-37 | L'Oréal 21-in-1 Leave-In | Conditioning polymer with some hold, NOT humidity-resistant |
-| — | — | — |
 
 **Coverage assessment:**
-- **True humidity barrier (PQ-69 or equivalent):** ZERO PRODUCTS — CRITICAL GAP
+- **True humidity barrier (PQ-69):** 2 products — RESOLVED (was critical gap, now covered)
 - **Partial hold (PQ-37):** 1 product — provides light conditioning hold but not humidity resistance
-- **This is the #1 missing function in the entire inventory.** No product creates a humidity-resistant film. This is why frizz persists despite good conditioning.
-- **Recommended:** Not Your Mother's Curl Talk Flash Freeze Gel (PQ-69 based, ~$8)
+- **NYM for moderate humidity, Got2b for high humidity** (Got2b has no glycerin = better in humid conditions)
 
 ---
 
@@ -114,14 +113,13 @@ Based on research from Lab Muffin (Wong 2024), Robbins (Chemical and Physical Be
 **Ingredients in Mandy's inventory:**
 | Ingredient | Products | Mechanism |
 |-----------|----------|-----------|
-| Coconut oil | OGX Miracle Oil, L'Oréal 21-in-1 Leave-In | Penetrates cortex (lauric acid), reduces protein loss |
+| Coconut oil | Pure Coconut Oil (standalone), OGX Miracle Oil (trace), L'Oréal 21-in-1 Leave-In (trace) | Penetrates cortex (lauric acid), reduces protein loss |
 | Argan oil | OGX Moroccan Argan Oil, Garnier Filler Pre-Shampoo | Surface emollient only — does NOT penetrate cortex |
-| Squalane | OGX Bond Protein Pre-Shampoo | Lightweight emollient, mimics natural sebum lipid, surface-level |
 
 **Coverage assessment:**
-- **Penetrating oil (coconut):** 2 products — adequate
-- **Surface emollient (argan, squalane):** 3 products — adequate
-- **No gap**, but coconut oil is always secondary ingredient (not standalone treatment)
+- **Penetrating oil (coconut):** 1 standalone product (Pure Coconut Oil) + 2 products with trace amounts — GOOD coverage now
+- **Surface emollient (argan):** 2 products — adequate
+- **No gap** — pure coconut oil is the correct dedicated pre-wash tool
 
 ---
 
@@ -134,11 +132,11 @@ Based on research from Lab Muffin (Wong 2024), Robbins (Chemical and Physical Be
 **Ingredients in Mandy's inventory:**
 | Ingredient | Products | Mechanism |
 |-----------|----------|-----------|
-| Panthenol | OGX Bond Protein Pre-Shampoo | Penetrates shaft, humectant, increases diameter |
+| Panthenol | OGX Bond Protein Repair 1-Minute Mask, OGX Bond Protein Repair Heat Spray | Penetrates shaft, humectant, increases diameter |
 | Glycerin (likely in many formulas) | Most conditioners/treatments | Surface humectant |
 
 **Coverage assessment:**
-- **Penetrating humectant:** 1 product with panthenol prominently listed
+- **Penetrating humectant:** 2 products with panthenol (OGX Mask, OGX Heat Spray)
 - **Important note for Mandy:** Humectants without a humidity barrier (Role 4) are counterproductive in high dew point conditions. They attract moisture that then disrupts the hair structure. This reinforces why the PQ-69 gel is critical.
 
 ---
@@ -165,13 +163,13 @@ Based on research from Lab Muffin (Wong 2024), Robbins (Chemical and Physical Be
 
 | Role | Coverage | Risk Level |
 |------|----------|------------|
-| 1. Cuticle Smoothing (amodimethicone) | 4 products | LOW |
+| 1. Cuticle Smoothing (amodimethicone) | 5 products (incl. OGX Mask) | LOW |
 | 2. Disulfide Bond Repair | 1 product (Olaplex) | MEDIUM (single source but effective) |
-| 3. Protein Fill | 1 deep-penetrating product | MEDIUM |
-| 4. Humidity Barrier | **ZERO products** | **CRITICAL — #1 gap** |
+| 3. Protein Fill | 2 deep-penetrating products (OGX Mask + Serum) | LOW |
+| 4. Humidity Barrier | NYM Curl Talk Gel + Got2b | LOW (was CRITICAL — now resolved) |
 | 5. Conditioning | Multiple products | LOW |
-| 6. Penetrating Oil | 2 products | LOW |
-| 7. Humectant | 1 product | LOW (but counterproductive without Role 4) |
+| 6. Penetrating Oil | 1 standalone (Pure Coconut Oil) + traces | LOW |
+| 7. Humectant | 2 products (OGX Mask, OGX Heat Spray) | LOW (but counterproductive without Role 4) |
 | 8. Clarifying | 2 products | LOW |
 
 ---
@@ -184,12 +182,10 @@ Based on research from Lab Muffin (Wong 2024), Robbins (Chemical and Physical Be
 
 **Under-represented functions:**
 - True disulfide bond repair — only Olaplex
-- Deep protein fill — only OGX pre-shampoo
-- Humidity barrier — NOTHING
 
 **Products that could be retired without functional loss:**
 - Dove Intensive Repair Conditioner — weakest conditioner, no unique function
-- OGX Moroccan Argan Oil — volatile silicones + argan oil = temporary shine only, no lasting benefit that L'Oréal 21-in-1 doesn't provide better
+- Monday Moisture Leave-In — outclassed by L'Oréal 21-in-1 in every dimension (marked use-up)
 
 ---
 

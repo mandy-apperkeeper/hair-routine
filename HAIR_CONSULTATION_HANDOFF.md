@@ -20,9 +20,8 @@ Ben. Personal topic, also used as a steering stress test.
 ### OGX
 - Miracle Oil (coconut miracle penetrating oil) — volatile silicones + coconut oil, temporary shine
 - Moroccan Argan Oil (for thick dry hair) — volatile silicones + argan oil, temporary shine
-- Bond Protein Repair Pre-Shampoo Treatment — hydrolyzed keratin, wheat protein, squalane, panthenol (protein fill, no silicone)
+- Bond Protein Repair 1-Minute Mask — amodimethicone + wheat protein + bond plex film-formers (cuticle smoothing + protein fill, rinse-off)
 - Bond Protein Repair Serum
-- One Minute Mask
 
 ### Garnier
 - Fructis Hair Filler Inner Fiber Repair Pre-Shampoo Treatment — peptides + citric acid + argan oil (NO amodimethicone). Bond repair pre-shampoo, NOT a conditioner.
