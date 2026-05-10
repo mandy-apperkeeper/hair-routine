@@ -3905,6 +3905,11 @@
 
             var html = '';
 
+            // Log past event button
+            html += '<div style="margin-bottom:1rem;">';
+            html += '<button class="btn-secondary" id="history-log-btn" style="width:100%;justify-content:center;">+ Log a wash day</button>';
+            html += '</div>';
+
             // Summary stats
             if (events.length > 0) {
                 var totalWashes = events.length;
@@ -3963,6 +3968,14 @@
             html += '</div>';
 
             historySection.innerHTML = html;
+
+            // Wire log button
+            var historyLogBtn = document.getElementById('history-log-btn');
+            if (historyLogBtn) {
+                historyLogBtn.addEventListener('click', function() {
+                    showQuickLog();
+                });
+            }
 
             // Wire export
             var exportBtn = document.getElementById('history-export');
