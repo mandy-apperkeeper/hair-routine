@@ -19,9 +19,23 @@
 5. Efficacy for Hair Profile (specific to 2C-3A coarse/thick/dry)
 6. Comparison to Alternatives (other products in same step category)
 7. Tier Placement Validation (confirm or challenge current tier)
-8. Sources Index
-9. Self-Critique
-10. Scorecard
+8. **Key Takeaways (for in-app education)**
+   - What this product does for your hair (plain language)
+   - Why it's in your routine (or why it's being used up)
+   - What makes it good/bad at its job (mechanism in one sentence)
+   - What to look for if replacing it (key ingredients/properties to seek)
+   - What to avoid in a replacement (anti-patterns)
+9. Sources Index
+10. Self-Critique
+11. Scorecard
+
+## Execution Model
+
+- **1 product = 1 document = 1 scorecard** (no batched documents)
+- Research sessions may cover 2-3 related products (shared source lookups) but each gets its own full write-up
+- Documents are standalone — readable without context from other product docs
+- Key Takeaways section is written for in-app display (plain language, actionable)
+- File naming: `research/products/[PRODUCT_ID].md` (e.g., `research/products/loreal-21in1.md`)
 
 ---
 
@@ -116,7 +130,26 @@
 ## Progress
 
 - **Total products:** 30
-- **Completed:** 3 (Dove deep dive)
+- **Completed:** 3 (Dove deep dive — conditioners + mask)
 - **Remaining:** 27
-- **Estimated batches:** 10-12 research sessions
+- **Estimated sessions:** ~10-14 (2-3 products per session)
+
+## Next Session Starts With
+
+1. `dove-bond-shampoo` — Bond Strength Repair Shampoo (INCI already pulled)
+2. `dove-intensive-shampoo` — Intensive Repair Shampoo (INCI already pulled)
+3. `dove-10in1-serum` — Bond Repair 10-in-1 Serum (INCI already pulled — notable as only Dove product in supporting tier)
+
+**INCI data pre-fetched (May 10, 2026):**
+
+### dove-bond-shampoo (INCIDecoder, Jul 2024)
+Aqua, Sodium C12-13 Pareth Sulfate, Cocamidopropyl Betaine, Sodium Chloride, Parfum, Dimethiconol, Citric Acid, Sodium Benzoate, Glycerin, Glycol Distearate, Carbomer, Gluconolactone, Sodium Laureth Sulfate, Guar Hydroxypropyltrimonium Chloride, PPG-9, Tea-Dodecylbenzenesulfonate, Cocamide MEA, Sodium Sulfate, Trehalose, Disodium EDTA, Propylene Glycol, PEG-45M, Prunus Amygdalus Dulcis (Sweet Almond) Oil, Argania Spinosa Kernel Oil, Cocos Nucifera (Coconut) Oil, CI 77019, CI 77891, CI 19140, CI 17200, CI 42090, Benzyl Salicylate, Citronellol, Hexyl Cinnamal, Limonene, Linalool
+
+### dove-intensive-shampoo — Damage Therapy version (INCIDecoder, Dec 2025)
+Water (Eau), Sodium Laureth Sulfate, Cocamidopropyl Betaine, Dimethiconol, Fragrance (Parfum), Citric Acid, Glycerin, Sodium Chloride, Sodium Benzoate, Glycol Distearate, Carbomer, Gluconolactone, Guar Hydroxypropyltrimonium Chloride, Tea-Dodecylbenzenesulfonate, PPG-9, Cocamide MEA, Sodium Sulfate, Trehalose, Disodium EDTA, PEG-45M, Benzyl Salicylate, Citronellol, Hexyl Cinnamal, Limonene, Linalool, Mica (CI 77019), Titanium Dioxide (CI 77891)
+
+### dove-10in1-serum (INCIDecoder, Aug 2025)
+Cyclopentasiloxane, Cyclohexasiloxane, Dimethiconol, Phenyl Trimethicone, Aminopropyl Dimethicone, Fragrance (Parfum), Dimethicone Crosspolymer, Prunus Armeniaca (Apricot) Kernel Oil, Lens Esculenta (Lentil) Seed Extract, Hydrolyzed Cicer Seed Extract, Chenopodium Quinoa Seed Extract, Benzyl Alcohol, Benzyl Salicylate, Citronellol, Geraniol, Hexyl Cinnamal, Limonene, Linalool
+
+**Key finding pre-noted:** Aminopropyl dimethicone (position 5 in serum) is an amine-functionalized silicone — same family as amodimethicone. It carries a slight positive charge that targets damaged hair. This likely explains why the serum earned supporting tier while other Dove products are use-up. Full analysis needed.
 
