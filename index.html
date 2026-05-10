@@ -111,28 +111,28 @@
         /* ===== Navigation ===== */
         nav {
             display: flex;
-            gap: 0.35rem;
-            flex-wrap: wrap;
+            gap: 0.25rem;
             margin-bottom: 0.5rem;
             padding: 0.25rem 0;
         }
 
         nav button {
-            padding: 0.4rem 0.7rem;
+            flex: 1;
+            padding: 0.4rem 0.25rem;
             border-radius: 8px;
             background: var(--card);
             border: 1px solid var(--border);
             color: var(--text-secondary);
             font-family: system-ui, -apple-system, sans-serif;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-weight: 500;
             cursor: pointer;
             transition: background 0.15s ease, color 0.15s ease;
             min-height: 36px;
-            min-width: 36px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap;
         }
 
         nav button:hover {
