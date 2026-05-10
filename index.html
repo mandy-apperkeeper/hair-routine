@@ -1050,7 +1050,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 3;
+        const CURRENT_VERSION = 4;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -1060,38 +1060,326 @@
          */
         const DEFAULT_INVENTORY = [
             // Primary Rotation — Every Wash
-            { id: 'garnier-color-repair-cond', name: 'Color Repair Conditioner', brand: 'Garnier Fructis', tier: 'primary', context: 'every-wash', usingUp: false, notes: 'Amodimethicone + synthetic ceramide (18-MEA replacement). Use every wash, 3-5 min.' },
-            { id: 'everpure-bond-shampoo', name: 'Bond Repair Shampoo', brand: "L'Oréal EverPure", tier: 'primary', context: 'every-wash', usingUp: false, notes: 'Daily shampoo. Gentle sulfate-free.' },
-            { id: 'loreal-21in1', name: '21-in-1 Leave-In Spray', brand: "L'Oréal EverPure", tier: 'primary', context: 'every-wash', usingUp: false, notes: 'Amodimethicone + PQ-37 + coconut oil. Best leave-in in collection.' },
-            { id: 'everpure-bond-conditioner', name: 'Bond Repair Conditioner', brand: "L'Oréal EverPure", tier: 'primary', context: 'every-wash', usingUp: false, notes: 'Bis-cetearyl amodimethicone + dimethicone. Second-best conditioner.' },
+            {
+                id: 'garnier-color-repair-cond', name: 'Color Repair Conditioner', brand: 'Garnier Fructis',
+                tier: 'primary', context: 'every-wash', usingUp: false,
+                notes: 'Amodimethicone + synthetic ceramide (18-MEA replacement). Use every wash, 3-5 min.',
+                intelligence: {
+                    mechanisms: ['cuticle_smoothing', 'conditioning'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { shine: 0.8, smoothness: 0.9, strength: 0.3 },
+                    cumulative: true,
+                    interactions: []
+                }
+            },
+            {
+                id: 'everpure-bond-shampoo', name: 'Bond Repair Shampoo', brand: "L'Oréal EverPure",
+                tier: 'primary', context: 'every-wash', usingUp: false,
+                notes: 'Daily shampoo. Gentle sulfate-free.',
+                intelligence: {
+                    mechanisms: ['cleansing'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { cleanliness: 0.9 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
+            {
+                id: 'loreal-21in1', name: '21-in-1 Leave-In Spray', brand: "L'Oréal EverPure",
+                tier: 'primary', context: 'every-wash', usingUp: false,
+                notes: 'Amodimethicone + PQ-37 + coconut oil. Best leave-in in collection.',
+                intelligence: {
+                    mechanisms: ['cuticle_smoothing', 'penetrating_oil', 'conditioning'],
+                    delivery: 'leave_on',
+                    phase: 'post_wash',
+                    outcomes: { shine: 0.9, smoothness: 0.8, strength: 0.2 },
+                    cumulative: true,
+                    interactions: [{ with: 'nym-curl-talk-gel', type: 'enables', note: 'Apply lightly before gel — heavy application weakens cast' }]
+                }
+            },
+            {
+                id: 'everpure-bond-conditioner', name: 'Bond Repair Conditioner', brand: "L'Oréal EverPure",
+                tier: 'primary', context: 'every-wash', usingUp: false,
+                notes: 'Bis-cetearyl amodimethicone + dimethicone. Second-best conditioner.',
+                intelligence: {
+                    mechanisms: ['cuticle_smoothing', 'conditioning'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { shine: 0.7, smoothness: 0.8, strength: 0.2 },
+                    cumulative: true,
+                    interactions: []
+                }
+            },
             // Primary Rotation — Curly Days
-            { id: 'nym-curl-talk-gel', name: 'Curl Talk Flash Freeze Gel', brand: 'Not Your Mother\'s', tier: 'primary', context: 'curly', usingUp: false, notes: 'PQ-69 humidity barrier. Scrunch into damp hair.' },
+            {
+                id: 'nym-curl-talk-gel', name: 'Curl Talk Flash Freeze Gel', brand: 'Not Your Mother\'s',
+                tier: 'primary', context: 'curly', usingUp: false,
+                notes: 'PQ-69 humidity barrier. Scrunch into damp hair.',
+                intelligence: {
+                    mechanisms: ['humidity_barrier'],
+                    delivery: 'leave_on',
+                    phase: 'style',
+                    outcomes: { definition: 0.9, frizz_control: 0.9 },
+                    cumulative: false,
+                    interactions: [{ with: 'marc-anthony-shield', type: 'blocks', note: 'PQ-69 may block polysilicone-29 deposition (medium confidence)' }]
+                }
+            },
             // Primary Rotation — Blowout Days
-            { id: 'marc-anthony-shield', name: 'Grow Long Anti-Frizz Shield', brand: 'Marc Anthony', tier: 'primary', context: 'blowout', usingUp: false, notes: 'Polysilicone-29 heat seal. Activates seal state.' },
+            {
+                id: 'marc-anthony-shield', name: 'Grow Long Anti-Frizz Shield', brand: 'Marc Anthony',
+                tier: 'primary', context: 'blowout', usingUp: false,
+                notes: 'Polysilicone-29 heat seal. Activates seal state.',
+                intelligence: {
+                    mechanisms: ['heat_protection', 'cuticle_smoothing'],
+                    delivery: 'leave_on',
+                    phase: 'style',
+                    outcomes: { smoothness: 0.8, strength: 0.4, frizz_control: 0.7 },
+                    cumulative: false,
+                    interactions: [{ with: 'nym-curl-talk-gel', type: 'blocks', note: 'PQ-69 may block polysilicone-29 (medium confidence)' }]
+                }
+            },
             // Primary Rotation — Weekly
-            { id: 'everpure-clarifying', name: 'Clarifying Shampoo', brand: "L'Oréal EverPure", tier: 'primary', context: 'weekly', usingUp: false, notes: 'Weekly reset. Deactivates seal state.' },
-            { id: 'olaplex-3', name: 'Olaplex 3', brand: 'Olaplex', tier: 'primary', context: 'weekly', usingUp: false, notes: 'Bis-aminopropyl diglycol dimaleate. Only product that reconnects disulfide bonds.' },
+            {
+                id: 'everpure-clarifying', name: 'Clarifying Shampoo', brand: "L'Oréal EverPure",
+                tier: 'primary', context: 'weekly', usingUp: false,
+                notes: 'Weekly reset. Deactivates seal state.',
+                intelligence: {
+                    mechanisms: ['clarifying'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { cleanliness: 1.0 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
+            {
+                id: 'olaplex-3', name: 'Olaplex 3', brand: 'Olaplex',
+                tier: 'primary', context: 'weekly', usingUp: false,
+                notes: 'Bis-aminopropyl diglycol dimaleate. Only product that reconnects disulfide bonds.',
+                intelligence: {
+                    mechanisms: ['bond_repair'],
+                    delivery: 'pre_shampoo',
+                    phase: 'pre_wash',
+                    outcomes: { strength: 0.9, elasticity: 0.8 },
+                    cumulative: true,
+                    interactions: []
+                }
+            },
             // Supporting Cast — Every Wash
-            { id: 'loreal-wonder-water', name: '8 Second Wonder Water', brand: "L'Oréal Elvive", tier: 'supporting', context: 'every-wash', usingUp: false, notes: 'Lamellar conditioning rinse. Spray bottle for distribution.' },
+            {
+                id: 'loreal-wonder-water', name: '8 Second Wonder Water', brand: "L'Oréal Elvive",
+                tier: 'supporting', context: 'every-wash', usingUp: false,
+                notes: 'Lamellar conditioning rinse. Spray bottle for distribution.',
+                intelligence: {
+                    mechanisms: ['conditioning'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { shine: 0.7, smoothness: 0.8 },
+                    cumulative: false,
+                    interactions: [{ with: '*', type: 'enhances', note: 'Smoother cuticle improves subsequent product distribution' }]
+                }
+            },
             // Supporting Cast — Weekly/Pre-shampoo
-            { id: 'garnier-pre-shampoo', name: 'Hair Filler Inner Fiber Repair Pre-Shampoo', brand: 'Garnier Fructis', tier: 'supporting', context: 'weekly', usingUp: false, notes: 'Peptides + citric acid. Bond repair + frizz protection. NOT a conditioner.' },
-            { id: 'ogx-bond-protein-pre', name: 'Bond Protein Repair Pre-Shampoo', brand: 'OGX', tier: 'supporting', context: 'weekly', usingUp: false, notes: 'Hydrolyzed keratin + wheat protein. Protein fill, no silicone.' },
-            { id: 'everpure-bond-pre', name: 'Bond Repair Pre-Shampoo Treatment', brand: "L'Oréal EverPure", tier: 'supporting', context: 'weekly', usingUp: false, notes: 'Citric acid bond support.' },
-            { id: 'everpure-glossing-mask', name: 'Glossing 5-Min Lamination Mask', brand: "L'Oréal EverPure", tier: 'supporting', context: 'weekly', usingUp: false, notes: '\u26A0\uFE0F NOT a conditioner \u2014 clarifying treatment (surfactants + glycolic acid). Use as occasional reset only.' },
+            {
+                id: 'garnier-pre-shampoo', name: 'Hair Filler Inner Fiber Repair Pre-Shampoo', brand: 'Garnier Fructis',
+                tier: 'supporting', context: 'weekly', usingUp: false,
+                notes: 'Peptides + citric acid. Bond repair + frizz protection. NOT a conditioner.',
+                intelligence: {
+                    mechanisms: ['bond_repair', 'protein_fill'],
+                    delivery: 'pre_shampoo',
+                    phase: 'pre_wash',
+                    outcomes: { strength: 0.6, smoothness: 0.4 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
+            {
+                id: 'ogx-bond-protein-pre', name: 'Bond Protein Repair Pre-Shampoo', brand: 'OGX',
+                tier: 'supporting', context: 'weekly', usingUp: false,
+                notes: 'Hydrolyzed keratin + wheat protein. Protein fill, no silicone.',
+                intelligence: {
+                    mechanisms: ['protein_fill', 'humectant'],
+                    delivery: 'pre_shampoo',
+                    phase: 'pre_wash',
+                    outcomes: { strength: 0.7, elasticity: 0.5 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
+            {
+                id: 'everpure-bond-pre', name: 'Bond Repair Pre-Shampoo Treatment', brand: "L'Oréal EverPure",
+                tier: 'supporting', context: 'weekly', usingUp: false,
+                notes: 'Citric acid bond support.',
+                intelligence: {
+                    mechanisms: ['bond_repair'],
+                    delivery: 'pre_shampoo',
+                    phase: 'pre_wash',
+                    outcomes: { strength: 0.4 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
+            {
+                id: 'everpure-glossing-mask', name: 'Glossing 5-Min Lamination Mask', brand: "L'Oréal EverPure",
+                tier: 'supporting', context: 'weekly', usingUp: false,
+                notes: '\u26A0\uFE0F NOT a conditioner \u2014 clarifying treatment (surfactants + glycolic acid). Use as occasional reset only.',
+                intelligence: {
+                    mechanisms: ['clarifying'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { cleanliness: 0.8, shine: 0.5 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
             // Supporting Cast — Finishing/As-needed
-            { id: 'garnier-filler-serum', name: 'Hair Filler Strength Repair Serum', brand: 'Garnier Fructis', tier: 'supporting', context: 'as-needed', usingUp: false, notes: 'Amodimethicone + citric acid. Leave-in serum.' },
-            { id: 'dove-10in1-serum', name: 'Bond Repair 10-in-1 Serum', brand: 'Dove', tier: 'supporting', context: 'as-needed', usingUp: false, notes: 'Amodimethicone (buried in formula). Better than Dove conditioners.' },
-            { id: 'pantene-bond-spray', name: 'Bond Repair Post-Shower Spray', brand: 'Pantene', tier: 'supporting', context: 'as-needed', usingUp: false, notes: '' },
+            {
+                id: 'garnier-filler-serum', name: 'Hair Filler Strength Repair Serum', brand: 'Garnier Fructis',
+                tier: 'supporting', context: 'as-needed', usingUp: false,
+                notes: 'Amodimethicone + citric acid. Leave-in serum.',
+                intelligence: {
+                    mechanisms: ['cuticle_smoothing'],
+                    delivery: 'leave_on',
+                    phase: 'post_wash',
+                    outcomes: { shine: 0.9, smoothness: 0.8 },
+                    cumulative: true,
+                    interactions: []
+                }
+            },
+            {
+                id: 'dove-10in1-serum', name: 'Bond Repair 10-in-1 Serum', brand: 'Dove',
+                tier: 'supporting', context: 'as-needed', usingUp: false,
+                notes: 'Amodimethicone (buried in formula). Better than Dove conditioners.',
+                intelligence: {
+                    mechanisms: ['cuticle_smoothing'],
+                    delivery: 'leave_on',
+                    phase: 'post_wash',
+                    outcomes: { shine: 0.6, smoothness: 0.6 },
+                    cumulative: true,
+                    interactions: []
+                }
+            },
+            {
+                id: 'pantene-bond-spray', name: 'Bond Repair Post-Shower Spray', brand: 'Pantene',
+                tier: 'supporting', context: 'as-needed', usingUp: false,
+                notes: '',
+                intelligence: {
+                    mechanisms: ['conditioning'],
+                    delivery: 'leave_on',
+                    phase: 'post_wash',
+                    outcomes: { smoothness: 0.4 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
             // Supporting Cast — Humid days
-            { id: 'got2b-gel', name: 'Glued Blasting Freeze Spray/Gel', brand: 'Got2b', tier: 'supporting', context: 'curly', usingUp: false, notes: 'Humid-day substitute for NYM gel. Stronger hold.' },
+            {
+                id: 'got2b-gel', name: 'Glued Blasting Freeze Spray/Gel', brand: 'Got2b',
+                tier: 'supporting', context: 'curly', usingUp: false,
+                notes: 'Humid-day substitute for NYM gel. Stronger hold.',
+                intelligence: {
+                    mechanisms: ['humidity_barrier'],
+                    delivery: 'leave_on',
+                    phase: 'style',
+                    outcomes: { definition: 0.8, frizz_control: 0.95 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
             // Use-Up Queue
-            { id: 'dove-bond-shampoo', name: 'Bond Strength Repair Shampoo', brand: 'Dove', tier: 'use-up', context: 'every-wash', usingUp: true, notes: 'Generic silicone. Finish and don\'t repurchase.' },
-            { id: 'dove-bond-conditioner', name: 'Bond Strength Repair Conditioner', brand: 'Dove', tier: 'use-up', context: 'every-wash', usingUp: true, notes: 'Dimethiconol \u2014 not targeted. L\'Or\u00E9al or Garnier conditioner compensates.' },
-            { id: 'dove-bond-mask', name: 'Bond Strength Hair Mask', brand: 'Dove', tier: 'use-up', context: 'as-needed', usingUp: true, notes: 'Same generic silicone as conditioner. Use as occasional deep treatment while finishing.' },
-            { id: 'dove-intensive-shampoo', name: 'Intensive Repair Shampoo', brand: 'Dove', tier: 'use-up', context: 'every-wash', usingUp: true, notes: 'Finish and don\'t repurchase.' },
-            { id: 'dove-intensive-conditioner', name: 'Intensive Repair Conditioner', brand: 'Dove', tier: 'use-up', context: 'every-wash', usingUp: true, notes: 'Weakest conditioner in collection. L\'Or\u00E9al 21-in-1 compensates.' },
-            { id: 'ogx-coconut-oil', name: 'Coconut Miracle Penetrating Oil', brand: 'OGX', tier: 'use-up', context: 'as-needed', usingUp: true, notes: 'Volatile silicones + coconut oil. Temporary shine only, no lasting benefit.' },
-            { id: 'ogx-argan-oil', name: 'Moroccan Argan Oil', brand: 'OGX', tier: 'use-up', context: 'as-needed', usingUp: true, notes: 'Volatile silicones + argan oil. Temporary shine only, no lasting benefit.' },
+            {
+                id: 'dove-bond-shampoo', name: 'Bond Strength Repair Shampoo', brand: 'Dove',
+                tier: 'use-up', context: 'every-wash', usingUp: true,
+                notes: 'Generic silicone. Finish and don\'t repurchase.',
+                intelligence: {
+                    mechanisms: ['cleansing'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { cleanliness: 0.7 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
+            {
+                id: 'dove-bond-conditioner', name: 'Bond Strength Repair Conditioner', brand: 'Dove',
+                tier: 'use-up', context: 'every-wash', usingUp: true,
+                notes: 'Dimethiconol \u2014 not targeted. L\'Or\u00E9al or Garnier conditioner compensates.',
+                intelligence: {
+                    mechanisms: ['cuticle_smoothing', 'conditioning'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { shine: 0.4, smoothness: 0.5 },
+                    cumulative: false,
+                    interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
+                }
+            },
+            {
+                id: 'dove-bond-mask', name: 'Bond Strength Hair Mask', brand: 'Dove',
+                tier: 'use-up', context: 'as-needed', usingUp: true,
+                notes: 'Same generic silicone as conditioner. Use as occasional deep treatment while finishing.',
+                intelligence: {
+                    mechanisms: ['cuticle_smoothing', 'conditioning'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { shine: 0.5, smoothness: 0.6 },
+                    cumulative: false,
+                    interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
+                }
+            },
+            {
+                id: 'dove-intensive-shampoo', name: 'Intensive Repair Shampoo', brand: 'Dove',
+                tier: 'use-up', context: 'every-wash', usingUp: true,
+                notes: 'Finish and don\'t repurchase.',
+                intelligence: {
+                    mechanisms: ['cleansing'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { cleanliness: 0.7 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
+            {
+                id: 'dove-intensive-conditioner', name: 'Intensive Repair Conditioner', brand: 'Dove',
+                tier: 'use-up', context: 'every-wash', usingUp: true,
+                notes: 'Weakest conditioner in collection. L\'Or\u00E9al 21-in-1 compensates.',
+                intelligence: {
+                    mechanisms: ['cuticle_smoothing', 'conditioning'],
+                    delivery: 'rinse_off',
+                    phase: 'wash',
+                    outcomes: { shine: 0.3, smoothness: 0.4 },
+                    cumulative: false,
+                    interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
+                }
+            },
+            {
+                id: 'ogx-coconut-oil', name: 'Coconut Miracle Penetrating Oil', brand: 'OGX',
+                tier: 'use-up', context: 'as-needed', usingUp: true,
+                notes: 'Volatile silicones + coconut oil. Temporary shine only, no lasting benefit.',
+                intelligence: {
+                    mechanisms: ['penetrating_oil'],
+                    delivery: 'leave_on',
+                    phase: 'post_wash',
+                    outcomes: { shine: 0.3 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
+            {
+                id: 'ogx-argan-oil', name: 'Moroccan Argan Oil', brand: 'OGX',
+                tier: 'use-up', context: 'as-needed', usingUp: true,
+                notes: 'Volatile silicones + argan oil. Temporary shine only, no lasting benefit.',
+                intelligence: {
+                    mechanisms: [],
+                    delivery: 'leave_on',
+                    phase: 'post_wash',
+                    outcomes: { shine: 0.2 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
         ];
 
         const DEFAULT_STATE = {
@@ -1162,6 +1450,37 @@
             if (state.version < 3) {
                 state.inventory = JSON.parse(JSON.stringify(DEFAULT_INVENTORY));
                 state.version = 3;
+            }
+
+            // v3 → v4: Add intelligence metadata to existing inventory products
+            if (state.version < 4) {
+                // Build lookup from DEFAULT_INVENTORY for known products
+                var intelligenceLookup = {};
+                DEFAULT_INVENTORY.forEach(function(p) {
+                    intelligenceLookup[p.id] = p.intelligence;
+                });
+
+                if (Array.isArray(state.inventory)) {
+                    state.inventory.forEach(function(product) {
+                        if (!product.intelligence) {
+                            // Try to match by ID to get pre-built intelligence
+                            if (intelligenceLookup[product.id]) {
+                                product.intelligence = JSON.parse(JSON.stringify(intelligenceLookup[product.id]));
+                            } else {
+                                // User-added product — give it a blank intelligence shell
+                                product.intelligence = {
+                                    mechanisms: [],
+                                    delivery: 'unknown',
+                                    phase: 'post_wash',
+                                    outcomes: {},
+                                    cumulative: false,
+                                    interactions: []
+                                };
+                            }
+                        }
+                    });
+                }
+                state.version = 4;
             }
         }
 
@@ -2310,7 +2629,15 @@
                         tier: product.tier || 'supporting',
                         context: product.context || 'as-needed',
                         usingUp: product.usingUp || false,
-                        notes: product.notes || ''
+                        notes: product.notes || '',
+                        intelligence: product.intelligence || {
+                            mechanisms: [],
+                            delivery: 'unknown',
+                            phase: 'post_wash',
+                            outcomes: {},
+                            cumulative: false,
+                            interactions: []
+                        }
                     };
                     inventory.push(newProduct);
                     saveInventory(inventory);
@@ -2333,6 +2660,7 @@
                             if ('notes' in updates) inventory[i].notes = updates.notes;
                             if ('name' in updates) inventory[i].name = updates.name;
                             if ('brand' in updates) inventory[i].brand = updates.brand;
+                            if ('intelligence' in updates) inventory[i].intelligence = updates.intelligence;
                             break;
                         }
                     }
@@ -3150,7 +3478,15 @@
                                     tier: 'primary',
                                     context: 'curly',
                                     usingUp: false,
-                                    notes: 'PQ-69 humidity barrier. Scrunch into damp hair.'
+                                    notes: 'PQ-69 humidity barrier. Scrunch into damp hair.',
+                                    intelligence: {
+                                        mechanisms: ['humidity_barrier'],
+                                        delivery: 'leave_on',
+                                        phase: 'style',
+                                        outcomes: { definition: 0.9, frizz_control: 0.9 },
+                                        cumulative: false,
+                                        interactions: [{ with: 'marc-anthony-shield', type: 'blocks', note: 'PQ-69 may block polysilicone-29 deposition (medium confidence)' }]
+                                    }
                                 });
                             }
                             // Re-render landing (gel gap will disappear since inventory now has it)
@@ -4417,16 +4753,29 @@
 
         // ===== Quick Log (Past Event) =====
 
-        // Map activities to relevant product IDs from inventory
-        var ACTIVITY_PRODUCTS = {
-            'wash': ['everpure-bond-shampoo', 'dove-bond-shampoo', 'dove-intensive-shampoo', 'garnier-color-repair-cond', 'everpure-bond-conditioner', 'dove-bond-conditioner', 'dove-intensive-conditioner', 'loreal-wonder-water'],
-            'clarify': ['everpure-clarifying', 'everpure-glossing-mask'],
-            'protein': ['garnier-pre-shampoo', 'ogx-bond-protein-pre', 'everpure-bond-pre'],
-            'deep-condition': ['dove-bond-mask'],
-            'bond-repair': ['olaplex-3'],
-            'style-curly': ['nym-curl-talk-gel', 'got2b-gel', 'loreal-21in1', 'garnier-filler-serum', 'dove-10in1-serum'],
-            'style-blowout': ['marc-anthony-shield', 'loreal-21in1', 'garnier-filler-serum', 'dove-10in1-serum', 'pantene-bond-spray'],
+        // Phase-based product grouping derived from intelligence metadata
+        // Replaces the old ACTIVITY_PRODUCTS mapping (which was incorrect)
+        var PHASE_LABELS = {
+            'pre_wash': 'Pre-wash',
+            'wash': 'Wash',
+            'post_wash': 'Post-wash',
+            'style': 'Style'
         };
+
+        var PHASE_ORDER = ['pre_wash', 'wash', 'post_wash', 'style'];
+
+        function getProductsByPhase(inventory) {
+            var phases = { pre_wash: [], wash: [], post_wash: [], style: [] };
+            inventory.forEach(function(p) {
+                var phase = (p.intelligence && p.intelligence.phase) || 'post_wash';
+                if (phases[phase]) {
+                    phases[phase].push(p);
+                } else {
+                    phases.post_wash.push(p);
+                }
+            });
+            return phases;
+        }
 
         function showQuickLog() {
             var walkSection = document.getElementById('walkthrough');
@@ -4445,38 +4794,20 @@
             html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.4rem;">When?</label>';
             html += '<input type="date" id="quick-log-date" value="' + defaultDate + '" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.6rem 0.75rem;font-size:0.9rem;margin-bottom:1.25rem;min-height:48px;">';
 
-            // Activities with inline product sections
-            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">What did you do? <span style="color:var(--muted);">(tap to expand, select products)</span></label>';
+            // Activities with inline product sections — phase-based grouping
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">What products did you use? <span style="color:var(--muted);">(tap phase to expand)</span></label>';
 
-            var activities = [
-                { id: 'wash', label: 'Wash', icon: '\uD83D\uDCA7' },
-                { id: 'clarify', label: 'Clarify', icon: '\u2728' },
-                { id: 'deep-condition', label: 'Deep condition', icon: '\uD83E\uDDF4' },
-                { id: 'bond-repair', label: 'Bond repair', icon: '\uD83D\uDD17' },
-                { id: 'protein', label: 'Protein treatment', icon: '\uD83E\uDDEC' },
-            ];
-
-            html += '<div id="quick-log-activities" style="margin-bottom:1.25rem;">';
-            for (var a = 0; a < activities.length; a++) {
-                var act = activities[a];
-                html += '<div class="quick-activity-block" data-activity="' + act.id + '" style="margin-bottom:0.5rem;">';
-                html += '<button class="btn-secondary quick-activity-btn" data-activity="' + act.id + '" style="width:100%;justify-content:flex-start;text-align:left;">';
-                html += act.icon + ' ' + act.label;
+            html += '<div id="quick-log-phases" style="margin-bottom:1.25rem;">';
+            var phaseIcons = { pre_wash: '\uD83E\uDDF4', wash: '\uD83D\uDCA7', post_wash: '\u2728', style: '\uD83C\uDF00' };
+            for (var pi = 0; pi < PHASE_ORDER.length; pi++) {
+                var phaseKey = PHASE_ORDER[pi];
+                html += '<div class="quick-activity-block" data-phase="' + phaseKey + '" style="margin-bottom:0.5rem;">';
+                html += '<button class="btn-secondary quick-phase-btn" data-phase="' + phaseKey + '" style="width:100%;justify-content:flex-start;text-align:left;">';
+                html += phaseIcons[phaseKey] + ' ' + PHASE_LABELS[phaseKey];
                 html += '</button>';
-                html += '<div class="quick-activity-products" data-activity-products="' + act.id + '" style="display:none;padding:0.5rem 0 0.25rem 0.5rem;"></div>';
+                html += '<div class="quick-phase-products" data-phase-products="' + phaseKey + '" style="display:none;padding:0.5rem 0 0.25rem 0.5rem;"></div>';
                 html += '</div>';
             }
-            html += '</div>';
-
-            // Style (shown after wash/clarify selected)
-            html += '<div id="quick-log-style-section" style="margin-bottom:1.25rem;">';
-            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">How did you style?</label>';
-            html += '<div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;" id="quick-log-lanes">';
-            html += '<button class="btn-secondary quick-lane-btn" data-lane="curly">\uD83C\uDF00 Curly</button>';
-            html += '<button class="btn-secondary quick-lane-btn" data-lane="blowout">\uD83D\uDCA8 Blowout</button>';
-            html += '<button class="btn-secondary quick-lane-btn" data-lane="none">No styling</button>';
-            html += '</div>';
-            html += '<div class="quick-activity-products" data-activity-products="style" style="display:none;padding:0.5rem 0 0.25rem 0.5rem;"></div>';
             html += '</div>';
 
             // Rating
@@ -4497,29 +4828,26 @@
             walkSection.innerHTML = html;
 
             // State
-            var selectedActivities = [];
             var selectedProducts = [];
-            var quickLane = 'none';
             var selectedRating = null;
 
-            function renderProductsForActivity(activityId, container) {
-                var productIds = ACTIVITY_PRODUCTS[activityId] || [];
-                var matchingProducts = inventory.filter(function(p) {
-                    return productIds.indexOf(p.id) !== -1;
+            function renderProductsForPhase(phaseKey, container) {
+                var phaseProducts = inventory.filter(function(p) {
+                    return p.intelligence && p.intelligence.phase === phaseKey;
                 });
 
-                if (matchingProducts.length === 0) {
-                    container.innerHTML = '<span style="font-size:0.78rem;color:var(--muted);">No matching products in inventory</span>';
+                if (phaseProducts.length === 0) {
+                    container.innerHTML = '<span style="font-size:0.78rem;color:var(--muted);">No products in this phase</span>';
                     return;
                 }
 
                 var pHtml = '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">';
-                for (var i = 0; i < matchingProducts.length; i++) {
-                    var prod = matchingProducts[i];
+                for (var i = 0; i < phaseProducts.length; i++) {
+                    var prod = phaseProducts[i];
                     var isSelected = selectedProducts.indexOf(prod.id) !== -1;
                     var selStyle = isSelected ? 'border-color:var(--green);color:var(--green);' : '';
                     pHtml += '<button class="btn-secondary quick-product-btn" data-product-id="' + escapeHtml(prod.id) + '" style="font-size:0.78rem;padding:0.3rem 0.6rem;min-height:36px;' + selStyle + '">';
-                    pHtml += escapeHtml(prod.name);
+                    pHtml += escapeHtml(prod.brand + ' ' + prod.name);
                     pHtml += '</button>';
                 }
                 pHtml += '</div>';
@@ -4548,50 +4876,22 @@
                 document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
             });
 
-            // Wire activity buttons (multi-select, shows products inline)
-            walkSection.querySelectorAll('.quick-activity-btn').forEach(function(btn) {
+            // Wire phase buttons (toggle expand/collapse, shows products inline)
+            walkSection.querySelectorAll('.quick-phase-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
-                    var activity = btn.getAttribute('data-activity');
-                    var productsContainer = walkSection.querySelector('[data-activity-products="' + activity + '"]');
-                    var idx = selectedActivities.indexOf(activity);
+                    var phase = btn.getAttribute('data-phase');
+                    var productsContainer = walkSection.querySelector('[data-phase-products="' + phase + '"]');
 
-                    if (idx === -1) {
-                        selectedActivities.push(activity);
+                    if (productsContainer.style.display === 'none') {
+                        productsContainer.style.display = '';
                         btn.style.borderColor = 'var(--green)';
                         btn.style.color = 'var(--green)';
-                        productsContainer.style.display = '';
-                        renderProductsForActivity(activity, productsContainer);
+                        renderProductsForPhase(phase, productsContainer);
                     } else {
-                        selectedActivities.splice(idx, 1);
-                        btn.style.borderColor = '';
-                        btn.style.color = '';
                         productsContainer.style.display = 'none';
                         productsContainer.innerHTML = '';
-                    }
-                });
-            });
-
-            // Wire lane buttons (single-select, shows style products)
-            walkSection.querySelectorAll('.quick-lane-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    quickLane = btn.getAttribute('data-lane');
-                    walkSection.querySelectorAll('.quick-lane-btn').forEach(function(b) {
-                        b.style.borderColor = '';
-                        b.style.color = '';
-                    });
-                    btn.style.borderColor = 'var(--green)';
-                    btn.style.color = 'var(--green)';
-
-                    var styleContainer = walkSection.querySelector('[data-activity-products="style"]');
-                    if (quickLane === 'curly') {
-                        styleContainer.style.display = '';
-                        renderProductsForActivity('style-curly', styleContainer);
-                    } else if (quickLane === 'blowout') {
-                        styleContainer.style.display = '';
-                        renderProductsForActivity('style-blowout', styleContainer);
-                    } else {
-                        styleContainer.style.display = 'none';
-                        styleContainer.innerHTML = '';
+                        btn.style.borderColor = '';
+                        btn.style.color = '';
                     }
                 });
             });
@@ -4611,7 +4911,29 @@
 
             // Wire save
             document.getElementById('quick-log-save').addEventListener('click', function() {
-                submitQuickLog(quickLane, selectedProducts, selectedActivities, selectedRating);
+                // Derive lane from selected style products
+                var lane = 'none';
+                var styleProducts = inventory.filter(function(p) {
+                    return p.intelligence && p.intelligence.phase === 'style' && selectedProducts.indexOf(p.id) !== -1;
+                });
+                if (styleProducts.length > 0) {
+                    // Check if any selected style product is a curly-context product
+                    var hasCurly = styleProducts.some(function(p) { return p.context === 'curly'; });
+                    var hasBlowout = styleProducts.some(function(p) { return p.context === 'blowout'; });
+                    if (hasCurly) lane = 'curly';
+                    else if (hasBlowout) lane = 'blowout';
+                    else lane = 'curly';
+                }
+
+                // Derive activities from selected products for backward compatibility
+                var activities = [];
+                var hasWashProduct = selectedProducts.some(function(id) {
+                    var p = inventory.find(function(pr) { return pr.id === id; });
+                    return p && p.intelligence && p.intelligence.phase === 'wash' && p.intelligence.mechanisms.indexOf('cleansing') !== -1;
+                });
+                if (hasWashProduct) activities.push('wash');
+
+                submitQuickLog(lane, selectedProducts, activities, selectedRating);
             });
         }
 
@@ -4622,20 +4944,31 @@
 
             var eventDate = new Date(dateStr + 'T12:00:00');
 
-            // Build treatments from activities
+            // Auto-detect treatments from selected products using intelligence metadata
             var treatments = [];
-            if (activities.indexOf('clarify') !== -1) treatments.push('clarify');
-            if (activities.indexOf('protein') !== -1) treatments.push('protein');
-            if (activities.indexOf('deep-condition') !== -1) treatments.push('deep-condition');
-            if (activities.indexOf('bond-repair') !== -1) treatments.push('bond-repair');
+            var inventory = InventoryManager.getAll();
+            products.forEach(function(prodId) {
+                var product = inventory.find(function(p) { return p.id === prodId; });
+                if (!product || !product.intelligence) return;
+                var mechs = product.intelligence.mechanisms;
+                if (mechs.indexOf('clarifying') !== -1 && treatments.indexOf('clarify') === -1) treatments.push('clarify');
+                if (mechs.indexOf('protein_fill') !== -1 && treatments.indexOf('protein') === -1) treatments.push('protein');
+                if (mechs.indexOf('bond_repair') !== -1 && treatments.indexOf('bond-repair') === -1) treatments.push('bond-repair');
+            });
 
-            // Auto-detect from products
-            if (products.indexOf('everpure-clarifying') !== -1 && treatments.indexOf('clarify') === -1) treatments.push('clarify');
-            if ((products.indexOf('garnier-pre-shampoo') !== -1 || products.indexOf('ogx-bond-protein-pre') !== -1 || products.indexOf('olaplex-3') !== -1) && treatments.indexOf('protein') === -1) treatments.push('protein');
+            // Also honor explicit activities passed in (backward compat)
+            if (activities.indexOf('clarify') !== -1 && treatments.indexOf('clarify') === -1) treatments.push('clarify');
+            if (activities.indexOf('protein') !== -1 && treatments.indexOf('protein') === -1) treatments.push('protein');
+            if (activities.indexOf('deep-condition') !== -1 && treatments.indexOf('deep-condition') === -1) treatments.push('deep-condition');
+            if (activities.indexOf('bond-repair') !== -1 && treatments.indexOf('bond-repair') === -1) treatments.push('bond-repair');
 
             // Determine lane
             var finalLane = lane === 'none' ? 'curly' : lane;
-            if (activities.indexOf('wash') === -1 && activities.indexOf('clarify') === -1) {
+            var hasWash = activities.indexOf('wash') !== -1 || products.some(function(id) {
+                var p = inventory.find(function(pr) { return pr.id === id; });
+                return p && p.intelligence && p.intelligence.mechanisms.indexOf('cleansing') !== -1;
+            });
+            if (!hasWash) {
                 finalLane = 'refresh';
             }
 
