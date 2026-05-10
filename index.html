@@ -736,6 +736,14 @@
                     <span class="tracker-value" id="status-clarify">—</span>
                 </div>
                 <div class="tracker-item">
+                    <span class="tracker-label">Last protein</span>
+                    <span class="tracker-value" id="status-protein">—</span>
+                </div>
+                <div class="tracker-item">
+                    <span class="tracker-label">Last deep condition</span>
+                    <span class="tracker-value" id="status-deep-condition">—</span>
+                </div>
+                <div class="tracker-item">
                     <span class="tracker-label">Seal state</span>
                     <span class="tracker-value" id="status-seal">Inactive</span>
                 </div>
@@ -1058,14 +1066,15 @@
         function updateSealState(event) {
             const state = StateManager.getState();
             const products = event.products || [];
+            const treatments = event.treatments || [];
 
             if (event.lane === 'blowout' && products.includes('marc-anthony-blowout')) {
                 // Activate seal
                 state.sealState.active = true;
                 state.sealState.appliedDate = event.date || new Date().toISOString();
                 state.sealState.washesSinceApplied = 0;
-            } else if (products.includes('everpure-clarifying')) {
-                // Deactivate seal on clarify
+            } else if (treatments.includes('clarify') || products.includes('everpure-clarifying')) {
+                // Deactivate seal on clarify (check treatments array first, then products)
                 state.sealState.active = false;
                 state.sealState.appliedDate = null;
                 state.sealState.washesSinceApplied = 0;
@@ -2447,23 +2456,44 @@
             // Status bar
             var lastWashDate = null;
             var lastClarifyDate = null;
+            var lastProteinDate = null;
+            var lastDeepConditionDate = null;
             var lastWashLane = null;
             for (var i = events.length - 1; i >= 0; i--) {
                 if (!lastWashDate) {
                     lastWashDate = events[i].date;
                     lastWashLane = events[i].lane;
                 }
-                if (!lastClarifyDate && events[i].products && events[i].products.includes('everpure-clarifying')) {
-                    lastClarifyDate = events[i].date;
+                if (!lastClarifyDate) {
+                    var treatments = events[i].treatments || [];
+                    if (treatments.includes('clarify') || (events[i].products && events[i].products.includes('everpure-clarifying'))) {
+                        lastClarifyDate = events[i].date;
+                    }
                 }
-                if (lastWashDate && lastClarifyDate) break;
+                if (!lastProteinDate) {
+                    var treatments2 = events[i].treatments || [];
+                    if (treatments2.includes('protein') || (events[i].products && (events[i].products.includes('garnier-pre-shampoo') || events[i].products.includes('olaplex-3')))) {
+                        lastProteinDate = events[i].date;
+                    }
+                }
+                if (!lastDeepConditionDate) {
+                    var treatments3 = events[i].treatments || [];
+                    if (treatments3.includes('deep-condition')) {
+                        lastDeepConditionDate = events[i].date;
+                    }
+                }
+                if (lastWashDate && lastClarifyDate && lastProteinDate && lastDeepConditionDate) break;
             }
 
             var washDays = daysSince(lastWashDate);
             var clarifyDays = daysSince(lastClarifyDate);
+            var proteinDays = daysSince(lastProteinDate);
+            var deepConditionDays = daysSince(lastDeepConditionDate);
 
             document.getElementById('status-wash').textContent = washDays !== null ? (washDays === 0 ? 'today' : washDays + ' day' + (washDays !== 1 ? 's' : '') + ' ago') : '—';
             document.getElementById('status-clarify').textContent = clarifyDays !== null ? (clarifyDays === 0 ? 'today' : clarifyDays + ' day' + (clarifyDays !== 1 ? 's' : '') + ' ago') : '—';
+            document.getElementById('status-protein').textContent = proteinDays !== null ? (proteinDays === 0 ? 'today' : proteinDays + ' day' + (proteinDays !== 1 ? 's' : '') + ' ago') : '—';
+            document.getElementById('status-deep-condition').textContent = deepConditionDays !== null ? (deepConditionDays === 0 ? 'today' : deepConditionDays + ' day' + (deepConditionDays !== 1 ? 's' : '') + ' ago') : '—';
             document.getElementById('status-seal').textContent = sealState.active ? 'Active' : 'Inactive';
 
             // Empty state vs status summary
@@ -2974,10 +3004,20 @@
                 }
             });
 
+            // Infer treatments from products used
+            var treatments = [];
+            if (products.includes('everpure-clarifying')) {
+                treatments.push('clarify');
+            }
+            if (products.includes('garnier-pre-shampoo') || products.includes('olaplex-3')) {
+                treatments.push('protein');
+            }
+
             var washEvent = {
                 id: generateUUID(),
                 date: new Date().toISOString(),
                 lane: selectedLane,
+                treatments: treatments,
                 products: products,
                 humidity: selectedHumidity,
                 dewPoint: detectedDewPoint,
