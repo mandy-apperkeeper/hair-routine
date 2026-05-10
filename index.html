@@ -1050,7 +1050,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 5;
+        const CURRENT_VERSION = 6;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -1067,8 +1067,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'conditioner',
+                    step: 'conditioner',
                     outcomes: { shine: 0.8, smoothness: 0.9, strength: 0.3 },
                     cumulative: true,
                     interactions: []
@@ -1081,8 +1080,7 @@
                 intelligence: {
                     mechanisms: ['cleansing'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'shampoo',
+                    step: 'shampoo',
                     outcomes: { cleanliness: 0.9 },
                     cumulative: false,
                     interactions: []
@@ -1095,7 +1093,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'penetrating_oil', 'conditioning'],
                     delivery: 'leave_on',
-                    step: 'post_wash',
+                    step: 'leave_in',
                     outcomes: { shine: 0.9, smoothness: 0.8, strength: 0.2 },
                     cumulative: true,
                     interactions: [{ with: 'nym-curl-talk-gel', type: 'enables', note: 'Apply lightly before gel — heavy application weakens cast' }]
@@ -1108,8 +1106,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'conditioner',
+                    step: 'conditioner',
                     outcomes: { shine: 0.7, smoothness: 0.8, strength: 0.2 },
                     cumulative: true,
                     interactions: []
@@ -1123,7 +1120,7 @@
                 intelligence: {
                     mechanisms: ['humidity_barrier'],
                     delivery: 'leave_on',
-                    step: 'style',
+                    step: 'styling',
                     outcomes: { definition: 0.9, frizz_control: 0.9 },
                     cumulative: false,
                     interactions: [{ with: 'marc-anthony-shield', type: 'blocks', note: 'PQ-69 may block polysilicone-29 deposition (medium confidence)' }]
@@ -1137,7 +1134,7 @@
                 intelligence: {
                     mechanisms: ['heat_protection', 'cuticle_smoothing'],
                     delivery: 'leave_on',
-                    step: 'style',
+                    step: 'heat_protection',
                     outcomes: { smoothness: 0.8, strength: 0.4, frizz_control: 0.7 },
                     cumulative: false,
                     interactions: [{ with: 'nym-curl-talk-gel', type: 'blocks', note: 'PQ-69 may block polysilicone-29 (medium confidence)' }]
@@ -1151,8 +1148,7 @@
                 intelligence: {
                     mechanisms: ['clarifying'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'clarify',
+                    step: 'shampoo',
                     outcomes: { cleanliness: 1.0 },
                     cumulative: false,
                     interactions: []
@@ -1164,8 +1160,8 @@
                 notes: 'Bis-aminopropyl diglycol dimaleate. Only product that reconnects disulfide bonds.',
                 intelligence: {
                     mechanisms: ['bond_repair'],
-                    delivery: 'pre_shampoo',
-                    step: 'pre_wash',
+                    delivery: 'rinse_off',
+                    step: 'bond_repair',
                     outcomes: { strength: 0.9, elasticity: 0.8 },
                     cumulative: true,
                     interactions: []
@@ -1179,22 +1175,21 @@
                 intelligence: {
                     mechanisms: ['conditioning'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'conditioner',
+                    step: 'gloss',
                     outcomes: { shine: 0.7, smoothness: 0.8 },
                     cumulative: false,
                     interactions: [{ with: '*', type: 'enhances', note: 'Smoother cuticle improves subsequent product distribution' }]
                 }
             },
-            // Supporting Cast — Weekly/Pre-shampoo
+            // Supporting Cast — Weekly/Bond Repair
             {
                 id: 'garnier-pre-shampoo', name: 'Hair Filler Inner Fiber Repair Pre-Shampoo', brand: 'Garnier Fructis',
                 tier: 'supporting', context: 'weekly', usingUp: false,
                 notes: 'Peptides + citric acid. Bond repair + frizz protection. NOT a conditioner.',
                 intelligence: {
                     mechanisms: ['bond_repair', 'protein_fill'],
-                    delivery: 'pre_shampoo',
-                    step: 'pre_wash',
+                    delivery: 'rinse_off',
+                    step: 'bond_repair',
                     outcomes: { strength: 0.6, smoothness: 0.4 },
                     cumulative: false,
                     interactions: []
@@ -1206,8 +1201,8 @@
                 notes: 'Hydrolyzed keratin + wheat protein. Protein fill, no silicone.',
                 intelligence: {
                     mechanisms: ['protein_fill', 'humectant'],
-                    delivery: 'pre_shampoo',
-                    step: 'pre_wash',
+                    delivery: 'rinse_off',
+                    step: 'bond_repair',
                     outcomes: { strength: 0.7, elasticity: 0.5 },
                     cumulative: false,
                     interactions: []
@@ -1219,8 +1214,8 @@
                 notes: 'Citric acid bond support.',
                 intelligence: {
                     mechanisms: ['bond_repair'],
-                    delivery: 'pre_shampoo',
-                    step: 'pre_wash',
+                    delivery: 'rinse_off',
+                    step: 'bond_repair',
                     outcomes: { strength: 0.4 },
                     cumulative: false,
                     interactions: []
@@ -1233,8 +1228,7 @@
                 intelligence: {
                     mechanisms: ['clarifying'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'glossing',
+                    step: 'gloss',
                     outcomes: { cleanliness: 0.8, shine: 0.5 },
                     cumulative: false,
                     interactions: []
@@ -1248,7 +1242,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing'],
                     delivery: 'leave_on',
-                    step: 'post_wash',
+                    step: 'finishing',
                     outcomes: { shine: 0.9, smoothness: 0.8 },
                     cumulative: true,
                     interactions: []
@@ -1261,7 +1255,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing'],
                     delivery: 'leave_on',
-                    step: 'post_wash',
+                    step: 'finishing',
                     outcomes: { shine: 0.6, smoothness: 0.6 },
                     cumulative: true,
                     interactions: []
@@ -1274,7 +1268,7 @@
                 intelligence: {
                     mechanisms: ['conditioning'],
                     delivery: 'leave_on',
-                    step: 'post_wash',
+                    step: 'leave_in',
                     outcomes: { smoothness: 0.4 },
                     cumulative: false,
                     interactions: []
@@ -1288,9 +1282,37 @@
                 intelligence: {
                     mechanisms: ['humidity_barrier'],
                     delivery: 'leave_on',
-                    step: 'style',
+                    step: 'styling',
                     outcomes: { definition: 0.8, frizz_control: 0.95 },
                     cumulative: false,
+                    interactions: []
+                }
+            },
+            // Supporting Cast — Curly Days
+            {
+                id: 'maui-curl-smoothie', name: 'Curl Quench + Coconut Oil Curl Smoothie', brand: 'Maui Moisture',
+                tier: 'supporting', context: 'curly', usingUp: false,
+                notes: 'Silicone-free curl cream. Coconut oil + shea butter + PQ-37 (light hold). Defines and defrizzes.',
+                intelligence: {
+                    mechanisms: ['conditioning', 'penetrating_oil'],
+                    delivery: 'leave_on',
+                    step: 'styling',
+                    outcomes: { definition: 0.5, frizz_control: 0.4, smoothness: 0.5 },
+                    cumulative: false,
+                    interactions: []
+                }
+            },
+            // Supporting Cast — Weekly Deep Condition
+            {
+                id: 'elvive-total-repair-5-balm', name: 'Total Repair 5 Damage Erasing Balm', brand: "L'Oréal Elvive",
+                tier: 'supporting', context: 'weekly', usingUp: false,
+                notes: 'Amodimethicone + hydrolyzed wheat protein + synthetic ceramide (18-MEA). Strong deep conditioner. Use 3-5 min with heat cap.',
+                intelligence: {
+                    mechanisms: ['cuticle_smoothing', 'protein_fill', 'conditioning'],
+                    delivery: 'rinse_off',
+                    step: 'deep_condition',
+                    outcomes: { shine: 0.8, smoothness: 0.8, strength: 0.5 },
+                    cumulative: true,
                     interactions: []
                 }
             },
@@ -1302,8 +1324,7 @@
                 intelligence: {
                     mechanisms: ['cleansing'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'shampoo',
+                    step: 'shampoo',
                     outcomes: { cleanliness: 0.7 },
                     cumulative: false,
                     interactions: []
@@ -1316,8 +1337,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'conditioner',
+                    step: 'conditioner',
                     outcomes: { shine: 0.4, smoothness: 0.5 },
                     cumulative: false,
                     interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
@@ -1330,8 +1350,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'deep_condition',
+                    step: 'deep_condition',
                     outcomes: { shine: 0.5, smoothness: 0.6 },
                     cumulative: false,
                     interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
@@ -1344,8 +1363,7 @@
                 intelligence: {
                     mechanisms: ['cleansing'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'shampoo',
+                    step: 'shampoo',
                     outcomes: { cleanliness: 0.7 },
                     cumulative: false,
                     interactions: []
@@ -1358,8 +1376,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    step: 'wash',
-                    subStep: 'conditioner',
+                    step: 'conditioner',
                     outcomes: { shine: 0.3, smoothness: 0.4 },
                     cumulative: false,
                     interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
@@ -1372,7 +1389,7 @@
                 intelligence: {
                     mechanisms: ['penetrating_oil'],
                     delivery: 'leave_on',
-                    step: 'post_wash',
+                    step: 'pre_wash',
                     outcomes: { shine: 0.3 },
                     cumulative: false,
                     interactions: []
@@ -1385,7 +1402,7 @@
                 intelligence: {
                     mechanisms: [],
                     delivery: 'leave_on',
-                    step: 'post_wash',
+                    step: 'pre_wash',
                     outcomes: { shine: 0.2 },
                     cumulative: false,
                     interactions: []
@@ -1482,7 +1499,7 @@
                                 product.intelligence = {
                                     mechanisms: [],
                                     delivery: 'unknown',
-                                    step: 'post_wash',
+                                    step: 'leave_in',
                                     outcomes: {},
                                     cumulative: false,
                                     interactions: []
@@ -1520,6 +1537,100 @@
                     });
                 }
                 state.version = 5;
+            }
+
+            // v5 → v6: Granular step system (replaces step+subStep with specific step values)
+            if (state.version < 6) {
+                var stepMigration = {
+                    'olaplex-3': 'bond_repair',
+                    'garnier-pre-shampoo': 'bond_repair',
+                    'ogx-bond-protein-pre': 'bond_repair',
+                    'everpure-bond-pre': 'bond_repair',
+                    'garnier-color-repair-cond': 'conditioner',
+                    'everpure-bond-conditioner': 'conditioner',
+                    'dove-bond-conditioner': 'conditioner',
+                    'dove-intensive-conditioner': 'conditioner',
+                    'dove-bond-mask': 'deep_condition',
+                    'loreal-wonder-water': 'gloss',
+                    'everpure-glossing-mask': 'gloss',
+                    'loreal-21in1': 'leave_in',
+                    'pantene-bond-spray': 'leave_in',
+                    'marc-anthony-shield': 'heat_protection',
+                    'nym-curl-talk-gel': 'styling',
+                    'got2b-gel': 'styling',
+                    'garnier-filler-serum': 'finishing',
+                    'dove-10in1-serum': 'finishing',
+                    'ogx-coconut-oil': 'pre_wash',
+                    'ogx-argan-oil': 'pre_wash',
+                    'everpure-bond-shampoo': 'shampoo',
+                    'dove-bond-shampoo': 'shampoo',
+                    'dove-intensive-shampoo': 'shampoo',
+                    'everpure-clarifying': 'shampoo'
+                };
+
+                // Remap old step values for products not in the lookup
+                var oldToNewStep = {
+                    'wash': 'shampoo',
+                    'pre_wash': 'bond_repair',
+                    'post_wash': 'leave_in',
+                    'style': 'styling'
+                };
+
+                if (Array.isArray(state.inventory)) {
+                    state.inventory.forEach(function(product) {
+                        if (product.intelligence) {
+                            // Use explicit mapping if available
+                            if (stepMigration[product.id]) {
+                                product.intelligence.step = stepMigration[product.id];
+                            } else if (oldToNewStep[product.intelligence.step]) {
+                                // Fallback: map old generic step to new equivalent
+                                product.intelligence.step = oldToNewStep[product.intelligence.step];
+                            }
+                            // Remove subStep — absorbed into granular step system
+                            if (product.intelligence.subStep) {
+                                delete product.intelligence.subStep;
+                            }
+                        }
+                    });
+
+                    // Add new products if not already present
+                    var hasProduct = function(id) {
+                        return state.inventory.some(function(p) { return p.id === id; });
+                    };
+
+                    if (!hasProduct('maui-curl-smoothie')) {
+                        state.inventory.push({
+                            id: 'maui-curl-smoothie', name: 'Curl Quench + Coconut Oil Curl Smoothie', brand: 'Maui Moisture',
+                            tier: 'supporting', context: 'curly', usingUp: false,
+                            notes: 'Silicone-free curl cream. Coconut oil + shea butter + PQ-37 (light hold). Defines and defrizzes.',
+                            intelligence: {
+                                mechanisms: ['conditioning', 'penetrating_oil'],
+                                delivery: 'leave_on',
+                                step: 'styling',
+                                outcomes: { definition: 0.5, frizz_control: 0.4, smoothness: 0.5 },
+                                cumulative: false,
+                                interactions: []
+                            }
+                        });
+                    }
+
+                    if (!hasProduct('elvive-total-repair-5-balm')) {
+                        state.inventory.push({
+                            id: 'elvive-total-repair-5-balm', name: 'Total Repair 5 Damage Erasing Balm', brand: "L'Or\u00E9al Elvive",
+                            tier: 'supporting', context: 'weekly', usingUp: false,
+                            notes: 'Amodimethicone + hydrolyzed wheat protein + synthetic ceramide (18-MEA). Strong deep conditioner. Use 3-5 min with heat cap.',
+                            intelligence: {
+                                mechanisms: ['cuticle_smoothing', 'protein_fill', 'conditioning'],
+                                delivery: 'rinse_off',
+                                step: 'deep_condition',
+                                outcomes: { shine: 0.8, smoothness: 0.8, strength: 0.5 },
+                                cumulative: true,
+                                interactions: []
+                            }
+                        });
+                    }
+                }
+                state.version = 6;
             }
         }
 
@@ -2672,7 +2783,7 @@
                         intelligence: product.intelligence || {
                             mechanisms: [],
                             delivery: 'unknown',
-                            step: 'post_wash',
+                            step: 'leave_in',
                             outcomes: {},
                             cumulative: false,
                             interactions: []
@@ -3521,7 +3632,7 @@
                                     intelligence: {
                                         mechanisms: ['humidity_barrier'],
                                         delivery: 'leave_on',
-                                        step: 'style',
+                                        step: 'styling',
                                         outcomes: { definition: 0.9, frizz_control: 0.9 },
                                         cumulative: false,
                                         interactions: [{ with: 'marc-anthony-shield', type: 'blocks', note: 'PQ-69 may block polysilicone-29 deposition (medium confidence)' }]
@@ -4792,28 +4903,52 @@
 
         // ===== Quick Log (Past Event) =====
 
-        // Phase-based product grouping derived from intelligence metadata
-        // Replaces the old ACTIVITY_PRODUCTS mapping (which was incorrect)
-        var PHASE_LABELS = {
-            'pre_wash': 'Pre-wash',
-            'wash': 'Wash',
-            'post_wash': 'Post-wash',
-            'style': 'Style'
-        };
+        // Step-based product grouping — granular 7-group system with sub-menus
+        var STEP_GROUPS = [
+            { key: 'pre_wash', label: 'Pre-wash', icon: '\uD83E\uDDF4', subMenus: null },
+            { key: 'shampoo', label: 'Shampoo', icon: '\uD83D\uDCA7', subMenus: [
+                { key: 'shampoo_regular', label: 'Shampoo', filter: function(p) { return p.intelligence.mechanisms.indexOf('clarifying') === -1; } },
+                { key: 'shampoo_clarifying', label: 'Clarifying', filter: function(p) { return p.intelligence.mechanisms.indexOf('clarifying') !== -1; } }
+            ]},
+            { key: 'bond_repair', label: 'Bond Repair', icon: '\uD83D\uDD17', subMenus: null },
+            { key: 'condition', label: 'Condition', icon: '\u2728', heatCap: true, subMenus: [
+                { key: 'conditioner', label: 'Conditioner \uD83E\uDDE2', filter: function(p) { return p.intelligence.step === 'conditioner'; } },
+                { key: 'deep_condition', label: 'Deep Conditioner \uD83E\uDDE2', filter: function(p) { return p.intelligence.step === 'deep_condition'; } },
+                { key: 'gloss', label: 'Gloss \uD83E\uDDE2', filter: function(p) { return p.intelligence.step === 'gloss'; } }
+            ]},
+            { key: 'leave_in_protect', label: 'Leave-in & Protect', icon: '\uD83D\uDEE1\uFE0F', subMenus: null, steps: ['leave_in', 'heat_protection'] },
+            { key: 'styling', label: 'Style', icon: '\uD83C\uDF00', subMenus: null },
+            { key: 'finishing', label: 'Finishing', icon: '\uD83D\uDCAB', subMenus: null }
+        ];
 
-        var PHASE_ORDER = ['pre_wash', 'wash', 'post_wash', 'style'];
-
-        function getProductsByPhase(inventory) {
-            var phases = { pre_wash: [], wash: [], post_wash: [], style: [] };
-            inventory.forEach(function(p) {
-                var phase = (p.intelligence && p.intelligence.step) || 'post_wash';
-                if (phases[phase]) {
-                    phases[phase].push(p);
-                } else {
-                    phases.post_wash.push(p);
+        function getProductsForGroup(inventory, group) {
+            if (group.subMenus) {
+                // For groups with sub-menus, collect all products matching any sub-menu
+                var steps = group.subMenus.map(function(sm) { return sm.key; });
+                // For 'condition' group, match conditioner/deep_condition/gloss steps
+                if (group.key === 'condition') {
+                    return inventory.filter(function(p) {
+                        return p.intelligence && (p.intelligence.step === 'conditioner' || p.intelligence.step === 'deep_condition' || p.intelligence.step === 'gloss');
+                    });
                 }
+                // For 'shampoo' group, match shampoo step
+                if (group.key === 'shampoo') {
+                    return inventory.filter(function(p) {
+                        return p.intelligence && p.intelligence.step === 'shampoo';
+                    });
+                }
+                return [];
+            }
+            if (group.steps) {
+                // Multi-step group (leave_in + heat_protection)
+                return inventory.filter(function(p) {
+                    return p.intelligence && group.steps.indexOf(p.intelligence.step) !== -1;
+                });
+            }
+            // Single-step group
+            return inventory.filter(function(p) {
+                return p.intelligence && p.intelligence.step === group.key;
             });
-            return phases;
         }
 
         function showQuickLog() {
@@ -4833,18 +4968,18 @@
             html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.4rem;">When?</label>';
             html += '<input type="date" id="quick-log-date" value="' + defaultDate + '" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.6rem 0.75rem;font-size:0.9rem;margin-bottom:1.25rem;min-height:48px;">';
 
-            // Activities with inline product sections — phase-based grouping
-            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">What products did you use? <span style="color:var(--muted);">(tap phase to expand)</span></label>';
+            // Activities with inline product sections — step-based grouping
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">What products did you use? <span style="color:var(--muted);">(tap group to expand)</span></label>';
 
             html += '<div id="quick-log-phases" style="margin-bottom:1.25rem;">';
-            var phaseIcons = { pre_wash: '\uD83E\uDDF4', wash: '\uD83D\uDCA7', post_wash: '\u2728', style: '\uD83C\uDF00' };
-            for (var pi = 0; pi < PHASE_ORDER.length; pi++) {
-                var phaseKey = PHASE_ORDER[pi];
-                html += '<div class="quick-activity-block" data-phase="' + phaseKey + '" style="margin-bottom:0.5rem;">';
-                html += '<button class="btn-secondary quick-phase-btn" data-phase="' + phaseKey + '" style="width:100%;justify-content:flex-start;text-align:left;">';
-                html += phaseIcons[phaseKey] + ' ' + PHASE_LABELS[phaseKey];
+            for (var pi = 0; pi < STEP_GROUPS.length; pi++) {
+                var group = STEP_GROUPS[pi];
+                html += '<div class="quick-activity-block" data-group="' + group.key + '" style="margin-bottom:0.5rem;">';
+                html += '<button class="btn-secondary quick-phase-btn" data-group="' + group.key + '" style="width:100%;justify-content:flex-start;text-align:left;">';
+                html += group.icon + ' ' + group.label;
+                if (group.heatCap) html += ' <span style="font-size:0.7rem;color:var(--muted);margin-left:0.5rem;">\uD83E\uDDE2 heat cap beneficial</span>';
                 html += '</button>';
-                html += '<div class="quick-phase-products" data-phase-products="' + phaseKey + '" style="display:none;padding:0.5rem 0 0.25rem 0.5rem;"></div>';
+                html += '<div class="quick-phase-products" data-group-products="' + group.key + '" style="display:none;padding:0.5rem 0 0.25rem 0.5rem;"></div>';
                 html += '</div>';
             }
             html += '</div>';
@@ -4870,26 +5005,54 @@
             var selectedProducts = [];
             var selectedRating = null;
 
-            function renderProductsForPhase(phaseKey, container) {
-                var phaseProducts = inventory.filter(function(p) {
-                    return p.intelligence && p.intelligence.step === phaseKey;
-                });
+            function renderProductsForGroup(groupKey, container) {
+                var group = STEP_GROUPS.find(function(g) { return g.key === groupKey; });
+                if (!group) { container.innerHTML = ''; return; }
 
-                if (phaseProducts.length === 0) {
-                    container.innerHTML = '<span style="font-size:0.78rem;color:var(--muted);">No products in this phase</span>';
+                var groupProducts = getProductsForGroup(inventory, group);
+
+                if (groupProducts.length === 0) {
+                    container.innerHTML = '<span style="font-size:0.78rem;color:var(--muted);">No products in this group</span>';
                     return;
                 }
 
-                var pHtml = '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">';
-                for (var i = 0; i < phaseProducts.length; i++) {
-                    var prod = phaseProducts[i];
-                    var isSelected = selectedProducts.indexOf(prod.id) !== -1;
-                    var selStyle = isSelected ? 'border-color:var(--green);color:var(--green);' : '';
-                    pHtml += '<button class="btn-secondary quick-product-btn" data-product-id="' + escapeHtml(prod.id) + '" style="font-size:0.78rem;padding:0.3rem 0.6rem;min-height:36px;' + selStyle + '">';
-                    pHtml += escapeHtml(prod.brand + ' ' + prod.name);
-                    pHtml += '</button>';
+                var pHtml = '';
+
+                if (group.subMenus) {
+                    // Render sub-menus
+                    for (var si = 0; si < group.subMenus.length; si++) {
+                        var subMenu = group.subMenus[si];
+                        var subProducts = groupProducts.filter(subMenu.filter);
+                        if (subProducts.length === 0) continue;
+
+                        pHtml += '<div style="margin-bottom:0.5rem;">';
+                        pHtml += '<div style="font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">' + subMenu.label + '</div>';
+                        pHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">';
+                        for (var i = 0; i < subProducts.length; i++) {
+                            var prod = subProducts[i];
+                            var isSelected = selectedProducts.indexOf(prod.id) !== -1;
+                            var selStyle = isSelected ? 'border-color:var(--green);color:var(--green);' : '';
+                            pHtml += '<button class="btn-secondary quick-product-btn" data-product-id="' + escapeHtml(prod.id) + '" style="font-size:0.78rem;padding:0.3rem 0.6rem;min-height:36px;' + selStyle + '">';
+                            pHtml += escapeHtml(prod.brand + ' ' + prod.name);
+                            pHtml += '</button>';
+                        }
+                        pHtml += '</div>';
+                        pHtml += '</div>';
+                    }
+                } else {
+                    // Flat list
+                    pHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">';
+                    for (var i = 0; i < groupProducts.length; i++) {
+                        var prod = groupProducts[i];
+                        var isSelected = selectedProducts.indexOf(prod.id) !== -1;
+                        var selStyle = isSelected ? 'border-color:var(--green);color:var(--green);' : '';
+                        pHtml += '<button class="btn-secondary quick-product-btn" data-product-id="' + escapeHtml(prod.id) + '" style="font-size:0.78rem;padding:0.3rem 0.6rem;min-height:36px;' + selStyle + '">';
+                        pHtml += escapeHtml(prod.brand + ' ' + prod.name);
+                        pHtml += '</button>';
+                    }
+                    pHtml += '</div>';
                 }
-                pHtml += '</div>';
+
                 container.innerHTML = pHtml;
 
                 container.querySelectorAll('.quick-product-btn').forEach(function(btn) {
@@ -4918,14 +5081,14 @@
             // Wire phase buttons (toggle expand/collapse, shows products inline)
             walkSection.querySelectorAll('.quick-phase-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
-                    var phase = btn.getAttribute('data-phase');
-                    var productsContainer = walkSection.querySelector('[data-phase-products="' + phase + '"]');
+                    var groupKey = btn.getAttribute('data-group');
+                    var productsContainer = walkSection.querySelector('[data-group-products="' + groupKey + '"]');
 
                     if (productsContainer.style.display === 'none') {
                         productsContainer.style.display = '';
                         btn.style.borderColor = 'var(--green)';
                         btn.style.color = 'var(--green)';
-                        renderProductsForPhase(phase, productsContainer);
+                        renderProductsForGroup(groupKey, productsContainer);
                     } else {
                         productsContainer.style.display = 'none';
                         productsContainer.innerHTML = '';
@@ -4950,10 +5113,10 @@
 
             // Wire save
             document.getElementById('quick-log-save').addEventListener('click', function() {
-                // Derive lane from selected style products
+                // Derive lane from selected styling/heat protection products
                 var lane = 'none';
                 var styleProducts = inventory.filter(function(p) {
-                    return p.intelligence && p.intelligence.step === 'style' && selectedProducts.indexOf(p.id) !== -1;
+                    return p.intelligence && (p.intelligence.step === 'styling' || p.intelligence.step === 'heat_protection') && selectedProducts.indexOf(p.id) !== -1;
                 });
                 if (styleProducts.length > 0) {
                     // Check if any selected style product is a curly-context product
@@ -4968,7 +5131,7 @@
                 var activities = [];
                 var hasWashProduct = selectedProducts.some(function(id) {
                     var p = inventory.find(function(pr) { return pr.id === id; });
-                    return p && p.intelligence && p.intelligence.step === 'wash' && p.intelligence.mechanisms.indexOf('cleansing') !== -1;
+                    return p && p.intelligence && p.intelligence.step === 'shampoo' && p.intelligence.mechanisms.indexOf('cleansing') !== -1;
                 });
                 if (hasWashProduct) activities.push('wash');
 
@@ -4993,6 +5156,7 @@
                 if (mechs.indexOf('clarifying') !== -1 && treatments.indexOf('clarify') === -1) treatments.push('clarify');
                 if (mechs.indexOf('protein_fill') !== -1 && treatments.indexOf('protein') === -1) treatments.push('protein');
                 if (mechs.indexOf('bond_repair') !== -1 && treatments.indexOf('bond-repair') === -1) treatments.push('bond-repair');
+                if (product.intelligence.step === 'deep_condition' && treatments.indexOf('deep-condition') === -1) treatments.push('deep-condition');
             });
 
             // Also honor explicit activities passed in (backward compat)
