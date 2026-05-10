@@ -1050,7 +1050,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 6;
+        const CURRENT_VERSION = 7;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -1629,8 +1629,28 @@
                             }
                         });
                     }
+                    // Deduplicate inventory (gel-gap card may have added a duplicate)
+                    var seen = {};
+                    state.inventory = state.inventory.filter(function(p) {
+                        if (seen[p.id]) return false;
+                        seen[p.id] = true;
+                        return true;
+                    });
                 }
                 state.version = 6;
+            }
+
+            // v6 → v7: Deduplicate inventory (gel-gap card could create duplicates)
+            if (state.version < 7) {
+                if (Array.isArray(state.inventory)) {
+                    var seen = {};
+                    state.inventory = state.inventory.filter(function(p) {
+                        if (seen[p.id]) return false;
+                        seen[p.id] = true;
+                        return true;
+                    });
+                }
+                state.version = 7;
             }
         }
 
