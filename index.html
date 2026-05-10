@@ -1683,7 +1683,6 @@
                 <div class="adjust-options" id="adjust-quick-options">
                     <button class="adjust-option" data-value="frizzy">🌊 Frizzy / poofy</button>
                     <button class="adjust-option" data-value="flat">🪨 Flat / no volume</button>
-                    <button class="adjust-option" data-value="soft_limp">🧈 Soft / mushy</button>
                     <button class="adjust-option" data-value="holding_well">✨ Holding well</button>
                     <button class="adjust-option" data-value="oily">🧴 Oily / heavy</button>
                     <button class="adjust-option" data-value="dry_rough">🌿 Dry / rough</button>
@@ -4596,9 +4595,6 @@
                 if (quick.indexOf('dry_rough') !== -1) {
                     applyDryRoughAdjustments(plan);
                 }
-                if (quick.indexOf('soft_limp') !== -1) {
-                    applySoftLimpAdjustments(plan);
-                }
                 if (quick.indexOf('holding_well') !== -1) {
                     applyHoldingWellAdjustments(plan);
                 }
@@ -4754,49 +4750,6 @@
                             phase: 'STYLE', alternatives: []
                         }
                     ];
-                }
-            }
-
-            function applySoftLimpAdjustments(plan) {
-                // Soft/limp = over-moisturized, needs protein reinforcement
-                // Reduce conditioner time, skip heavy leave-ins, suggest protein treatment
-                for (var i = 0; i < plan.steps.length; i++) {
-                    if (plan.steps[i].stepType === 'conditioner') {
-                        plan.steps[i].instruction = 'Quick application — 2 minutes max, ends only. Hair is over-moisturized.';
-                        plan.steps[i].tip = 'Reduced — soft/limp hair needs less moisture, more protein';
-                        if (plan.steps[i].timer) {
-                            plan.steps[i].timer.duration = 120;
-                            plan.steps[i].timer.label = 'Conditioner (short — soft hair)';
-                        }
-                    }
-                    if (plan.steps[i].stepType === 'leave_in') {
-                        plan.steps[i].instruction = 'Skip or use minimal amount on ends only.';
-                        plan.steps[i].tip = 'Less moisture — hair is already soft/over-conditioned';
-                    }
-                }
-                // Add protein step if not already present
-                var hasProtein = plan.steps.some(function(s) { return s.stepType === 'protein' || s.stepType === 'bond_repair'; });
-                if (!hasProtein) {
-                    // Insert after shampoo
-                    var shampooIdx = -1;
-                    for (var j = 0; j < plan.steps.length; j++) {
-                        if (plan.steps[j].stepType === 'shampoo') { shampooIdx = j; break; }
-                    }
-                    if (shampooIdx !== -1) {
-                        plan.steps.splice(shampooIdx + 1, 0, {
-                            id: 'step-added-protein',
-                            number: 0,
-                            stepType: 'bond_repair',
-                            productId: 'pantene-miracle-rescue',
-                            productName: 'Pantene Miracle Rescue Leave-In',
-                            instruction: 'Apply to wet hair after shampoo. Bis-aminopropyl dimethicone repairs bonds and adds structure.',
-                            scienceBadge: 'BOND REPAIR',
-                            timer: null,
-                            tip: 'Added — soft/limp hair needs protein structure',
-                            phase: 'PREP & WASH',
-                            alternatives: []
-                        });
-                    }
                 }
             }
 
@@ -5874,7 +5827,6 @@
             var labels = {
                 'frizzy': '🌊 Frizz',
                 'flat': '🪨 Flat',
-                'soft_limp': '🧈 Soft/mushy',
                 'holding_well': '✨ Holding well',
                 'oily': '🧴 Oily',
                 'dry_rough': '🌿 Dry',
