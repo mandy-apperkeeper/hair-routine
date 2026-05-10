@@ -667,6 +667,172 @@
             margin-bottom: 0;
         }
 
+        /* ===== Inventory ===== */
+        .inventory-group-label {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin: 1.25rem 0 0.5rem;
+            padding-left: 0.25rem;
+        }
+
+        .inventory-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+
+        .inventory-item:hover {
+            border-color: var(--green);
+        }
+
+        .inventory-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .inventory-item-name {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .inventory-item-brand {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 0.15rem;
+        }
+
+        .inventory-item-note {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 0.35rem;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .inventory-item.expanded .inventory-item-note {
+            display: block;
+        }
+
+        .inventory-item-badges {
+            display: flex;
+            gap: 0.3rem;
+            margin-top: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .badge-using-up {
+            background: rgba(212, 116, 138, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(212, 116, 138, 0.3);
+        }
+
+        .badge-context {
+            background: rgba(122, 158, 196, 0.12);
+            color: var(--blue);
+            font-size: 0.6rem;
+        }
+
+        .inventory-item-actions {
+            display: none;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+
+        .inventory-item.expanded .inventory-item-actions {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .inv-action-btn {
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 500;
+            cursor: pointer;
+            min-height: 36px;
+            min-width: 36px;
+            transition: color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .inv-action-btn:hover {
+            color: var(--text);
+            border-color: var(--green);
+        }
+
+        .inv-action-btn.danger:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .inventory-add-form {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .inventory-add-form.active {
+            display: block;
+        }
+
+        .inventory-add-form input,
+        .inventory-add-form select {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            font-size: 0.85rem;
+            font-family: system-ui, -apple-system, sans-serif;
+            margin-bottom: 0.6rem;
+            min-height: 48px;
+        }
+
+        .inventory-add-form input::placeholder {
+            color: var(--muted);
+        }
+
+        .inventory-tier-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            padding: 0.5rem 0;
+            min-height: 48px;
+        }
+
+        .inventory-tier-title {
+            font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+            font-size: 1.05rem;
+            font-weight: 400;
+            color: var(--gold);
+        }
+
+        .inventory-tier-count {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
         /* ===== Responsive Layout ===== */
         @media (min-width: 768px) {
             body {
@@ -761,6 +927,7 @@
 
     <nav aria-label="Main navigation">
         <button data-view="landing" aria-current="true">Home</button>
+        <button data-view="inventory">Products</button>
         <button data-view="history">History</button>
         <button data-view="learn">Learn</button>
         <button data-view="settings">Settings</button>
@@ -848,6 +1015,11 @@
             <!-- Populated dynamically by WalkthroughEngine -->
         </section>
 
+        <!-- Inventory View -->
+        <section id="inventory" class="view" aria-label="Product inventory">
+            <!-- Populated dynamically by renderInventory -->
+        </section>
+
         <!-- History View -->
         <section id="history" class="view" aria-label="Wash history">
             <!-- Populated dynamically by History module -->
@@ -877,9 +1049,52 @@
         const STORAGE_KEY = 'hair-routine-data';
         const CURRENT_VERSION = 3;
 
+        /**
+         * Default product inventory — pre-populated from consultation.
+         * Each product: { id, name, brand, tier, context, usingUp, notes }
+         * Tiers: 'primary' | 'supporting' | 'use-up'
+         * Context: 'every-wash' | 'curly' | 'blowout' | 'weekly' | 'as-needed'
+         */
+        const DEFAULT_INVENTORY = [
+            // Primary Rotation — Every Wash
+            { id: 'garnier-color-repair-cond', name: 'Color Repair Conditioner', brand: 'Garnier Fructis', tier: 'primary', context: 'every-wash', usingUp: false, notes: 'Amodimethicone + synthetic ceramide (18-MEA replacement). Use every wash, 3-5 min.' },
+            { id: 'everpure-bond-shampoo', name: 'Bond Repair Shampoo', brand: "L'Oréal EverPure", tier: 'primary', context: 'every-wash', usingUp: false, notes: 'Daily shampoo. Gentle sulfate-free.' },
+            { id: 'loreal-21in1', name: '21-in-1 Leave-In Spray', brand: "L'Oréal EverPure", tier: 'primary', context: 'every-wash', usingUp: false, notes: 'Amodimethicone + PQ-37 + coconut oil. Best leave-in in collection.' },
+            { id: 'everpure-bond-conditioner', name: 'Bond Repair Conditioner', brand: "L'Oréal EverPure", tier: 'primary', context: 'every-wash', usingUp: false, notes: 'Bis-cetearyl amodimethicone + dimethicone. Second-best conditioner.' },
+            // Primary Rotation — Curly Days
+            { id: 'nym-curl-talk-gel', name: 'Curl Talk Flash Freeze Gel', brand: 'Not Your Mother\'s', tier: 'primary', context: 'curly', usingUp: false, notes: 'PQ-69 humidity barrier. Scrunch into damp hair.' },
+            // Primary Rotation — Blowout Days
+            { id: 'marc-anthony-shield', name: 'Grow Long Anti-Frizz Shield', brand: 'Marc Anthony', tier: 'primary', context: 'blowout', usingUp: false, notes: 'Polysilicone-29 heat seal. Activates seal state.' },
+            // Primary Rotation — Weekly
+            { id: 'everpure-clarifying', name: 'Clarifying Shampoo', brand: "L'Oréal EverPure", tier: 'primary', context: 'weekly', usingUp: false, notes: 'Weekly reset. Deactivates seal state.' },
+            { id: 'olaplex-3', name: 'Olaplex 3', brand: 'Olaplex', tier: 'primary', context: 'weekly', usingUp: false, notes: 'Bis-aminopropyl diglycol dimaleate. Only product that reconnects disulfide bonds.' },
+            // Supporting Cast — Every Wash
+            { id: 'loreal-wonder-water', name: '8 Second Wonder Water', brand: "L'Oréal Elvive", tier: 'supporting', context: 'every-wash', usingUp: false, notes: 'Lamellar conditioning rinse. Spray bottle for distribution.' },
+            // Supporting Cast — Weekly/Pre-shampoo
+            { id: 'garnier-pre-shampoo', name: 'Hair Filler Inner Fiber Repair Pre-Shampoo', brand: 'Garnier Fructis', tier: 'supporting', context: 'weekly', usingUp: false, notes: 'Peptides + citric acid. Bond repair + frizz protection. NOT a conditioner.' },
+            { id: 'ogx-bond-protein-pre', name: 'Bond Protein Repair Pre-Shampoo', brand: 'OGX', tier: 'supporting', context: 'weekly', usingUp: false, notes: 'Hydrolyzed keratin + wheat protein. Protein fill, no silicone.' },
+            { id: 'everpure-bond-pre', name: 'Bond Repair Pre-Shampoo Treatment', brand: "L'Oréal EverPure", tier: 'supporting', context: 'weekly', usingUp: false, notes: 'Citric acid bond support.' },
+            { id: 'everpure-glossing-mask', name: 'Glossing 5-Min Lamination Mask', brand: "L'Oréal EverPure", tier: 'supporting', context: 'weekly', usingUp: false, notes: '\u26A0\uFE0F NOT a conditioner \u2014 clarifying treatment (surfactants + glycolic acid). Use as occasional reset only.' },
+            // Supporting Cast — Finishing/As-needed
+            { id: 'garnier-filler-serum', name: 'Hair Filler Strength Repair Serum', brand: 'Garnier Fructis', tier: 'supporting', context: 'as-needed', usingUp: false, notes: 'Amodimethicone + citric acid. Leave-in serum.' },
+            { id: 'dove-10in1-serum', name: 'Bond Repair 10-in-1 Serum', brand: 'Dove', tier: 'supporting', context: 'as-needed', usingUp: false, notes: 'Amodimethicone (buried in formula). Better than Dove conditioners.' },
+            { id: 'pantene-bond-spray', name: 'Bond Repair Post-Shower Spray', brand: 'Pantene', tier: 'supporting', context: 'as-needed', usingUp: false, notes: '' },
+            // Supporting Cast — Humid days
+            { id: 'got2b-gel', name: 'Glued Blasting Freeze Spray/Gel', brand: 'Got2b', tier: 'supporting', context: 'curly', usingUp: false, notes: 'Humid-day substitute for NYM gel. Stronger hold.' },
+            // Use-Up Queue
+            { id: 'dove-bond-shampoo', name: 'Bond Strength Repair Shampoo', brand: 'Dove', tier: 'use-up', context: 'every-wash', usingUp: true, notes: 'Generic silicone. Finish and don\'t repurchase.' },
+            { id: 'dove-bond-conditioner', name: 'Bond Strength Repair Conditioner', brand: 'Dove', tier: 'use-up', context: 'every-wash', usingUp: true, notes: 'Dimethiconol \u2014 not targeted. L\'Or\u00E9al or Garnier conditioner compensates.' },
+            { id: 'dove-bond-mask', name: 'Bond Strength Hair Mask', brand: 'Dove', tier: 'use-up', context: 'as-needed', usingUp: true, notes: 'Same generic silicone as conditioner. Use as occasional deep treatment while finishing.' },
+            { id: 'dove-intensive-shampoo', name: 'Intensive Repair Shampoo', brand: 'Dove', tier: 'use-up', context: 'every-wash', usingUp: true, notes: 'Finish and don\'t repurchase.' },
+            { id: 'dove-intensive-conditioner', name: 'Intensive Repair Conditioner', brand: 'Dove', tier: 'use-up', context: 'every-wash', usingUp: true, notes: 'Weakest conditioner in collection. L\'Or\u00E9al 21-in-1 compensates.' },
+            { id: 'ogx-coconut-oil', name: 'Coconut Miracle Penetrating Oil', brand: 'OGX', tier: 'use-up', context: 'as-needed', usingUp: true, notes: 'Volatile silicones + coconut oil. Temporary shine only, no lasting benefit.' },
+            { id: 'ogx-argan-oil', name: 'Moroccan Argan Oil', brand: 'OGX', tier: 'use-up', context: 'as-needed', usingUp: true, notes: 'Volatile silicones + argan oil. Temporary shine only, no lasting benefit.' },
+        ];
+
         const DEFAULT_STATE = {
             version: CURRENT_VERSION,
             events: [],
+            inventory: JSON.parse(JSON.stringify(DEFAULT_INVENTORY)),
             thresholds: {
                 washMinDays: 2,
                 clarifyMinDays: 5,
@@ -938,6 +1153,12 @@
                     });
                 }
                 state.version = 2;
+            }
+
+            // v2 → v3: Add product inventory
+            if (state.version < 3) {
+                state.inventory = JSON.parse(JSON.stringify(DEFAULT_INVENTORY));
+                state.version = 3;
             }
         }
 
@@ -2036,6 +2257,97 @@
                 shouldShowGelGap: shouldShowGelGap,
                 dismissGelGap: dismissGelGap,
                 getGelGapInfo: function() { return GEL_GAP; }
+            };
+        })();
+
+        // ===== InventoryManager =====
+        const InventoryManager = (function() {
+            function getInventory() {
+                var state = StateManager.getState();
+                return state.inventory || [];
+            }
+
+            function saveInventory(inventory) {
+                var state = StateManager.getState();
+                state.inventory = inventory;
+                if (StateManager.isStorageAvailable()) {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                    } catch (e) {
+                        console.warn('Failed to save inventory:', e);
+                    }
+                }
+            }
+
+            return {
+                getAll: function() {
+                    return getInventory();
+                },
+
+                getByTier: function(tier) {
+                    return getInventory().filter(function(p) { return p.tier === tier; });
+                },
+
+                getByContext: function(context) {
+                    return getInventory().filter(function(p) { return p.context === context; });
+                },
+
+                addProduct: function(product) {
+                    var inventory = getInventory();
+                    var newProduct = {
+                        id: product.id || generateUUID(),
+                        name: product.name || '',
+                        brand: product.brand || '',
+                        tier: product.tier || 'supporting',
+                        context: product.context || 'as-needed',
+                        usingUp: product.usingUp || false,
+                        notes: product.notes || ''
+                    };
+                    inventory.push(newProduct);
+                    saveInventory(inventory);
+                    return newProduct;
+                },
+
+                removeProduct: function(productId) {
+                    var inventory = getInventory();
+                    inventory = inventory.filter(function(p) { return p.id !== productId; });
+                    saveInventory(inventory);
+                },
+
+                updateProduct: function(productId, updates) {
+                    var inventory = getInventory();
+                    for (var i = 0; i < inventory.length; i++) {
+                        if (inventory[i].id === productId) {
+                            if ('tier' in updates) inventory[i].tier = updates.tier;
+                            if ('context' in updates) inventory[i].context = updates.context;
+                            if ('usingUp' in updates) inventory[i].usingUp = updates.usingUp;
+                            if ('notes' in updates) inventory[i].notes = updates.notes;
+                            if ('name' in updates) inventory[i].name = updates.name;
+                            if ('brand' in updates) inventory[i].brand = updates.brand;
+                            break;
+                        }
+                    }
+                    saveInventory(inventory);
+                },
+
+                markUsingUp: function(productId) {
+                    this.updateProduct(productId, { usingUp: true, tier: 'use-up' });
+                },
+
+                markActive: function(productId) {
+                    this.updateProduct(productId, { usingUp: false });
+                },
+
+                changeTier: function(productId, newTier) {
+                    var updates = { tier: newTier };
+                    if (newTier === 'use-up') updates.usingUp = true;
+                    if (newTier !== 'use-up') updates.usingUp = false;
+                    this.updateProduct(productId, updates);
+                },
+
+                resetToDefaults: function() {
+                    saveInventory(JSON.parse(JSON.stringify(DEFAULT_INVENTORY)));
+                }
             };
         })();
 
@@ -3301,6 +3613,253 @@
             renderLanding();
         }
 
+        // ===== Inventory View =====
+        function renderInventory() {
+            var section = document.getElementById('inventory');
+            var inventory = InventoryManager.getAll();
+
+            var CONTEXT_LABELS = {
+                'every-wash': 'Every Wash',
+                'curly': 'Curly Days',
+                'blowout': 'Blowout Days',
+                'weekly': 'Weekly',
+                'as-needed': 'As Needed'
+            };
+
+            var TIER_CONFIG = [
+                { key: 'primary', title: 'Primary Rotation', description: 'Core products used regularly' },
+                { key: 'supporting', title: 'Supporting Cast', description: 'Occasional or situational use' },
+                { key: 'use-up', title: 'Use-Up Queue', description: 'Finish these, don\'t repurchase' }
+            ];
+
+            var CONTEXT_ORDER = ['every-wash', 'curly', 'blowout', 'weekly', 'as-needed'];
+
+            var html = '<h2>Products</h2>';
+            html += '<p class="product-note" style="margin-bottom:1rem;">Your current inventory. Tap a product for details and actions.</p>';
+
+            // Add product button
+            html += '<button class="btn-secondary" id="inv-add-btn" style="margin-bottom:1rem;">+ Add product</button>';
+
+            // Add form (hidden by default)
+            html += '<div class="inventory-add-form" id="inv-add-form">';
+            html += '<input type="text" id="inv-new-name" placeholder="Product name" aria-label="Product name">';
+            html += '<input type="text" id="inv-new-brand" placeholder="Brand" aria-label="Brand">';
+            html += '<select id="inv-new-tier" aria-label="Tier">';
+            html += '<option value="primary">Primary Rotation</option>';
+            html += '<option value="supporting" selected>Supporting Cast</option>';
+            html += '<option value="use-up">Use-Up Queue</option>';
+            html += '</select>';
+            html += '<select id="inv-new-context" aria-label="Routine context">';
+            html += '<option value="every-wash">Every Wash</option>';
+            html += '<option value="curly">Curly Days</option>';
+            html += '<option value="blowout">Blowout Days</option>';
+            html += '<option value="weekly">Weekly</option>';
+            html += '<option value="as-needed" selected>As Needed</option>';
+            html += '</select>';
+            html += '<input type="text" id="inv-new-notes" placeholder="Notes (optional)" aria-label="Notes">';
+            html += '<div style="display:flex;gap:0.5rem;margin-top:0.25rem;">';
+            html += '<button class="btn-primary" id="inv-save-btn" style="height:48px;font-size:0.85rem;">Save</button>';
+            html += '<button class="btn-secondary" id="inv-cancel-btn">Cancel</button>';
+            html += '</div>';
+            html += '</div>';
+
+            // Render each tier
+            for (var t = 0; t < TIER_CONFIG.length; t++) {
+                var tier = TIER_CONFIG[t];
+                var tierProducts = inventory.filter(function(p) { return p.tier === tier.key; });
+
+                html += '<div class="inventory-tier-header" data-tier="' + tier.key + '" role="button" aria-expanded="true" tabindex="0">';
+                html += '<span class="inventory-tier-title">' + escapeHtml(tier.title) + '</span>';
+                html += '<span class="inventory-tier-count">' + tierProducts.length + ' product' + (tierProducts.length !== 1 ? 's' : '') + '</span>';
+                html += '</div>';
+
+                html += '<div class="inventory-tier-body" data-tier-body="' + tier.key + '">';
+
+                // Group by context within tier
+                for (var c = 0; c < CONTEXT_ORDER.length; c++) {
+                    var ctx = CONTEXT_ORDER[c];
+                    var contextProducts = tierProducts.filter(function(p) { return p.context === ctx; });
+                    if (contextProducts.length === 0) continue;
+
+                    html += '<div class="inventory-group-label">' + CONTEXT_LABELS[ctx] + '</div>';
+
+                    for (var p = 0; p < contextProducts.length; p++) {
+                        var prod = contextProducts[p];
+                        html += '<div class="inventory-item" data-product-id="' + escapeHtml(prod.id) + '">';
+                        html += '<div class="inventory-item-info">';
+                        html += '<div class="inventory-item-name">' + escapeHtml(prod.name) + '</div>';
+                        html += '<div class="inventory-item-brand">' + escapeHtml(prod.brand) + '</div>';
+
+                        // Badges
+                        html += '<div class="inventory-item-badges">';
+                        if (prod.usingUp) {
+                            html += '<span class="badge badge-using-up">Using Up</span>';
+                        }
+                        html += '</div>';
+
+                        // Notes (shown on expand)
+                        if (prod.notes) {
+                            html += '<div class="inventory-item-note">' + escapeHtml(prod.notes) + '</div>';
+                        }
+
+                        // Actions (shown on expand)
+                        html += '<div class="inventory-item-actions">';
+                        if (prod.tier !== 'use-up') {
+                            html += '<button class="inv-action-btn" data-action="use-up" data-id="' + escapeHtml(prod.id) + '">Mark using up</button>';
+                        }
+                        if (prod.tier === 'use-up') {
+                            html += '<button class="inv-action-btn" data-action="promote" data-id="' + escapeHtml(prod.id) + '">Move to Supporting</button>';
+                        }
+                        if (prod.tier === 'supporting') {
+                            html += '<button class="inv-action-btn" data-action="to-primary" data-id="' + escapeHtml(prod.id) + '">Move to Primary</button>';
+                        }
+                        if (prod.tier === 'primary') {
+                            html += '<button class="inv-action-btn" data-action="to-supporting" data-id="' + escapeHtml(prod.id) + '">Move to Supporting</button>';
+                        }
+                        html += '<button class="inv-action-btn danger" data-action="remove" data-id="' + escapeHtml(prod.id) + '">Remove</button>';
+                        html += '</div>';
+
+                        html += '</div>'; // inventory-item-info
+                        html += '</div>'; // inventory-item
+                    }
+                }
+
+                html += '</div>'; // inventory-tier-body
+            }
+
+            // Reset to defaults link
+            html += '<div style="text-align:center;margin:1.5rem 0 0.5rem;">';
+            html += '<button class="btn-secondary" id="inv-reset-btn" style="font-size:0.75rem;color:var(--muted);">Reset to defaults</button>';
+            html += '</div>';
+
+            section.innerHTML = html;
+
+            // Wire event listeners
+            wireInventoryEvents(section);
+        }
+
+        function wireInventoryEvents(section) {
+            // Expand/collapse product items
+            section.addEventListener('click', function(e) {
+                var item = e.target.closest('.inventory-item');
+                var actionBtn = e.target.closest('.inv-action-btn');
+                var tierHeader = e.target.closest('.inventory-tier-header');
+
+                // Tier collapse/expand
+                if (tierHeader && !actionBtn) {
+                    var tierKey = tierHeader.getAttribute('data-tier');
+                    var body = section.querySelector('[data-tier-body="' + tierKey + '"]');
+                    var expanded = tierHeader.getAttribute('aria-expanded') === 'true';
+                    tierHeader.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                    body.style.display = expanded ? 'none' : '';
+                    return;
+                }
+
+                // Action buttons
+                if (actionBtn) {
+                    e.stopPropagation();
+                    var action = actionBtn.getAttribute('data-action');
+                    var productId = actionBtn.getAttribute('data-id');
+
+                    if (action === 'use-up') {
+                        InventoryManager.markUsingUp(productId);
+                    } else if (action === 'promote') {
+                        InventoryManager.changeTier(productId, 'supporting');
+                    } else if (action === 'to-primary') {
+                        InventoryManager.changeTier(productId, 'primary');
+                    } else if (action === 'to-supporting') {
+                        InventoryManager.changeTier(productId, 'supporting');
+                    } else if (action === 'remove') {
+                        InventoryManager.removeProduct(productId);
+                    }
+                    renderInventory();
+                    return;
+                }
+
+                // Expand/collapse item
+                if (item) {
+                    item.classList.toggle('expanded');
+                }
+            });
+
+            // Tier header keyboard support
+            section.querySelectorAll('.inventory-tier-header').forEach(function(header) {
+                header.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        header.click();
+                    }
+                });
+            });
+
+            // Add button
+            var addBtn = document.getElementById('inv-add-btn');
+            var addForm = document.getElementById('inv-add-form');
+            if (addBtn && addForm) {
+                addBtn.addEventListener('click', function() {
+                    addForm.classList.toggle('active');
+                    if (addForm.classList.contains('active')) {
+                        document.getElementById('inv-new-name').focus();
+                    }
+                });
+            }
+
+            // Cancel button
+            var cancelBtn = document.getElementById('inv-cancel-btn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    addForm.classList.remove('active');
+                    document.getElementById('inv-new-name').value = '';
+                    document.getElementById('inv-new-brand').value = '';
+                    document.getElementById('inv-new-notes').value = '';
+                });
+            }
+
+            // Save button
+            var saveBtn = document.getElementById('inv-save-btn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    var name = document.getElementById('inv-new-name').value.trim();
+                    var brand = document.getElementById('inv-new-brand').value.trim();
+                    var tier = document.getElementById('inv-new-tier').value;
+                    var context = document.getElementById('inv-new-context').value;
+                    var notes = document.getElementById('inv-new-notes').value.trim();
+
+                    if (!name) {
+                        document.getElementById('inv-new-name').focus();
+                        return;
+                    }
+
+                    InventoryManager.addProduct({
+                        name: name,
+                        brand: brand,
+                        tier: tier,
+                        context: context,
+                        usingUp: tier === 'use-up',
+                        notes: notes
+                    });
+
+                    // Clear form and re-render
+                    document.getElementById('inv-new-name').value = '';
+                    document.getElementById('inv-new-brand').value = '';
+                    document.getElementById('inv-new-notes').value = '';
+                    addForm.classList.remove('active');
+                    renderInventory();
+                });
+            }
+
+            // Reset to defaults
+            var resetBtn = document.getElementById('inv-reset-btn');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    if (confirm('Reset product inventory to defaults? This will remove any products you added and restore the original list.')) {
+                        InventoryManager.resetToDefaults();
+                        renderInventory();
+                    }
+                });
+            }
+        }
+
         // ===== History View =====
         function renderHistory() {
             var state = StateManager.getState();
@@ -4003,6 +4562,7 @@
 
             // Render other views (lazy — populated when navigated to, but pre-render for instant feel)
             renderHistory();
+            renderInventory();
             renderLearn();
             renderSettings();
 
@@ -4050,6 +4610,7 @@
             CooldownSystem,
             FeedbackEngine,
             CompensationEngine,
+            InventoryManager,
             WalkthroughEngine,
             TimerManager,
             daysSince,
