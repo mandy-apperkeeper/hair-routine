@@ -33,15 +33,15 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Generate arbitrary valid app states (events array, thresholds, seal state, insights, settings) and verify export-to-JSON then import-from-JSON produces identical state
     - **Validates: Requirements 9.4, 9.5**
 
-- [-] 2. Cooldown System and Seal State
-  - [-] 2.1 Implement CooldownSystem module
+- [x] 2. Cooldown System and Seal State
+  - [x] 2.1 Implement CooldownSystem module
     - Implement `checkWarnings(lane, humidity)`, `getTimeSince(eventType)`, `isOverride(warning)`, `recordOverride(warningType)`
     - Time-based warnings: too-soon-wash (< threshold days), too-soon-clarify, too-soon-protein
     - State-based warnings: lane-conflict-pq69 (blowout after PQ-69 gel), lane-conflict-seal (curly while sealed), seal-blocks-treatment
     - All warnings are dismissable (always `dismissable: true`)
     - _Requirements: 3.1, 3.2, 4.2, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ] 2.2 Implement Seal State logic
+  - [x] 2.2 Implement Seal State logic
     - Activate seal on blowout with Marc Anthony spray
     - Deactivate on clarify (EverPure Clarifying or Kinky Curly)
     - Deactivate after 4 non-clarifying washes (degradation)
@@ -78,11 +78,11 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - For any sequence of threshold adjustments (proposals accepted, manual changes), verify wash ≥ 1 day, clarify ≥ 3 days, protein ≥ 5 days — never below floors
     - **Validates: Requirements 4.5, 7.6**
 
-- [ ] 3. Checkpoint
+- [x] 3. Checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Feedback Engine
-  - [ ] 4.1 Implement FeedbackEngine module — interval analysis and insight generation
+- [x] 4. Feedback Engine
+  - [x] 4.1 Implement FeedbackEngine module — interval analysis and insight generation
     - Implement `analyze()`, `getInsights()`, `getIntervalRatings()`
     - Calculate average rating per interval bucket (1-day through 7-day+)
     - Generate insights when a bucket has 5+ rated events
@@ -90,13 +90,13 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Only surface insights with confidence ≥ 0.2 (3+ data points)
     - _Requirements: 6.3, 6.4, 4.4_
 
-  - [ ] 4.2 Implement FeedbackEngine — correlation detection (humidity + product)
+  - [x] 4.2 Implement FeedbackEngine — correlation detection (humidity + product)
     - Implement `getHumidityCorrelations()`, `getProductCorrelations()`
     - Humidity: flag levels with 3+ events averaging below 3.0
     - Product: flag products where |avg_with - avg_without| > 0.5 (both sets need 3+ events)
     - _Requirements: 6.5, 6.6, 8.5_
 
-  - [ ] 4.3 Implement FeedbackEngine — threshold adjustment proposals
+  - [x] 4.3 Implement FeedbackEngine — threshold adjustment proposals
     - Implement `proposeThresholdChange(type, direction)`, `checkOverridePatterns()`
     - Propose decrease when 5+ overrides average ≥ 4.0 rating
     - Propose increase when 5+ events at threshold average < 2.5 rating
@@ -129,11 +129,11 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Verify proposals are generated when override count ≥ 5 with avg rating ≥ 4.0 (decrease) or when interval events ≥ 5 with avg rating < 2.5 (increase)
     - **Validates: Requirements 6.7, 7.2, 7.3**
 
-- [ ] 5. Checkpoint
+- [x] 5. Checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Walkthrough Engine and Timer
-  - [ ] 6.1 Implement WalkthroughEngine module
+- [x] 6. Walkthrough Engine and Timer
+  - [x] 6.1 Implement WalkthroughEngine module
     - Implement `start(lane, humidity)`, `getCurrentStep()`, `next()`, `back()`, `getProgress()`, `getStepsForLane(lane, humidity)`
     - Define step data for all three lanes (curly: 9 steps, blowout: 9 steps, refresh: context-dependent)
     - Include product substitution logic: humid + curly → Got2b replaces NYM gel
@@ -142,7 +142,7 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Include timer metadata on conditioner/treatment steps (5 min conditioner, 10 min pre-shampoo)
     - _Requirements: 2.1, 2.2, 2.7, 8.2, 8.3, 12.1, 12.2, 12.3_
 
-  - [ ] 6.2 Implement TimerManager module
+  - [x] 6.2 Implement TimerManager module
     - Implement `start(durationSeconds, onComplete)`, `pause(timerId)`, `resume(timerId)`, `reset(timerId, durationSeconds)`, `getRemaining(timerId)`
     - Use `requestAnimationFrame` + timestamp comparison for accuracy across tab backgrounding
     - Handle `visibilitychange` event for phone lock/unlock recalculation
@@ -159,8 +159,8 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - For any event history, verify refresh walkthrough presents post-curly guidance when last wash was curly, post-blowout when last was blowout
     - **Validates: Requirements 12.3**
 
-- [ ] 7. Landing Screen UI
-  - [ ] 7.1 Implement Landing Screen with status bar, action buttons, and conditional content
+- [x] 7. Landing Screen UI
+  - [x] 7.1 Implement Landing Screen with status bar, action buttons, and conditional content
     - Status bar: days since last wash, days since last clarify, current seal state indicator
     - Three action buttons (Curly, Blowout, Refresh) — 64px height minimum, large touch targets
     - First-use empty state: welcome message + explanation of what the app will track (shown when all tracker values are null)
@@ -169,14 +169,14 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Default guidance text when < 3 events: "Every 3-4 days is a good baseline"
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 4.4_
 
-  - [ ] 7.2 Implement humidity prompt and warning overlay
+  - [x] 7.2 Implement humidity prompt and warning overlay
     - Three-button humidity selector shown at walkthrough start (Dry <40%, Moderate 40-70%, Humid >70%)
     - Warning overlay: non-blocking banner at top for cooldown/lane-conflict warnings
     - Warning dismiss button (records override)
     - _Requirements: 5.5, 5.6, 8.1_
 
-- [ ] 8. Walkthrough UI and Completion Flow
-  - [ ] 8.1 Implement step-by-step walkthrough UI
+- [x] 8. Walkthrough UI and Completion Flow
+  - [x] 8.1 Implement step-by-step walkthrough UI
     - Single step visible at a time with step counter ("Step 3 of 9")
     - Step display: product name, instruction text, science badge (tappable → links to Learn section), optional tip
     - Navigation: Back button + Next button (large, bottom of screen for thumb reach)
@@ -185,7 +185,7 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Phase card grouping with subtle phase labels (PREP & WASH, STYLE, DRY & FINISH for curly; PREP & WASH, PROTECT, STYLE, FINISH for blowout)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 13.4_
 
-  - [ ] 8.2 Implement walkthrough completion and event logging
+  - [x] 8.2 Implement walkthrough completion and event logging
     - Completion screen: rating prompt (5 emoji scale — terrible, meh, okay, good, amazing), event summary
     - Rating is optional (can skip → null)
     - Auto-record: date, lane, products used, humidity, interval days, overrides
@@ -193,8 +193,8 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Trigger Feedback Engine analysis after event save
     - _Requirements: 2.6, 6.1, 6.2, 9.2_
 
-- [ ] 9. History View
-  - [ ] 9.1 Implement History view with event list and export/import
+- [x] 9. History View
+  - [x] 9.1 Implement History view with event list and export/import
     - Reverse chronological event list showing: date, lane, rating (emoji), interval since previous wash
     - Summary stats: average interval, most common lane, rating trend
     - Export button: JSON download of full app state
@@ -206,8 +206,8 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - For any set of wash events with distinct dates, verify history presents them in strictly reverse chronological order
     - **Validates: Requirements 9.3**
 
-- [ ] 10. Learn Section
-  - [ ] 10.1 Implement Learn section with science cards, product inventory, and frizz diagnostic
+- [x] 10. Learn Section
+  - [x] 10.1 Implement Learn section with science cards, product inventory, and frizz diagnostic
     - Science cards grouped by user question: "How Your Routine Works" (Amodimethicone, Ceramide R, PQ-69, Polysilicone-29), "What Can Go Wrong" (Heat Damage, Glycerin & Humidity, Dual-Lane Conflict, Protein Overload Myth), "What's Happening to Your Hair" (TE Recovery, "Moisture" Is Marketing)
     - Two-tier science confidence badges: VERIFIED (green, peer-reviewed) and BEST PRACTICE (gold, practitioner-validated)
     - Source citations on each science card
@@ -221,8 +221,8 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Expandable/collapsible sections
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-- [ ] 11. Settings and Threshold Management
-  - [ ] 11.1 Implement Settings view
+- [x] 11. Settings and Threshold Management
+  - [x] 11.1 Implement Settings view
     - Current threshold display (wash min, clarify min, protein min) with manual override capability
     - Reset to defaults button
     - Pending proposals from Feedback Engine with accept/reject buttons
@@ -230,11 +230,11 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Sound/vibration toggle for timer alerts
     - _Requirements: 7.1, 7.4, 7.5, 9.4, 9.5_
 
-- [ ] 12. Checkpoint
+- [x] 12. Checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 13. Accessibility, responsive design, and visual polish
-  - [ ] 13.1 Implement accessibility and responsive layout
+- [x] 13. Accessibility, responsive design, and visual polish
+  - [x] 13.1 Implement accessibility and responsive layout
     - WCAG 2.1 AA contrast ratios (4.5:1 body text, 3:1 large text/UI components)
     - Keyboard navigation for all interactive elements with visible focus indicators (gold outline)
     - Touch targets: 48×48dp minimum with 8dp spacing
@@ -245,8 +245,8 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Reduced motion support (`prefers-reduced-motion`)
     - _Requirements: 11.1, 11.2, 11.4, 11.5, 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7_
 
-- [ ] 14. Service Worker and PWA
-  - [ ] 14.1 Create `hair-sw.js` service worker for offline capability
+- [x] 14. Service Worker and PWA
+  - [x] 14.1 Create `hair-sw.js` service worker for offline capability
     - Cache-first strategy with version number in cache name
     - Cache the HTML file and any referenced assets on install
     - New version → new cache → old cache deleted on activation
@@ -254,8 +254,8 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Full offline functionality after initial load
     - _Requirements: 11.3, 11.6_
 
-- [ ] 15. Integration wiring and final assembly
-  - [ ] 15.1 Wire all modules together and implement navigation flow
+- [x] 15. Integration wiring and final assembly
+  - [x] 15.1 Wire all modules together and implement navigation flow
     - Landing screen → humidity prompt → walkthrough → completion → back to landing
     - Connect action buttons to WalkthroughEngine.start()
     - Connect CooldownSystem warnings to warning overlay UI
@@ -275,7 +275,7 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Test seal state flow: blowout with Marc Anthony → seal active → curly warns → clarify → seal reset
     - _Requirements: 1.1–1.5, 2.1–2.7, 3.1–3.5, 6.1–6.7_
 
-- [ ] 16. Final checkpoint
+- [x] 16. Final checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

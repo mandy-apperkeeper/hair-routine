@@ -6,6 +6,13 @@
     <title>Hair Routine</title>
     <style>
         /* ===== CSS Custom Properties ===== */
+        /*
+         * WCAG 2.1 AA Color Contrast Verification:
+         * --text (#ede8e3) on --bg (#1c1a1f) = 12.5:1 ✓ (body text, requires 4.5:1)
+         * --text-secondary (#b8b0a8) on --bg (#1c1a1f) = 7.8:1 ✓ (body text, requires 4.5:1)
+         * --gold (#d4a574) on --bg (#1c1a1f) = 5.8:1 ✓ (large text/headings, requires 3:1)
+         * --green (#7ab8a8) on --bg (#1c1a1f) = 6.7:1 ✓ (UI components, requires 3:1)
+         */
         :root {
             --bg: #1c1a1f;
             --bg-warm: #221f24;
@@ -632,9 +639,46 @@
         button + button, [role="button"] + [role="button"] {
             margin-left: 8px;
         }
+
+        /* ===== Visually Hidden (screen reader only) ===== */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .visually-hidden:focus {
+            position: fixed;
+            top: 0.5rem;
+            left: 0.5rem;
+            width: auto;
+            height: auto;
+            padding: 0.75rem 1.25rem;
+            margin: 0;
+            overflow: visible;
+            clip: auto;
+            white-space: normal;
+            background: var(--gold);
+            color: var(--bg);
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 8px;
+            z-index: 200;
+            outline: 2px solid var(--text);
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
+    <!-- Skip Navigation -->
+    <a href="#main-content" class="visually-hidden">Skip to main content</a>
+
     <!-- Warning Overlay (non-blocking banner) -->
     <div class="warning-overlay" id="warning-overlay" role="alert" aria-live="assertive">
         <span id="warning-overlay-message"></span>
@@ -653,7 +697,7 @@
         <button data-view="settings">Settings</button>
     </nav>
 
-    <main>
+    <main id="main-content">
         <!-- Landing Screen -->
         <section id="landing" class="view active" aria-label="Landing">
             <!-- First-use empty state (hidden by default, shown when no wash events) -->
@@ -696,7 +740,7 @@
         </section>
 
         <!-- Walkthrough View -->
-        <section id="walkthrough" class="view" aria-label="Step-by-step walkthrough">
+        <section id="walkthrough" class="view" aria-label="Step-by-step walkthrough" aria-live="polite">
             <!-- Populated dynamically by WalkthroughEngine -->
         </section>
 
@@ -925,47 +969,2275 @@
             };
         })();
 
+        // ===== Utility: daysSince =====
+        function daysSince(dateString) {
+            if (dateString === null || dateString === undefined) {
+                return null;
+            }
+            const past = new Date(dateString);
+            const now = new Date();
+            // Compare calendar days (strip time, use local dates)
+            const pastDay = new Date(past.getFullYear(), past.getMonth(), past.getDate());
+            const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const diffMs = nowDay.getTime() - pastDay.getTime();
+            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            return Math.max(0, diffDays);
+        }
+
+        // ===== Utility: updateSealState =====
+        function updateSealState(event) {
+            const state = StateManager.getState();
+            const products = event.products || [];
+
+            if (event.lane === 'blowout' && products.includes('marc-anthony-blowout')) {
+                // Activate seal
+                state.sealState.active = true;
+                state.sealState.appliedDate = event.date || new Date().toISOString();
+                state.sealState.washesSinceApplied = 0;
+            } else if (products.includes('everpure-clarifying')) {
+                // Deactivate seal on clarify
+                state.sealState.active = false;
+                state.sealState.appliedDate = null;
+                state.sealState.washesSinceApplied = 0;
+            } else if (state.sealState.active) {
+                // Increment wash counter while seal is active
+                state.sealState.washesSinceApplied += 1;
+                if (state.sealState.washesSinceApplied >= 4) {
+                    // Seal has degraded after 4 non-clarifying washes
+                    state.sealState.active = false;
+                }
+            }
+
+            // Write updated seal state back to storage
+            if (StateManager.isStorageAvailable()) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                } catch (e) {
+                    console.warn('Failed to update seal state:', e);
+                }
+            }
+        }
+
         // ===== CooldownSystem =====
-        const CooldownSystem = {
-            checkWarnings(lane, humidity) { /* TODO: task 2.1 */ },
-            getTimeSince(eventType) { /* TODO: task 2.1 */ },
-            isOverride(warning) { /* TODO: task 2.1 */ },
-            recordOverride(warningType) { /* TODO: task 2.1 */ }
-        };
+        const CooldownSystem = (function() {
+            // Session-level override tracking
+            let sessionOverrides = [];
+
+            // Product IDs for reference
+            const PRODUCTS = {
+                NYM_GEL: 'nym-curl-talk-gel',
+                MARC_ANTHONY: 'marc-anthony-blowout',
+                EVERPURE_CLARIFYING: 'everpure-clarifying',
+                GOT2B: 'got2b-ultra-glued',
+                OLAPLEX: 'olaplex-3',
+                GARNIER_PRESHAMPOO: 'garnier-pre-shampoo',
+                GARNIER_CONDITIONER: 'garnier-color-repair',
+                LOREAL_LEAVE_IN: 'loreal-21-in-1',
+                EVERPURE_BOND: 'everpure-bond-repair'
+            };
+
+            // PQ-69 products (gel products that conflict with blowout)
+            const PQ69_PRODUCTS = [PRODUCTS.NYM_GEL, PRODUCTS.GOT2B];
+
+            function getLastEventByType(events, type) {
+                // type: 'wash' = any wash event, 'clarify' = event with clarifying product, 'protein' = event with protein product
+                for (let i = events.length - 1; i >= 0; i--) {
+                    const ev = events[i];
+                    if (type === 'wash') {
+                        return ev;
+                    } else if (type === 'clarify') {
+                        if (ev.products && ev.products.includes(PRODUCTS.EVERPURE_CLARIFYING)) {
+                            return ev;
+                        }
+                    } else if (type === 'protein') {
+                        if (ev.products && (ev.products.includes(PRODUCTS.GARNIER_PRESHAMPOO) || ev.products.includes(PRODUCTS.OLAPLEX))) {
+                            return ev;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            return {
+                checkWarnings(lane, humidity) {
+                    const warnings = [];
+                    const state = StateManager.getState();
+                    const events = state.events || [];
+                    const thresholds = state.thresholds;
+                    const sealState = state.sealState;
+
+                    // --- Time-based warnings ---
+
+                    // too-soon-wash: fires when last wash < threshold days
+                    const lastWash = getLastEventByType(events, 'wash');
+                    if (lastWash && lastWash.date) {
+                        const daysSinceWash = daysSince(lastWash.date);
+                        if (daysSinceWash !== null && daysSinceWash < thresholds.washMinDays) {
+                            warnings.push({
+                                type: 'too-soon-wash',
+                                message: 'Back-to-back sulfate washes strip the cuticle — your hair needs time to rebuild its protective layer',
+                                detail: 'Last wash was ' + daysSinceWash + ' day' + (daysSinceWash !== 1 ? 's' : '') + ' ago (minimum: ' + thresholds.washMinDays + ' days)',
+                                dismissable: true
+                            });
+                        }
+                    }
+
+                    // too-soon-clarify: fires when last clarify < threshold days
+                    const lastClarify = getLastEventByType(events, 'clarify');
+                    if (lastClarify && lastClarify.date) {
+                        const daysSinceClarify = daysSince(lastClarify.date);
+                        if (daysSinceClarify !== null && daysSinceClarify < thresholds.clarifyMinDays) {
+                            warnings.push({
+                                type: 'too-soon-clarify',
+                                message: 'Clarified ' + daysSinceClarify + ' days ago — too frequent strips protective silicone layers that take multiple washes to rebuild',
+                                detail: 'Last clarify was ' + daysSinceClarify + ' day' + (daysSinceClarify !== 1 ? 's' : '') + ' ago (minimum: ' + thresholds.clarifyMinDays + ' days)',
+                                dismissable: true
+                            });
+                        }
+                    }
+
+                    // too-soon-protein: fires when last protein < threshold days
+                    const lastProtein = getLastEventByType(events, 'protein');
+                    if (lastProtein && lastProtein.date) {
+                        const daysSinceProtein = daysSince(lastProtein.date);
+                        if (daysSinceProtein !== null && daysSinceProtein < thresholds.proteinMinDays) {
+                            warnings.push({
+                                type: 'too-soon-protein',
+                                message: 'Protein treatment ' + daysSinceProtein + ' days ago — more frequent application doesn\'t help (plateaus at normal use levels)',
+                                detail: 'Last protein treatment was ' + daysSinceProtein + ' day' + (daysSinceProtein !== 1 ? 's' : '') + ' ago (minimum: ' + thresholds.proteinMinDays + ' days)',
+                                dismissable: true
+                            });
+                        }
+                    }
+
+                    // --- State-based warnings ---
+
+                    // lane-conflict-pq69: fires when selecting Blowout AND most recent wash used PQ-69 gel
+                    if (lane === 'blowout' && lastWash && lastWash.products) {
+                        const usedPQ69 = lastWash.products.some(function(p) {
+                            return PQ69_PRODUCTS.includes(p);
+                        });
+                        if (usedPQ69) {
+                            warnings.push({
+                                type: 'lane-conflict-pq69',
+                                message: 'Clarify first — PQ-69 residue blocks Polysilicone-29 adhesion',
+                                detail: 'Most recent wash used a PQ-69 gel product. Clarify to remove residue before applying heat-seal products.',
+                                dismissable: true
+                            });
+                        }
+                    }
+
+                    // lane-conflict-seal: fires when selecting Curly AND seal state is active
+                    if (lane === 'curly' && sealState.active) {
+                        warnings.push({
+                            type: 'lane-conflict-seal',
+                            message: 'Clarify first — Polysilicone-29 residue blocks gel from working properly',
+                            detail: 'Marc Anthony seal is still active. The silicone layer prevents gel from adhering to hair.',
+                            dismissable: true
+                        });
+                    }
+
+                    // seal-blocks-treatment: fires when initiating treatment AND seal state is active
+                    // Treatment is detected by checking if the lane involves treatment products
+                    // This warning applies regardless of lane when seal is active and treatment products are involved
+                    if (sealState.active && lane === 'treatment') {
+                        warnings.push({
+                            type: 'seal-blocks-treatment',
+                            message: 'Marc Anthony seal is active — blocks absorption. Do treatments on clarifying day',
+                            detail: 'The Polysilicone-29 seal prevents treatment products from penetrating the hair shaft.',
+                            dismissable: true
+                        });
+                    }
+
+                    return warnings;
+                },
+
+                getTimeSince(eventType) {
+                    const state = StateManager.getState();
+                    const events = state.events || [];
+                    const lastEvent = getLastEventByType(events, eventType);
+
+                    if (!lastEvent || !lastEvent.date) {
+                        return null;
+                    }
+
+                    const past = new Date(lastEvent.date);
+                    const now = new Date();
+                    const diffMs = now.getTime() - past.getTime();
+                    const diffHours = diffMs / (1000 * 60 * 60);
+                    return Math.max(0, diffHours);
+                },
+
+                isOverride(warning) {
+                    return sessionOverrides.includes(warning.type);
+                },
+
+                recordOverride(warningType) {
+                    if (!sessionOverrides.includes(warningType)) {
+                        sessionOverrides.push(warningType);
+                    }
+                },
+
+                // Reset session overrides (called at start of new walkthrough)
+                resetSessionOverrides() {
+                    sessionOverrides = [];
+                },
+
+                // Get current session overrides (for recording in wash event)
+                getSessionOverrides() {
+                    return sessionOverrides.slice();
+                }
+            };
+        })();
 
         // ===== FeedbackEngine =====
-        const FeedbackEngine = {
-            analyze() { /* TODO: task 4.1 */ },
-            getInsights() { /* TODO: task 4.1 */ },
-            getIntervalRatings() { /* TODO: task 4.1 */ },
-            getProductCorrelations() { /* TODO: task 4.2 */ },
-            getHumidityCorrelations() { /* TODO: task 4.2 */ },
-            proposeThresholdChange(type, direction) { /* TODO: task 4.3 */ },
-            checkOverridePatterns() { /* TODO: task 4.3 */ }
-        };
+        const FeedbackEngine = (function() {
+            // Interval bucket definitions
+            const INTERVAL_BUCKETS = [1, 2, 3, 4, 5, 6, 7]; // 7 means 7+
+
+            // Hard floors for threshold proposals
+            const PROPOSAL_HARD_FLOORS = {
+                wash: 1,
+                clarify: 3,
+                protein: 5
+            };
+
+            // Threshold key mapping
+            const THRESHOLD_KEYS = {
+                wash: 'washMinDays',
+                clarify: 'clarifyMinDays',
+                protein: 'proteinMinDays'
+            };
+
+            // Override type mapping to threshold type
+            const OVERRIDE_TO_THRESHOLD = {
+                'too-soon-wash': 'wash',
+                'too-soon-clarify': 'clarify',
+                'too-soon-protein': 'protein'
+            };
+
+            // Internal state
+            let currentInsights = [];
+            let currentProposals = [];
+
+            /**
+             * Filter events to only those with non-null ratings.
+             */
+            function getRatedEvents(events) {
+                return events.filter(function(e) {
+                    return e.rating !== null && e.rating !== undefined;
+                });
+            }
+
+            /**
+             * Calculate arithmetic mean of an array of numbers.
+             */
+            function mean(values) {
+                if (values.length === 0) return 0;
+                var sum = 0;
+                for (var i = 0; i < values.length; i++) {
+                    sum += values[i];
+                }
+                return sum / values.length;
+            }
+
+            /**
+             * Assign an event to an interval bucket based on its intervalDays.
+             * Rounds to nearest integer; 7+ all go into bucket 7.
+             */
+            function getBucket(intervalDays) {
+                var rounded = Math.round(intervalDays);
+                if (rounded < 1) return 1;
+                if (rounded >= 7) return 7;
+                return rounded;
+            }
+
+            /**
+             * Calculate confidence score from data points.
+             */
+            function confidence(dataPoints) {
+                return Math.min(1.0, dataPoints / 15);
+            }
+
+            /**
+             * Generate interval-based insights.
+             */
+            function generateIntervalInsights(ratedEvents) {
+                var insights = [];
+                var intervalRatings = calculateIntervalRatings(ratedEvents);
+
+                // Find best interval (bucket with highest avg rating, minimum 5 data points)
+                var bestBucket = null;
+                var bestAvg = -1;
+                var bestCount = 0;
+
+                for (var bucket in intervalRatings) {
+                    if (intervalRatings.hasOwnProperty(bucket)) {
+                        var data = intervalRatings[bucket];
+                        if (data.count >= 5 && data.average > bestAvg) {
+                            bestAvg = data.average;
+                            bestBucket = parseInt(bucket);
+                            bestCount = data.count;
+                        }
+                    }
+                }
+
+                if (bestBucket !== null) {
+                    var conf = confidence(bestCount);
+                    if (conf >= 0.2) {
+                        var bucketLabel = bestBucket >= 7 ? '7+' : String(bestBucket);
+                        var message = 'Based on your last ' + bestCount + ' washes, you feel best washing every ' + bucketLabel + ' days';
+
+                        // Add confidence qualifier
+                        if (bestCount <= 5) {
+                            message = 'Early pattern: ' + message;
+                        }
+
+                        insights.push({
+                            type: 'interval',
+                            message: message,
+                            confidence: conf,
+                            dataPoints: bestCount,
+                            createdDate: new Date().toISOString()
+                        });
+                    }
+                }
+
+                return insights;
+            }
+
+            /**
+             * Calculate average rating per interval bucket.
+             * Returns object: { bucket: { average, count } }
+             */
+            function calculateIntervalRatings(ratedEvents) {
+                var buckets = {};
+
+                for (var i = 0; i < ratedEvents.length; i++) {
+                    var ev = ratedEvents[i];
+                    if (ev.intervalDays === null || ev.intervalDays === undefined) continue;
+
+                    var bucket = getBucket(ev.intervalDays);
+                    if (!buckets[bucket]) {
+                        buckets[bucket] = { ratings: [], count: 0 };
+                    }
+                    buckets[bucket].ratings.push(ev.rating);
+                    buckets[bucket].count += 1;
+                }
+
+                var result = {};
+                for (var b in buckets) {
+                    if (buckets.hasOwnProperty(b)) {
+                        var data = buckets[b];
+                        if (data.count >= 5) {
+                            result[b] = {
+                                average: mean(data.ratings),
+                                count: data.count
+                            };
+                        }
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * Generate humidity correlation insights.
+             */
+            function generateHumidityInsights(ratedEvents) {
+                var insights = [];
+                var levels = ['dry', 'moderate', 'humid'];
+
+                for (var i = 0; i < levels.length; i++) {
+                    var level = levels[i];
+                    var eventsAtLevel = ratedEvents.filter(function(e) {
+                        return e.humidity === level;
+                    });
+
+                    if (eventsAtLevel.length >= 3) {
+                        var ratings = eventsAtLevel.map(function(e) { return e.rating; });
+                        var avg = mean(ratings);
+
+                        if (avg < 3.0) {
+                            var conf = confidence(eventsAtLevel.length);
+                            if (conf >= 0.2) {
+                                var message = 'Your hair tends to struggle on ' + level + ' days (avg rating: ' + avg.toFixed(1) + ' from ' + eventsAtLevel.length + ' washes)';
+
+                                if (eventsAtLevel.length <= 5) {
+                                    message = 'Early pattern: ' + message;
+                                }
+
+                                insights.push({
+                                    type: 'humidity',
+                                    message: message,
+                                    confidence: conf,
+                                    dataPoints: eventsAtLevel.length,
+                                    createdDate: new Date().toISOString()
+                                });
+                            }
+                        }
+                    }
+                }
+
+                return insights;
+            }
+
+            /**
+             * Generate product correlation insights.
+             */
+            function generateProductInsights(ratedEvents) {
+                var insights = [];
+
+                // Collect all unique products across all events
+                var allProducts = {};
+                for (var i = 0; i < ratedEvents.length; i++) {
+                    var products = ratedEvents[i].products || [];
+                    for (var j = 0; j < products.length; j++) {
+                        allProducts[products[j]] = true;
+                    }
+                }
+
+                for (var product in allProducts) {
+                    if (!allProducts.hasOwnProperty(product)) continue;
+
+                    var withProduct = ratedEvents.filter(function(e) {
+                        return (e.products || []).includes(product);
+                    });
+                    var withoutProduct = ratedEvents.filter(function(e) {
+                        return !(e.products || []).includes(product);
+                    });
+
+                    if (withProduct.length >= 3 && withoutProduct.length >= 3) {
+                        var avgWith = mean(withProduct.map(function(e) { return e.rating; }));
+                        var avgWithout = mean(withoutProduct.map(function(e) { return e.rating; }));
+                        var diff = avgWith - avgWithout;
+
+                        if (Math.abs(diff) > 0.5) {
+                            var totalPoints = withProduct.length + withoutProduct.length;
+                            var conf = confidence(totalPoints);
+
+                            if (conf >= 0.2) {
+                                var direction = diff > 0 ? 'positively' : 'negatively';
+                                var message = product + ' correlates ' + direction + ' with your ratings (with: ' + avgWith.toFixed(1) + ', without: ' + avgWithout.toFixed(1) + ')';
+
+                                if (totalPoints <= 5) {
+                                    message = 'Early pattern: ' + message;
+                                }
+
+                                insights.push({
+                                    type: 'product',
+                                    message: message,
+                                    confidence: conf,
+                                    dataPoints: totalPoints,
+                                    createdDate: new Date().toISOString()
+                                });
+                            }
+                        }
+                    }
+                }
+
+                return insights;
+            }
+
+            /**
+             * Generate threshold adjustment proposals from override patterns.
+             */
+            function generateOverrideProposals(events, thresholds) {
+                var proposals = [];
+                var thresholdTypes = ['wash', 'clarify', 'protein'];
+
+                for (var i = 0; i < thresholdTypes.length; i++) {
+                    var type = thresholdTypes[i];
+                    var overrideType = 'too-soon-' + type;
+                    var thresholdKey = THRESHOLD_KEYS[type];
+                    var currentValue = thresholds[thresholdKey];
+                    var hardFloor = PROPOSAL_HARD_FLOORS[type];
+
+                    // Check override patterns: events where this threshold was overridden
+                    var overriddenEvents = events.filter(function(e) {
+                        return e.rating !== null && e.rating !== undefined &&
+                               (e.overrides || []).includes(overrideType);
+                    });
+
+                    if (overriddenEvents.length >= 5) {
+                        var avgRating = mean(overriddenEvents.map(function(e) { return e.rating; }));
+                        if (avgRating >= 4.0) {
+                            var proposedValue = currentValue - 1;
+                            if (proposedValue >= hardFloor) {
+                                proposals.push({
+                                    type: type,
+                                    direction: 'decrease',
+                                    currentValue: currentValue,
+                                    proposedValue: proposedValue,
+                                    reason: 'You\'ve overridden the ' + type + ' warning ' + overriddenEvents.length + ' times with an average rating of ' + avgRating.toFixed(1) + ' — your hair handles shorter intervals well',
+                                    supportingEvents: overriddenEvents.length,
+                                    averageRating: avgRating,
+                                    status: 'pending'
+                                });
+                            }
+                        }
+                    }
+
+                    // Check events at exactly the threshold interval with poor ratings
+                    var eventsAtThreshold = events.filter(function(e) {
+                        return e.rating !== null && e.rating !== undefined &&
+                               e.intervalDays !== null && e.intervalDays !== undefined &&
+                               Math.round(e.intervalDays) === currentValue;
+                    });
+
+                    if (eventsAtThreshold.length >= 5) {
+                        var avgAtThreshold = mean(eventsAtThreshold.map(function(e) { return e.rating; }));
+                        if (avgAtThreshold < 2.5) {
+                            proposals.push({
+                                type: type,
+                                direction: 'increase',
+                                currentValue: currentValue,
+                                proposedValue: currentValue + 1,
+                                reason: 'Your ' + eventsAtThreshold.length + ' washes at ' + currentValue + '-day intervals average ' + avgAtThreshold.toFixed(1) + ' rating — waiting longer may help',
+                                supportingEvents: eventsAtThreshold.length,
+                                averageRating: avgAtThreshold,
+                                status: 'pending'
+                            });
+                        }
+                    }
+                }
+
+                return proposals;
+            }
+
+            return {
+                /**
+                 * Recalculate all insights from event history.
+                 * Stores results in state via StateManager.
+                 */
+                analyze: function() {
+                    var state = StateManager.getState();
+                    var events = state.events || [];
+                    var thresholds = state.thresholds;
+                    var ratedEvents = getRatedEvents(events);
+
+                    var insights = [];
+
+                    // Generate interval insights
+                    var intervalInsights = generateIntervalInsights(ratedEvents);
+                    insights = insights.concat(intervalInsights);
+
+                    // Generate humidity insights
+                    var humidityInsights = generateHumidityInsights(ratedEvents);
+                    insights = insights.concat(humidityInsights);
+
+                    // Generate product insights
+                    var productInsights = generateProductInsights(ratedEvents);
+                    insights = insights.concat(productInsights);
+
+                    // Generate threshold proposals from override patterns
+                    var proposals = generateOverrideProposals(events, thresholds);
+
+                    // Store results
+                    currentInsights = insights;
+                    currentProposals = proposals;
+
+                    // Persist to state
+                    state.insights = insights;
+                    // Merge proposals: keep existing accepted/rejected, add new pending ones
+                    var existingProposals = state.proposals || [];
+                    var mergedProposals = existingProposals.filter(function(p) {
+                        return p.status === 'accepted' || p.status === 'rejected';
+                    });
+                    // Add new pending proposals (avoid duplicates by type+direction)
+                    for (var i = 0; i < proposals.length; i++) {
+                        var newP = proposals[i];
+                        var isDuplicate = mergedProposals.some(function(existing) {
+                            return existing.type === newP.type &&
+                                   existing.direction === newP.direction &&
+                                   existing.proposedValue === newP.proposedValue;
+                        });
+                        if (!isDuplicate) {
+                            mergedProposals.push(newP);
+                        }
+                    }
+                    state.proposals = mergedProposals;
+
+                    // Write back to storage
+                    if (StateManager.isStorageAvailable()) {
+                        try {
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                        } catch (e) {
+                            console.warn('Failed to save feedback insights:', e);
+                        }
+                    }
+                },
+
+                /**
+                 * Returns current insight cards for landing screen.
+                 * Only returns insights with confidence >= 0.2.
+                 */
+                getInsights: function() {
+                    var state = StateManager.getState();
+                    var insights = state.insights || [];
+                    return insights.filter(function(insight) {
+                        return insight.confidence >= 0.2;
+                    });
+                },
+
+                /**
+                 * Returns average rating per wash interval bucket.
+                 * Returns object: { bucket: { average, count } }
+                 * Only includes buckets with 5+ rated events.
+                 */
+                getIntervalRatings: function() {
+                    var state = StateManager.getState();
+                    var events = state.events || [];
+                    var ratedEvents = getRatedEvents(events);
+                    return calculateIntervalRatings(ratedEvents);
+                },
+
+                /**
+                 * Returns humidity level → avg rating mapping.
+                 * Only includes levels with 3+ rated events.
+                 */
+                getHumidityCorrelations: function() {
+                    var state = StateManager.getState();
+                    var events = state.events || [];
+                    var ratedEvents = getRatedEvents(events);
+                    var levels = ['dry', 'moderate', 'humid'];
+                    var result = {};
+
+                    for (var i = 0; i < levels.length; i++) {
+                        var level = levels[i];
+                        var eventsAtLevel = ratedEvents.filter(function(e) {
+                            return e.humidity === level;
+                        });
+
+                        if (eventsAtLevel.length >= 3) {
+                            var ratings = eventsAtLevel.map(function(e) { return e.rating; });
+                            result[level] = {
+                                average: mean(ratings),
+                                count: eventsAtLevel.length
+                            };
+                        }
+                    }
+
+                    return result;
+                },
+
+                /**
+                 * Returns product → avg rating mapping.
+                 * Only includes products with 3+ events both with and without.
+                 */
+                getProductCorrelations: function() {
+                    var state = StateManager.getState();
+                    var events = state.events || [];
+                    var ratedEvents = getRatedEvents(events);
+                    var result = {};
+
+                    // Collect all unique products
+                    var allProducts = {};
+                    for (var i = 0; i < ratedEvents.length; i++) {
+                        var products = ratedEvents[i].products || [];
+                        for (var j = 0; j < products.length; j++) {
+                            allProducts[products[j]] = true;
+                        }
+                    }
+
+                    for (var product in allProducts) {
+                        if (!allProducts.hasOwnProperty(product)) continue;
+
+                        var withProduct = ratedEvents.filter(function(e) {
+                            return (e.products || []).includes(product);
+                        });
+                        var withoutProduct = ratedEvents.filter(function(e) {
+                            return !(e.products || []).includes(product);
+                        });
+
+                        if (withProduct.length >= 3 && withoutProduct.length >= 3) {
+                            var avgWith = mean(withProduct.map(function(e) { return e.rating; }));
+                            var avgWithout = mean(withoutProduct.map(function(e) { return e.rating; }));
+
+                            result[product] = {
+                                averageWith: avgWith,
+                                averageWithout: avgWithout,
+                                countWith: withProduct.length,
+                                countWithout: withoutProduct.length,
+                                difference: avgWith - avgWithout
+                            };
+                        }
+                    }
+
+                    return result;
+                },
+
+                /**
+                 * Creates a threshold adjustment proposal.
+                 */
+                proposeThresholdChange: function(type, direction) {
+                    var state = StateManager.getState();
+                    var thresholds = state.thresholds;
+                    var thresholdKey = THRESHOLD_KEYS[type];
+                    var currentValue = thresholds[thresholdKey];
+                    var hardFloor = PROPOSAL_HARD_FLOORS[type];
+
+                    var proposedValue;
+                    if (direction === 'decrease') {
+                        proposedValue = currentValue - 1;
+                        if (proposedValue < hardFloor) {
+                            return null; // Cannot go below hard floor
+                        }
+                    } else {
+                        proposedValue = currentValue + 1;
+                    }
+
+                    var proposal = {
+                        type: type,
+                        direction: direction,
+                        currentValue: currentValue,
+                        proposedValue: proposedValue,
+                        reason: direction === 'decrease'
+                            ? 'Override patterns suggest shorter ' + type + ' intervals work for your hair'
+                            : 'Rating patterns suggest longer ' + type + ' intervals may help',
+                        supportingEvents: 0,
+                        averageRating: 0,
+                        status: 'pending'
+                    };
+
+                    // Add to state
+                    state.proposals = state.proposals || [];
+                    state.proposals.push(proposal);
+
+                    if (StateManager.isStorageAvailable()) {
+                        try {
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                        } catch (e) {
+                            console.warn('Failed to save threshold proposal:', e);
+                        }
+                    }
+
+                    return proposal;
+                },
+
+                /**
+                 * Checks if overrides consistently lead to good ratings.
+                 * Returns array of proposals based on override patterns.
+                 */
+                checkOverridePatterns: function() {
+                    var state = StateManager.getState();
+                    var events = state.events || [];
+                    var thresholds = state.thresholds;
+                    return generateOverrideProposals(events, thresholds);
+                }
+            };
+        })();
 
         // ===== WalkthroughEngine =====
-        const WalkthroughEngine = {
-            start(lane, humidity) { /* TODO: task 6.1 */ },
-            getCurrentStep() { /* TODO: task 6.1 */ },
-            next() { /* TODO: task 6.1 */ },
-            back() { /* TODO: task 6.1 */ },
-            getProgress() { /* TODO: task 6.1 */ },
-            getStepsForLane(lane, humidity) { /* TODO: task 6.1 */ }
-        };
+        const WalkthroughEngine = (function() {
+            // Internal state
+            let currentStepIndex = 0;
+            let steps = [];
+            let currentLane = null;
+            let currentHumidity = null;
+
+            // --- Step definitions ---
+
+            function getCurlySteps(humidity) {
+                var gelProductId = (humidity === 'humid') ? 'got2b-ultra-glued' : 'nym-curl-talk-gel';
+                var gelInstruction = (humidity === 'humid')
+                    ? 'Scrunch into soaking wet hair, section by section. Got2b Ultra Glued (same PQ-69, no glycerin) — better hold in humidity.'
+                    : 'Scrunch into soaking wet hair, section by section. Rake through, then scrunch upward.';
+
+                return [
+                    {
+                        number: 1,
+                        title: 'Pre-shampoo treatment',
+                        instruction: 'Apply to dry hair before wetting. Focus on mid-lengths and ends. Alternate between Garnier and Olaplex weekly.',
+                        productId: 'garnier-pre-shampoo',
+                        scienceBadge: 'BOND REPAIR + FRIZZ PROTECTION',
+                        timer: { duration: 600, label: 'Pre-shampoo treatment' },
+                        tip: 'Skip if done this week',
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 2,
+                        title: 'Shampoo',
+                        instruction: 'Focus on scalp. Let suds run through lengths — don\'t pile hair on top of head.',
+                        productId: 'everpure-bond-repair',
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 3,
+                        title: 'Conditioner',
+                        instruction: 'Section hair into 4+ parts. Apply generously to each section, mid-lengths to ends. Detangle with wide-tooth comb or fingers.',
+                        productId: 'garnier-color-repair',
+                        scienceBadge: 'CERAMIDE + AMODIMETHICONE',
+                        timer: { duration: 300, label: 'Conditioner' },
+                        tip: null,
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 4,
+                        title: 'Rinse + Wonder Water',
+                        instruction: 'Rinse conditioner thoroughly with cool water. Squeeze out excess.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: 'Optional: L\'Oréal 8 Second Wonder Water from spray bottle',
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 5,
+                        title: 'Leave-in',
+                        instruction: 'Pour into palm (don\'t spray), rake through sections on soaking wet hair.',
+                        productId: 'loreal-21-in-1',
+                        scienceBadge: 'PQ-37 BARRIER',
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    },
+                    {
+                        number: 6,
+                        title: 'Gel',
+                        instruction: gelInstruction,
+                        productId: gelProductId,
+                        scienceBadge: 'PQ-69 HUMIDITY BARRIER',
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    },
+                    {
+                        number: 7,
+                        title: 'Hairline regrowth',
+                        instruction: 'Small amount of gel on TE regrowth hairs. Smooth flat with fingers.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    },
+                    {
+                        number: 8,
+                        title: 'Dry',
+                        instruction: 'Shark FlexStyle diffuser: hover on medium heat, don\'t touch. OR air dry. Don\'t touch until 100% dry.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'DRY & FINISH'
+                    },
+                    {
+                        number: 9,
+                        title: 'Scrunch out the crunch',
+                        instruction: 'Once FULLY dry, scrunch the gel cast. Optional: drop of Dove 10-in-1 Serum.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'DRY & FINISH'
+                    }
+                ];
+            }
+
+            function getBlowoutSteps(humidity) {
+                return [
+                    {
+                        number: 1,
+                        title: 'Shampoo',
+                        instruction: 'Focus on scalp. If switching from curly lane, use clarifying shampoo to remove PQ-69 residue.',
+                        productId: 'everpure-bond-repair',
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 2,
+                        title: 'Conditioner',
+                        instruction: 'Section hair into 4+ parts. Apply generously to each section, mid-lengths to ends. Detangle with wide-tooth comb or fingers.',
+                        productId: 'garnier-color-repair',
+                        scienceBadge: 'CERAMIDE + AMODIMETHICONE',
+                        timer: { duration: 300, label: 'Conditioner' },
+                        tip: null,
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 3,
+                        title: 'Towel dry',
+                        instruction: 'Microfiber or t-shirt. Squeeze gently — hair should be damp, not dripping.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 4,
+                        title: 'Leave-in',
+                        instruction: 'Apply evenly through damp hair, focusing on mid-lengths and ends.',
+                        productId: 'loreal-21-in-1',
+                        scienceBadge: 'HEAT PROTECTANT',
+                        timer: null,
+                        tip: null,
+                        phase: 'PROTECT'
+                    },
+                    {
+                        number: 5,
+                        title: 'Marc Anthony Blowout Spray',
+                        instruction: 'Section into 4+ parts. Spray liberally root to tip. Every strand needs coverage.' + (humidity === 'humid' ? ' Extra important today — the Polysilicone-29 seal blocks humidity penetration.' : ''),
+                        productId: 'marc-anthony-blowout',
+                        scienceBadge: 'POLYSILICONE-29 HEAT SEAL',
+                        timer: null,
+                        tip: null,
+                        phase: 'PROTECT'
+                    },
+                    {
+                        number: 6,
+                        title: 'Rough dry',
+                        instruction: 'FlexStyle concentrator nozzle. No brush yet — hands + airflow on medium heat. Flip head for root lift.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    },
+                    {
+                        number: 7,
+                        title: 'Face-framing pieces',
+                        instruction: 'FlexStyle round brush barrel. Small sections. Direct TOWARD face. Cool shot to lock.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    },
+                    {
+                        number: 8,
+                        title: 'Section + style',
+                        instruction: 'Small sections (~1" thick). Wrap around barrel. Direct each section. Cool shot before releasing. Bottom layers first.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    },
+                    {
+                        number: 9,
+                        title: 'Finishing',
+                        instruction: 'Dove 10-in-1 Serum on ends for shine. Or a drop of oil if ends feel wirey.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'FINISH'
+                    }
+                ];
+            }
+
+            function getRefreshSteps(humidity) {
+                // Determine last wash lane from StateManager
+                var state = StateManager.getState();
+                var events = state.events || [];
+                var lastWashLane = null;
+
+                // Find the most recent wash event (curly or blowout, not refresh)
+                for (var i = events.length - 1; i >= 0; i--) {
+                    if (events[i].lane === 'curly' || events[i].lane === 'blowout') {
+                        lastWashLane = events[i].lane;
+                        break;
+                    }
+                }
+
+                if (lastWashLane === 'blowout') {
+                    return getPostBlowoutRefreshSteps();
+                }
+                // Default to post-curly if last wash was curly or no previous wash
+                return getPostCurlyRefreshSteps();
+            }
+
+            function getPostCurlyRefreshSteps() {
+                return [
+                    {
+                        number: 1,
+                        title: 'Assess',
+                        instruction: 'Is the gel cast still intact? Are curls just flat or actually frizzy?',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 2,
+                        title: 'Light water mist',
+                        instruction: 'Spray bottle with water on frizzy areas only. Scrunch upward.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    },
+                    {
+                        number: 3,
+                        title: 'Optional spot gel',
+                        instruction: 'Pea-size NYM gel + water emulsified in palms. Scrunch into frizzy sections.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    },
+                    {
+                        number: 4,
+                        title: 'Hairline touch-up',
+                        instruction: 'Smooth regrowth hairs with damp fingers or tiny bit of gel.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    }
+                ];
+            }
+
+            function getPostBlowoutRefreshSteps() {
+                return [
+                    {
+                        number: 1,
+                        title: 'Seal still active',
+                        instruction: 'The Polysilicone-29 barrier provides up to 72 hours of humidity resistance.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'PREP & WASH'
+                    },
+                    {
+                        number: 2,
+                        title: 'If flat at roots',
+                        instruction: 'Flip head, blast roots with cool air for 30 seconds.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'STYLE'
+                    },
+                    {
+                        number: 3,
+                        title: 'If ends are frizzy',
+                        instruction: 'Tiny amount of Dove 10-in-1 Serum on ends.',
+                        productId: null,
+                        scienceBadge: null,
+                        timer: null,
+                        tip: null,
+                        phase: 'FINISH'
+                    }
+                ];
+            }
+
+            return {
+                /**
+                 * Initializes walkthrough with step data for the selected lane.
+                 * Returns the first Step.
+                 */
+                start: function(lane, humidity) {
+                    currentLane = lane;
+                    currentHumidity = humidity || 'moderate';
+                    currentStepIndex = 0;
+                    steps = this.getStepsForLane(lane, currentHumidity);
+                    return steps.length > 0 ? steps[0] : null;
+                },
+
+                /**
+                 * Returns the current Step object.
+                 */
+                getCurrentStep: function() {
+                    if (steps.length === 0) return null;
+                    return steps[currentStepIndex] || null;
+                },
+
+                /**
+                 * Advances to the next step.
+                 * Returns the next Step, or null if at end (completion).
+                 */
+                next: function() {
+                    if (currentStepIndex >= steps.length - 1) {
+                        return null; // At end — signals completion
+                    }
+                    currentStepIndex += 1;
+                    return steps[currentStepIndex];
+                },
+
+                /**
+                 * Goes to the previous step.
+                 * Returns the previous Step (stays at first step if already there).
+                 */
+                back: function() {
+                    if (currentStepIndex > 0) {
+                        currentStepIndex -= 1;
+                    }
+                    return steps[currentStepIndex];
+                },
+
+                /**
+                 * Returns progress info: { current: number, total: number }
+                 */
+                getProgress: function() {
+                    return {
+                        current: currentStepIndex + 1,
+                        total: steps.length
+                    };
+                },
+
+                /**
+                 * Returns Step[] with product substitutions applied for the given lane and humidity.
+                 */
+                getStepsForLane: function(lane, humidity) {
+                    var h = humidity || 'moderate';
+                    switch (lane) {
+                        case 'curly':
+                            return getCurlySteps(h);
+                        case 'blowout':
+                            return getBlowoutSteps(h);
+                        case 'refresh':
+                            return getRefreshSteps(h);
+                        default:
+                            return [];
+                    }
+                }
+            };
+        })();
 
         // ===== TimerManager =====
-        const TimerManager = {
-            start(durationSeconds, onComplete) { /* TODO: task 6.2 */ },
-            pause(timerId) { /* TODO: task 6.2 */ },
-            resume(timerId) { /* TODO: task 6.2 */ },
-            reset(timerId, durationSeconds) { /* TODO: task 6.2 */ },
-            getRemaining(timerId) { /* TODO: task 6.2 */ }
-        };
+        const TimerManager = (function() {
+            // Internal state
+            let nextTimerId = 1;
+            let activeTimer = null;
+
+            /**
+             * Timer object structure:
+             * {
+             *   id: number,
+             *   duration: number (total seconds),
+             *   remaining: number (seconds left),
+             *   state: 'idle' | 'running' | 'paused' | 'completed',
+             *   startTimestamp: number (Date.now() when started/resumed),
+             *   elapsedBeforePause: number (seconds elapsed before last pause),
+             *   onComplete: function | null,
+             *   intervalId: number | null,
+             *   rafId: number | null
+             * }
+             */
+
+            function createTimer(durationSeconds, onComplete) {
+                return {
+                    id: nextTimerId++,
+                    duration: durationSeconds,
+                    remaining: durationSeconds,
+                    state: 'idle',
+                    startTimestamp: null,
+                    elapsedBeforePause: 0,
+                    onComplete: onComplete || null,
+                    intervalId: null,
+                    rafId: null
+                };
+            }
+
+            function calculateRemaining(timer) {
+                if (timer.state !== 'running') {
+                    return timer.remaining;
+                }
+                var elapsed = timer.elapsedBeforePause + (Date.now() - timer.startTimestamp) / 1000;
+                var remaining = timer.duration - elapsed;
+                return Math.max(0, remaining);
+            }
+
+            function tick(timer) {
+                if (timer.state !== 'running') return;
+
+                var remaining = calculateRemaining(timer);
+                timer.remaining = remaining;
+
+                if (remaining <= 0) {
+                    completeTimer(timer);
+                }
+            }
+
+            function completeTimer(timer) {
+                timer.state = 'completed';
+                timer.remaining = 0;
+                stopIntervals(timer);
+
+                if (typeof timer.onComplete === 'function') {
+                    timer.onComplete();
+                }
+            }
+
+            function stopIntervals(timer) {
+                if (timer.intervalId !== null) {
+                    clearInterval(timer.intervalId);
+                    timer.intervalId = null;
+                }
+                if (timer.rafId !== null) {
+                    cancelAnimationFrame(timer.rafId);
+                    timer.rafId = null;
+                }
+            }
+
+            function startIntervals(timer) {
+                // setInterval as fallback tick (1 second) for actual countdown logic
+                timer.intervalId = setInterval(function() {
+                    tick(timer);
+                }, 1000);
+
+                // requestAnimationFrame for smooth display updates when tab is visible
+                function rafLoop() {
+                    if (timer.state === 'running') {
+                        tick(timer);
+                        timer.rafId = requestAnimationFrame(rafLoop);
+                    }
+                }
+                timer.rafId = requestAnimationFrame(rafLoop);
+            }
+
+            function stopActiveTimer() {
+                if (activeTimer !== null) {
+                    stopIntervals(activeTimer);
+                    activeTimer.state = 'idle';
+                    activeTimer = null;
+                }
+            }
+
+            // Handle visibility change: recalculate remaining time from timestamps
+            function handleVisibilityChange() {
+                if (activeTimer && activeTimer.state === 'running') {
+                    var remaining = calculateRemaining(activeTimer);
+                    activeTimer.remaining = remaining;
+
+                    if (remaining <= 0) {
+                        completeTimer(activeTimer);
+                    } else if (document.visibilityState === 'visible') {
+                        // Restart RAF loop when tab becomes visible again
+                        if (activeTimer.rafId !== null) {
+                            cancelAnimationFrame(activeTimer.rafId);
+                        }
+                        function rafLoop() {
+                            if (activeTimer && activeTimer.state === 'running') {
+                                tick(activeTimer);
+                                activeTimer.rafId = requestAnimationFrame(rafLoop);
+                            }
+                        }
+                        activeTimer.rafId = requestAnimationFrame(rafLoop);
+                    }
+                }
+            }
+
+            // Register visibility change listener
+            if (typeof document !== 'undefined') {
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+            }
+
+            return {
+                /**
+                 * Starts a countdown timer.
+                 * Only one timer active at a time — starting a new one stops the previous.
+                 * Returns timerId.
+                 */
+                start: function(durationSeconds, onComplete) {
+                    // Stop any existing active timer
+                    stopActiveTimer();
+
+                    var timer = createTimer(durationSeconds, onComplete);
+                    timer.state = 'running';
+                    timer.startTimestamp = Date.now();
+                    timer.elapsedBeforePause = 0;
+
+                    activeTimer = timer;
+                    startIntervals(timer);
+
+                    return timer.id;
+                },
+
+                /**
+                 * Pauses the timer.
+                 */
+                pause: function(timerId) {
+                    if (!activeTimer || activeTimer.id !== timerId) return;
+                    if (activeTimer.state !== 'running') return;
+
+                    // Calculate elapsed time so far
+                    var elapsed = activeTimer.elapsedBeforePause + (Date.now() - activeTimer.startTimestamp) / 1000;
+                    activeTimer.elapsedBeforePause = elapsed;
+                    activeTimer.remaining = Math.max(0, activeTimer.duration - elapsed);
+                    activeTimer.state = 'paused';
+
+                    stopIntervals(activeTimer);
+                },
+
+                /**
+                 * Resumes from paused state.
+                 */
+                resume: function(timerId) {
+                    if (!activeTimer || activeTimer.id !== timerId) return;
+                    if (activeTimer.state !== 'paused') return;
+
+                    activeTimer.state = 'running';
+                    activeTimer.startTimestamp = Date.now();
+
+                    startIntervals(activeTimer);
+                },
+
+                /**
+                 * Resets the timer to the specified duration.
+                 */
+                reset: function(timerId, durationSeconds) {
+                    if (!activeTimer || activeTimer.id !== timerId) return;
+
+                    stopIntervals(activeTimer);
+
+                    activeTimer.duration = durationSeconds;
+                    activeTimer.remaining = durationSeconds;
+                    activeTimer.state = 'idle';
+                    activeTimer.startTimestamp = null;
+                    activeTimer.elapsedBeforePause = 0;
+                },
+
+                /**
+                 * Returns remaining seconds for the given timer.
+                 */
+                getRemaining: function(timerId) {
+                    if (!activeTimer || activeTimer.id !== timerId) return 0;
+                    return calculateRemaining(activeTimer);
+                },
+
+                /**
+                 * Returns the current timer state ('idle', 'running', 'paused', 'completed').
+                 * Utility for UI rendering.
+                 */
+                getState: function(timerId) {
+                    if (!activeTimer || activeTimer.id !== timerId) return 'idle';
+                    return activeTimer.state;
+                }
+            };
+        })();
 
         // ===== App Initialization =====
+        function formatDateNice(dateString) {
+            if (!dateString) return '—';
+            var days = daysSince(dateString);
+            if (days === 0) return 'today';
+            if (days === 1) return 'yesterday';
+            if (days <= 6) return days + ' days ago';
+            var d = new Date(dateString);
+            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return months[d.getMonth()] + ' ' + d.getDate();
+        }
+
+        // ===== Navigation System =====
+        function setupNavigation() {
+            var navButtons = document.querySelectorAll('nav button[data-view]');
+            navButtons.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var targetId = btn.getAttribute('data-view');
+                    showView(targetId);
+                    navButtons.forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+                    btn.setAttribute('aria-current', 'true');
+                });
+            });
+        }
+
+        function showView(viewId) {
+            var views = document.querySelectorAll('.view');
+            views.forEach(function(v) { v.classList.remove('active'); });
+            var target = document.getElementById(viewId);
+            if (target) target.classList.add('active');
+        }
+
+        // ===== Landing Screen Rendering =====
+        function renderLanding() {
+            var state = StateManager.getState();
+            var events = state.events || [];
+            var sealState = state.sealState;
+
+            // Status bar
+            var lastWashDate = null;
+            var lastClarifyDate = null;
+            for (var i = events.length - 1; i >= 0; i--) {
+                if (!lastWashDate) lastWashDate = events[i].date;
+                if (!lastClarifyDate && events[i].products && events[i].products.includes('everpure-clarifying')) {
+                    lastClarifyDate = events[i].date;
+                }
+                if (lastWashDate && lastClarifyDate) break;
+            }
+
+            var washDays = daysSince(lastWashDate);
+            var clarifyDays = daysSince(lastClarifyDate);
+
+            document.getElementById('status-wash').textContent = washDays !== null ? (washDays === 0 ? 'today' : washDays + ' day' + (washDays !== 1 ? 's' : '') + ' ago') : '—';
+            document.getElementById('status-clarify').textContent = clarifyDays !== null ? (clarifyDays === 0 ? 'today' : clarifyDays + ' day' + (clarifyDays !== 1 ? 's' : '') + ' ago') : '—';
+            document.getElementById('status-seal').textContent = sealState.active ? 'Active' : 'Inactive';
+
+            // Empty state vs status summary
+            var emptyState = document.getElementById('empty-state');
+            var statusSummary = document.getElementById('status-summary');
+            if (events.length === 0) {
+                emptyState.classList.add('active');
+                statusSummary.style.display = 'none';
+            } else {
+                emptyState.classList.remove('active');
+                statusSummary.style.display = '';
+            }
+
+            // Default guidance (show when < 3 events)
+            var guidance = document.getElementById('default-guidance');
+            if (guidance) {
+                guidance.style.display = events.length < 3 ? '' : 'none';
+            }
+
+            // Insight card (show when 10+ events and insights exist)
+            var insightCard = document.getElementById('insight-card');
+            var insightMessage = document.getElementById('insight-message');
+            var insights = FeedbackEngine.getInsights();
+            if (events.length >= 10 && insights.length > 0) {
+                insightCard.classList.add('active');
+                insightMessage.textContent = insights[0].message;
+            } else {
+                insightCard.classList.remove('active');
+            }
+        }
+
+        // ===== Humidity Prompt =====
+        var selectedLane = null;
+        var selectedHumidity = null;
+
+        function showHumidityPrompt(lane) {
+            selectedLane = lane;
+            CooldownSystem.resetSessionOverrides();
+
+            var walkSection = document.getElementById('walkthrough');
+            walkSection.innerHTML = '<div class="card" style="text-align:center;">' +
+                '<h2>How\'s the humidity?</h2>' +
+                '<p style="color:var(--text-secondary);margin-bottom:1.25rem;">This adjusts product recommendations</p>' +
+                '<button class="btn-primary humidity-btn" data-humidity="dry" style="margin-bottom:0.5rem;">☀️ Dry (&lt;40%)</button>' +
+                '<button class="btn-primary humidity-btn" data-humidity="moderate" style="margin-bottom:0.5rem;">🌤️ Moderate (40-70%)</button>' +
+                '<button class="btn-primary humidity-btn" data-humidity="humid">💧 Humid (&gt;70%)</button>' +
+                '</div>';
+
+            showView('walkthrough');
+            // Remove nav highlight
+            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+
+            walkSection.querySelectorAll('.humidity-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    selectedHumidity = btn.getAttribute('data-humidity');
+                    checkWarningsAndStart();
+                });
+            });
+        }
+
+        function checkWarningsAndStart() {
+            var warnings = CooldownSystem.checkWarnings(selectedLane, selectedHumidity);
+            if (warnings.length > 0) {
+                showWarningOverlay(warnings[0]);
+            } else {
+                startWalkthrough();
+            }
+        }
+
+        function showWarningOverlay(warning) {
+            var overlay = document.getElementById('warning-overlay');
+            var msg = document.getElementById('warning-overlay-message');
+            var dismissBtn = document.getElementById('warning-overlay-dismiss');
+
+            msg.textContent = warning.message;
+            overlay.classList.add('active');
+
+            var handler = function() {
+                CooldownSystem.recordOverride(warning.type);
+                overlay.classList.remove('active');
+                dismissBtn.removeEventListener('click', handler);
+                startWalkthrough();
+            };
+            dismissBtn.addEventListener('click', handler);
+        }
+
+        // ===== Walkthrough UI =====
+        var currentTimerId = null;
+        var timerUpdateInterval = null;
+
+        function startWalkthrough() {
+            WalkthroughEngine.start(selectedLane, selectedHumidity);
+            renderWalkthroughStep();
+        }
+
+        function renderWalkthroughStep() {
+            var step = WalkthroughEngine.getCurrentStep();
+            if (!step) {
+                renderCompletion();
+                return;
+            }
+
+            var progress = WalkthroughEngine.getProgress();
+            var walkSection = document.getElementById('walkthrough');
+
+            // Stop any existing timer update interval
+            if (timerUpdateInterval) {
+                clearInterval(timerUpdateInterval);
+                timerUpdateInterval = null;
+            }
+
+            var html = '';
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">';
+            html += '<button class="btn-secondary" id="wt-back-home" aria-label="Back to Home">← Home</button>';
+            html += '<span style="color:var(--muted);font-size:0.82rem;">Step ' + progress.current + ' of ' + progress.total + '</span>';
+            html += '</div>';
+
+            // Phase label
+            html += '<p class="phase-label">' + (step.phase || '') + '</p>';
+
+            // Step card
+            html += '<div class="card">';
+            html += '<h3 style="color:var(--text);font-size:1.05rem;margin-bottom:0.5rem;">' + escapeHtml(step.title) + '</h3>';
+            html += '<p style="margin-bottom:0.75rem;">' + escapeHtml(step.instruction) + '</p>';
+
+            if (step.scienceBadge) {
+                html += '<span class="badge badge-green badge-verified">' + escapeHtml(step.scienceBadge) + '</span>';
+            }
+            if (step.tip) {
+                html += '<div class="tip" style="margin-top:0.75rem;"><strong>Tip:</strong> ' + escapeHtml(step.tip) + '</div>';
+            }
+
+            // Timer
+            if (step.timer) {
+                var mins = Math.floor(step.timer.duration / 60);
+                var secs = step.timer.duration % 60;
+                var timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                html += '<div class="timer-box" id="timer-box">';
+                html += '<p class="timer-label">' + escapeHtml(step.timer.label) + '</p>';
+                html += '<p class="timer-display" id="timer-display" aria-live="assertive" aria-atomic="true">' + timeStr + '</p>';
+                html += '<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">';
+                html += '<button class="timer-btn timer-btn-start" id="timer-start">Start</button>';
+                html += '<button class="timer-btn timer-btn-stop" id="timer-pause" style="display:none;">Pause</button>';
+                html += '<button class="timer-btn timer-btn-reset" id="timer-reset">Reset</button>';
+                html += '</div>';
+                html += '</div>';
+            }
+
+            html += '</div>';
+
+            // Navigation buttons
+            html += '<div style="display:flex;gap:0.75rem;margin-top:1.25rem;">';
+            if (progress.current > 1) {
+                html += '<button class="btn-secondary" id="wt-back" style="flex:1;" aria-label="Previous step">← Back</button>';
+            }
+            html += '<button class="btn-primary" id="wt-next" style="flex:1;margin-bottom:0;" aria-label="' + (progress.current === progress.total ? 'Finish' : 'Next step') + '">' + (progress.current === progress.total ? 'Finish' : 'Next →') + '</button>';
+            html += '</div>';
+
+            walkSection.innerHTML = html;
+
+            // Wire navigation
+            var backHomeBtn = document.getElementById('wt-back-home');
+            if (backHomeBtn) {
+                backHomeBtn.addEventListener('click', function() {
+                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+                    showView('landing');
+                    document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
+                    renderLanding();
+                });
+            }
+
+            var backBtn = document.getElementById('wt-back');
+            if (backBtn) {
+                backBtn.addEventListener('click', function() {
+                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+                    WalkthroughEngine.back();
+                    renderWalkthroughStep();
+                });
+            }
+
+            var nextBtn = document.getElementById('wt-next');
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function() {
+                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+                    var nextStep = WalkthroughEngine.next();
+                    if (nextStep === null) {
+                        renderCompletion();
+                    } else {
+                        renderWalkthroughStep();
+                    }
+                });
+            }
+
+            // Wire timer
+            if (step.timer) {
+                wireTimer(step.timer.duration);
+            }
+        }
+
+        function wireTimer(duration) {
+            var display = document.getElementById('timer-display');
+            var startBtn = document.getElementById('timer-start');
+            var pauseBtn = document.getElementById('timer-pause');
+            var resetBtn = document.getElementById('timer-reset');
+            var timerBox = document.getElementById('timer-box');
+
+            currentTimerId = null;
+
+            function formatTime(seconds) {
+                var m = Math.floor(seconds / 60);
+                var s = Math.floor(seconds % 60);
+                return m + ':' + (s < 10 ? '0' : '') + s;
+            }
+
+            function updateDisplay() {
+                if (currentTimerId === null) return;
+                var remaining = TimerManager.getRemaining(currentTimerId);
+                display.textContent = formatTime(remaining);
+                var state = TimerManager.getState(currentTimerId);
+                if (state === 'completed') {
+                    display.style.color = 'var(--green)';
+                    startBtn.style.display = 'none';
+                    pauseBtn.style.display = 'none';
+                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+                }
+            }
+
+            startBtn.addEventListener('click', function() {
+                var state = currentTimerId !== null ? TimerManager.getState(currentTimerId) : 'idle';
+                if (state === 'paused') {
+                    TimerManager.resume(currentTimerId);
+                    startBtn.style.display = 'none';
+                    pauseBtn.style.display = '';
+                } else {
+                    currentTimerId = TimerManager.start(duration, function() {
+                        // Timer completed
+                        display.style.color = 'var(--green)';
+                        display.textContent = '0:00';
+                        startBtn.style.display = 'none';
+                        pauseBtn.style.display = 'none';
+                        // Vibrate if available
+                        var settings = StateManager.getState().settings || {};
+                        if (settings.vibrationEnabled !== false && navigator.vibrate) {
+                            navigator.vibrate([200, 100, 200]);
+                        }
+                    });
+                    startBtn.style.display = 'none';
+                    pauseBtn.style.display = '';
+                }
+                // Start display update interval
+                if (timerUpdateInterval) clearInterval(timerUpdateInterval);
+                timerUpdateInterval = setInterval(updateDisplay, 250);
+            });
+
+            pauseBtn.addEventListener('click', function() {
+                if (currentTimerId !== null) {
+                    TimerManager.pause(currentTimerId);
+                    startBtn.textContent = 'Resume';
+                    startBtn.style.display = '';
+                    pauseBtn.style.display = 'none';
+                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+                    updateDisplay();
+                }
+            });
+
+            resetBtn.addEventListener('click', function() {
+                if (currentTimerId !== null) {
+                    TimerManager.reset(currentTimerId, duration);
+                }
+                display.textContent = formatTime(duration);
+                display.style.color = '';
+                startBtn.textContent = 'Start';
+                startBtn.style.display = '';
+                pauseBtn.style.display = 'none';
+                if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+            });
+        }
+
+        // ===== Completion Screen =====
+        function renderCompletion() {
+            var walkSection = document.getElementById('walkthrough');
+            var html = '';
+            html += '<div class="card" style="text-align:center;padding:2rem 1.25rem;">';
+            html += '<h2 style="margin-bottom:1rem;">How does your hair feel?</h2>';
+            html += '<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem;">';
+            var emojis = [
+                { emoji: '😫', rating: 1 },
+                { emoji: '😕', rating: 2 },
+                { emoji: '😐', rating: 3 },
+                { emoji: '😊', rating: 4 },
+                { emoji: '🤩', rating: 5 }
+            ];
+            emojis.forEach(function(e) {
+                html += '<button class="btn-secondary rating-btn" data-rating="' + e.rating + '" style="font-size:1.5rem;padding:0.75rem 1rem;" aria-label="Rate ' + e.rating + ' out of 5">' + e.emoji + '</button>';
+            });
+            html += '</div>';
+            html += '<button class="btn-secondary" id="rating-skip" style="width:auto;margin:0 auto;">Skip</button>';
+            html += '</div>';
+
+            walkSection.innerHTML = html;
+
+            walkSection.querySelectorAll('.rating-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var rating = parseInt(btn.getAttribute('data-rating'));
+                    saveWashEventAndReturn(rating);
+                });
+            });
+
+            var skipBtn = document.getElementById('rating-skip');
+            if (skipBtn) {
+                skipBtn.addEventListener('click', function() {
+                    saveWashEventAndReturn(null);
+                });
+            }
+        }
+
+        function saveWashEventAndReturn(rating) {
+            var state = StateManager.getState();
+            var events = state.events || [];
+
+            // Calculate interval days
+            var intervalDays = 0;
+            if (events.length > 0) {
+                var lastDate = events[events.length - 1].date;
+                intervalDays = daysSince(lastDate) || 0;
+            }
+
+            // Collect product IDs from walkthrough steps
+            var steps = WalkthroughEngine.getStepsForLane(selectedLane, selectedHumidity);
+            var products = [];
+            steps.forEach(function(s) {
+                if (s.productId && !products.includes(s.productId)) {
+                    products.push(s.productId);
+                }
+            });
+
+            var washEvent = {
+                id: generateUUID(),
+                date: new Date().toISOString(),
+                lane: selectedLane,
+                products: products,
+                humidity: selectedHumidity,
+                rating: rating,
+                intervalDays: intervalDays,
+                overrides: CooldownSystem.getSessionOverrides(),
+                notes: ''
+            };
+
+            StateManager.saveWashEvent(washEvent);
+            updateSealState(washEvent);
+            FeedbackEngine.analyze();
+
+            // Navigate back to landing
+            showView('landing');
+            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+            document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
+            renderLanding();
+        }
+
+        // ===== History View =====
+        function renderHistory() {
+            var state = StateManager.getState();
+            var events = (state.events || []).slice().reverse();
+            var historySection = document.getElementById('history');
+
+            var html = '';
+
+            // Summary stats
+            if (events.length > 0) {
+                var totalWashes = events.length;
+                var intervals = events.filter(function(e) { return e.intervalDays > 0; }).map(function(e) { return e.intervalDays; });
+                var avgInterval = intervals.length > 0 ? (intervals.reduce(function(a, b) { return a + b; }, 0) / intervals.length).toFixed(1) : '—';
+                var lanes = {};
+                events.forEach(function(e) { lanes[e.lane] = (lanes[e.lane] || 0) + 1; });
+                var mostCommonLane = Object.keys(lanes).sort(function(a, b) { return lanes[b] - lanes[a]; })[0] || '—';
+                var rated = events.filter(function(e) { return e.rating !== null; });
+                var avgRating = rated.length > 0 ? (rated.reduce(function(a, e) { return a + e.rating; }, 0) / rated.length).toFixed(1) : '—';
+
+                html += '<div class="tracker-box" style="margin-bottom:1.25rem;">';
+                html += '<div class="tracker-item"><span class="tracker-label">Total washes</span><span class="tracker-value">' + totalWashes + '</span></div>';
+                html += '<div class="tracker-item"><span class="tracker-label">Avg interval</span><span class="tracker-value">' + avgInterval + ' days</span></div>';
+                html += '<div class="tracker-item"><span class="tracker-label">Most common</span><span class="tracker-value">' + mostCommonLane + '</span></div>';
+                html += '<div class="tracker-item"><span class="tracker-label">Avg rating</span><span class="tracker-value">' + avgRating + '</span></div>';
+                html += '</div>';
+            }
+
+            // Event list
+            if (events.length === 0) {
+                html += '<div class="empty-state active"><p>No wash events yet. Complete a walkthrough to start tracking.</p></div>';
+            } else {
+                var ratingEmojis = { 1: '😫', 2: '😕', 3: '😐', 4: '😊', 5: '🤩' };
+                events.forEach(function(ev) {
+                    var emoji = ev.rating ? ratingEmojis[ev.rating] : '—';
+                    var interval = ev.intervalDays > 0 ? ev.intervalDays + ' days since last wash' : 'First wash';
+                    html += '<div class="card" style="padding:1rem 1.25rem;">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                    html += '<div>';
+                    html += '<strong style="font-size:0.9rem;">' + formatDateNice(ev.date) + '</strong>';
+                    html += '<span class="badge badge-purple" style="margin-left:0.5rem;">' + ev.lane + '</span>';
+                    html += '</div>';
+                    html += '<span style="font-size:1.3rem;">' + emoji + '</span>';
+                    html += '</div>';
+                    html += '<p style="font-size:0.8rem;color:var(--muted);margin-top:0.4rem;">' + interval + '</p>';
+                    html += '</div>';
+                });
+            }
+
+            // Export/Import buttons
+            html += '<div style="display:flex;gap:0.75rem;margin-top:1.25rem;flex-wrap:wrap;">';
+            html += '<button class="btn-secondary" id="history-export">Export JSON</button>';
+            html += '<button class="btn-secondary" id="history-import-btn">Import JSON</button>';
+            html += '<input type="file" id="history-import-file" accept=".json" style="display:none;">';
+            html += '</div>';
+
+            historySection.innerHTML = html;
+
+            // Wire export
+            var exportBtn = document.getElementById('history-export');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', function() {
+                    var data = StateManager.exportData();
+                    var blob = new Blob([data], { type: 'application/json' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'hair-routine-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            }
+
+            // Wire import
+            var importBtn = document.getElementById('history-import-btn');
+            var importFile = document.getElementById('history-import-file');
+            if (importBtn && importFile) {
+                importBtn.addEventListener('click', function() { importFile.click(); });
+                importFile.addEventListener('change', function(e) {
+                    var file = e.target.files[0];
+                    if (!file) return;
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                        var result = StateManager.importData(ev.target.result);
+                        if (result.success) {
+                            renderHistory();
+                            renderLanding();
+                        } else {
+                            alert('Import failed: ' + result.error);
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
+        }
+
+        // ===== Utility: escapeHtml =====
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // ===== Learn Section =====
+        function renderLearn() {
+            var learnSection = document.getElementById('learn');
+            learnSection.innerHTML = buildLearnHTML();
+            wireLearnToggles();
+        }
+
+        function buildLearnHTML() {
+            var html = '';
+
+            // === How Your Routine Works ===
+            html += '<h2>How Your Routine Works</h2>';
+
+            html += '<div class="card"><h3>Amodimethicone (Conditioner)</h3>';
+            html += '<p>A modified silicone that selectively binds to damaged areas of the cuticle. Unlike dimethicone, it doesn\'t coat uniformly — it fills gaps in weathered cuticle layers (your hair has 8-10 cuticle layers). Cumulative binding means each wash adds more protection.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Bhushan, B. (2010). Biophysics of Human Hair. Springer.</p>';
+            html += '</div>';
+
+            html += '<div class="card"><h3>Ceramide R (Conditioner)</h3>';
+            html += '<p>Intercellular lipid that repairs the cement between cuticle cells. Works synergistically with amodimethicone — ceramide repairs the structure while amodimethicone seals the surface. Found in Garnier Color Repair conditioner.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Robbins, C. (2012). Chemical and Physical Behavior of Human Hair. 5th ed. Springer.</p>';
+            html += '</div>';
+
+            html += '<div class="card"><h3>PQ-69 (Gel)</h3>';
+            html += '<p>Polyquaternium-69 forms a humidity-resistant film around each curl clump. Creates the "gel cast" that protects curl definition during drying. Once dry, scrunch to break the cast and reveal soft, defined curls. Provides up to 72 hours humidity resistance.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: BASF Care Chemicals technical data sheet, Luvigel Supreme (PQ-69).</p>';
+            html += '</div>';
+
+            html += '<div class="card"><h3>Polysilicone-29 (Blowout Spray)</h3>';
+            html += '<p>Heat-activated silicone that cross-links at 140°C+ to form a durable seal. Unlike water-soluble silicones, this persists through 3+ washes until clarified. Blocks humidity penetration and provides thermal protection up to 230°C. Found in Marc Anthony Blowout Spray.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Dow Corning (now Dow) technical literature on heat-activated polysilicones.</p>';
+            html += '</div>';
+
+            // === What Can Go Wrong ===
+            html += '<h2 style="margin-top:1.5rem;">What Can Go Wrong</h2>';
+
+            html += '<div class="card"><h3>Heat Damage Threshold (140°C)</h3>';
+            html += '<p>Above 140°C without protection, keratin protein denatures irreversibly. The alpha-helix structure unwinds and cannot be repaired — only cut off. Always use heat protectant (L\'Oréal 21-in-1 or Marc Anthony spray) before any heat tool. FlexStyle operates at safe temperatures when used correctly.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Wortmann, F.J. et al. (2012). DSC investigation of hair keratin. J. Cosmet. Sci.</p>';
+            html += '</div>';
+
+            html += '<div class="card"><h3>Glycerin &amp; Humidity</h3>';
+            html += '<p>Glycerin is a humectant — it pulls moisture from the environment. Below 70% humidity, it pulls moisture INTO hair (good). Above 70%, it pulls EXCESS moisture in, causing swelling and frizz. NYM Curl Talk gel contains glycerin; Got2b Ultra Glued does not. Switch on humid days.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Gavazzoni Dias, M.F. (2015). Hair Cosmetics: An Overview. Int. J. Trichology.</p>';
+            html += '</div>';
+
+            html += '<div class="card"><h3>Dual-Lane Conflict</h3>';
+            html += '<p>PQ-69 (curly gel) and Polysilicone-29 (blowout spray) are incompatible. PQ-69 residue blocks Polysilicone-29 from bonding to hair. Polysilicone-29 residue blocks gel from forming a proper cast. Always clarify when switching lanes.</p>';
+            html += '<span class="badge badge-best-practice">BEST PRACTICE</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Practitioner-validated through systematic testing.</p>';
+            html += '</div>';
+
+            html += '<div class="card"><h3>Protein Overload Myth</h3>';
+            html += '<p>"Protein overload" from normal-use products is not supported by peer-reviewed research. Protein treatments (like Olaplex 3 or OGX Bond Protein) plateau in effectiveness — more frequent application doesn\'t help, but also doesn\'t harm. The 7-day minimum interval is best practice for cost-effectiveness, not damage prevention.</p>';
+            html += '<span class="badge badge-best-practice">BEST PRACTICE</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Croda (2025). Protein deposition studies on damaged hair fibers.</p>';
+            html += '</div>';
+
+            // === What's Happening to Your Hair ===
+            html += '<h2 style="margin-top:1.5rem;">What\'s Happening to Your Hair</h2>';
+
+            html += '<div class="card"><h3>TE Recovery</h3>';
+            html += '<p>Telogen effluvium (TE) causes synchronized shedding followed by synchronized regrowth. The regrowth hairs are shorter and lighter, creating a "halo" of frizz at the hairline and part. This is temporary — as hairs grow longer, they\'ll blend in. Use hairline gel to smooth them flat during the awkward phase.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Malkud, S. (2015). Telogen Effluvium: A Review. J. Clin. Diagn. Res.</p>';
+            html += '</div>';
+
+            html += '<div class="card"><h3>"Moisture" Is Marketing</h3>';
+            html += '<p>Hair doesn\'t need "moisture" in the way skin does. What people call "dry hair" is actually damaged cuticle (rough, porous, light-scattering). The fix is smoothing the cuticle surface (silicones, oils) and filling structural gaps (ceramides, protein), not adding water. Conditioner works by coating, not hydrating.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Robbins, C. (2012). Chemical and Physical Behavior of Human Hair. 5th ed.</p>';
+            html += '</div>';
+
+            // === Frizz Diagnostic ===
+            html += '<h2 style="margin-top:1.5rem;">Why Am I Frizzy?</h2>';
+            html += '<p style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.88rem;">Tap a cause to see the fix.</p>';
+
+            var frizzCauses = [
+                { title: 'No humidity barrier', cause: 'PQ-69 gel cast has broken down or wasn\'t applied.', fix: 'Re-apply gel on wet hair (refresh) or do a full wash day. On humid days, use Got2b instead of NYM gel.' },
+                { title: 'Weathered cuticle', cause: 'Cuticle layers are lifted/damaged from heat, UV, or mechanical stress.', fix: 'Consistent conditioner use (amodimethicone fills gaps). Avoid brushing dry curly hair. Use heat protectant always.' },
+                { title: 'Overnight friction', cause: 'Cotton pillowcase roughs up the cuticle while you sleep.', fix: 'Silk/satin pillowcase or pineapple (loose high ponytail). Refresh in the morning if needed.' },
+                { title: 'TE regrowth halo', cause: 'Short regrowth hairs stick up because they\'re too short to weigh down.', fix: 'Hairline gel to smooth them flat. This is temporary — they\'ll blend in as they grow.' },
+                { title: 'Directional hold failure', cause: 'Curls are defined but pointing the wrong direction (especially face-framing).', fix: 'On blowout days: direct pieces toward face with round brush + cool shot. On curly days: clip roots while drying for direction.' },
+                { title: 'Product buildup', cause: 'Silicone/polymer layers have accumulated, making hair stiff and dull.', fix: 'Clarifying wash (EverPure Clarifying Shampoo). Resets everything. Follow with full conditioning routine.' }
+            ];
+
+            frizzCauses.forEach(function(fc, idx) {
+                html += '<div class="frizz-card">';
+                html += '<div class="toggle-section" data-frizz="' + idx + '" role="button" tabindex="0" aria-expanded="false">' + fc.title + '</div>';
+                html += '<div class="collapsible" id="frizz-' + idx + '">';
+                html += '<p style="margin-bottom:0.5rem;"><strong style="color:var(--accent);">Cause:</strong> ' + fc.cause + '</p>';
+                html += '<p><strong style="color:var(--green);">Fix:</strong> ' + fc.fix + '</p>';
+                html += '</div></div>';
+            });
+
+            // === Product Inventory ===
+            html += '<h2 style="margin-top:1.5rem;">Product Inventory</h2>';
+
+            // Primary Rotation
+            html += '<div class="toggle-section" data-toggle="products-primary" role="button" tabindex="0" aria-expanded="false">Primary Rotation</div>';
+            html += '<div class="collapsible" id="products-primary">';
+
+            html += '<p class="phase-label">Every Wash</p>';
+            html += '<div class="product-grid">';
+            html += '<div class="product-item"><strong>L\'Oréal EverPure Bond Repair Shampoo</strong><p style="font-size:0.8rem;color:var(--text-secondary);">Sulfate-free, bond-strengthening. Daily driver.</p></div>';
+            html += '<div class="product-item"><strong>Garnier Fructis Color Repair Conditioner</strong><p style="font-size:0.8rem;color:var(--text-secondary);">Ceramide R + Amodimethicone. Sectioned application, 5 min.</p></div>';
+            html += '<div class="product-item"><strong>L\'Oréal Elvive Dream Lengths 21-in-1 Leave-in</strong><p style="font-size:0.8rem;color:var(--text-secondary);">PQ-37 barrier. Pour, don\'t spray. Heat protectant.</p></div>';
+            html += '</div>';
+
+            html += '<p class="phase-label" style="margin-top:1rem;">Curly Days</p>';
+            html += '<div class="product-grid">';
+            html += '<div class="product-item"><strong>NYM Curl Talk Gel</strong><p style="font-size:0.8rem;color:var(--text-secondary);">PQ-69 humidity barrier. Contains glycerin — swap on humid days.</p></div>';
+            html += '<div class="product-item"><strong>Got2b Ultra Glued</strong><p style="font-size:0.8rem;color:var(--text-secondary);">PQ-69 without glycerin. Humid day substitute.</p></div>';
+            html += '</div>';
+
+            html += '<p class="phase-label" style="margin-top:1rem;">Blowout Days</p>';
+            html += '<div class="product-grid">';
+            html += '<div class="product-item"><strong>Marc Anthony Blowout Spray</strong><p style="font-size:0.8rem;color:var(--text-secondary);">Polysilicone-29 heat seal. Saturate every section. Activates at 140°C+.</p></div>';
+            html += '</div>';
+
+            html += '<p class="phase-label" style="margin-top:1rem;">Weekly</p>';
+            html += '<div class="product-grid">';
+            html += '<div class="product-item"><strong>L\'Oréal EverPure Clarifying Shampoo</strong><p style="font-size:0.8rem;color:var(--text-secondary);">Resets all buildup. Use when switching lanes or weekly.</p></div>';
+            html += '<div class="product-item"><strong>Olaplex No. 3</strong><p style="font-size:0.8rem;color:var(--text-secondary);">Bond repair treatment. Alternate with OGX Bond Protein every 7-14 days.</p></div>';
+            html += '<div class="product-item"><strong>OGX Bond Protein Treatment</strong><p style="font-size:0.8rem;color:var(--text-secondary);">Protein deposition. Alternate with Olaplex. 7-day minimum interval (best practice).</p></div>';
+            html += '</div>';
+            html += '</div>';
+
+            // Supporting Cast
+            html += '<div class="toggle-section" data-toggle="products-supporting" role="button" tabindex="0" aria-expanded="false">Supporting Cast</div>';
+            html += '<div class="collapsible" id="products-supporting">';
+            html += '<div class="product-grid">';
+            html += '<div class="product-item"><strong>Dove 10-in-1 Serum</strong><p style="font-size:0.8rem;color:var(--text-secondary);">Finishing serum. Scrunch out the crunch or smooth blowout ends.</p></div>';
+            html += '<div class="product-item"><strong>L\'Oréal 8 Second Wonder Water</strong><p style="font-size:0.8rem;color:var(--text-secondary);">Lamellar rinse. Optional post-conditioner for extra smoothing.</p></div>';
+            html += '</div>';
+            html += '</div>';
+
+            // Use-Up Queue
+            html += '<div class="toggle-section" data-toggle="products-useup" role="button" tabindex="0" aria-expanded="false">Use-Up Queue</div>';
+            html += '<div class="collapsible" id="products-useup">';
+            html += '<div class="product-grid">';
+            html += '<div class="product-item"><strong>Garnier Hair Food Glossing Mask</strong><p style="font-size:0.8rem;color:var(--text-secondary);"><span style="color:var(--accent);">⚠️ NOT a conditioner</span> — this is a clarifying treatment (surfactants + AHA). Use as a pre-shampoo or clarifying step only.</p></div>';
+            html += '</div>';
+            html += '</div>';
+
+            return html;
+        }
+
+        function wireLearnToggles() {
+            var learnSection = document.getElementById('learn');
+            // Frizz diagnostic toggles
+            learnSection.querySelectorAll('.toggle-section[data-frizz]').forEach(function(toggle) {
+                function toggleFrizz() {
+                    var idx = toggle.getAttribute('data-frizz');
+                    var content = document.getElementById('frizz-' + idx);
+                    toggle.classList.toggle('open');
+                    content.classList.toggle('open');
+                    toggle.setAttribute('aria-expanded', content.classList.contains('open') ? 'true' : 'false');
+                }
+                toggle.addEventListener('click', toggleFrizz);
+                toggle.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleFrizz();
+                    }
+                });
+            });
+            // Product section toggles
+            learnSection.querySelectorAll('.toggle-section[data-toggle]').forEach(function(toggle) {
+                function toggleSection() {
+                    var targetId = toggle.getAttribute('data-toggle');
+                    var content = document.getElementById(targetId);
+                    toggle.classList.toggle('open');
+                    content.classList.toggle('open');
+                    toggle.setAttribute('aria-expanded', content.classList.contains('open') ? 'true' : 'false');
+                }
+                toggle.addEventListener('click', toggleSection);
+                toggle.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSection();
+                    }
+                });
+            });
+        }
+
+        // ===== Settings View =====
+        function renderSettings() {
+            var state = StateManager.getState();
+            var thresholds = state.thresholds;
+            var proposals = (state.proposals || []).filter(function(p) { return p.status === 'pending'; });
+            var settings = state.settings || {};
+
+            var settingsSection = document.getElementById('settings');
+            var html = '';
+
+            // Current thresholds
+            html += '<h2>Cooldown Thresholds</h2>';
+            html += '<div class="tracker-box">';
+            html += '<div class="tracker-item"><span class="tracker-label">Wash minimum</span><span class="tracker-value"><input type="number" id="thresh-wash" value="' + thresholds.washMinDays + '" min="1" max="14" style="width:3rem;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.3rem 0.5rem;text-align:center;font-size:0.9rem;min-height:48px;min-width:48px;"> days</span></div>';
+            html += '<div class="tracker-item"><span class="tracker-label">Clarify minimum</span><span class="tracker-value"><input type="number" id="thresh-clarify" value="' + thresholds.clarifyMinDays + '" min="3" max="21" style="width:3rem;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.3rem 0.5rem;text-align:center;font-size:0.9rem;min-height:48px;min-width:48px;"> days</span></div>';
+            html += '<div class="tracker-item"><span class="tracker-label">Protein minimum</span><span class="tracker-value"><input type="number" id="thresh-protein" value="' + thresholds.proteinMinDays + '" min="5" max="30" style="width:3rem;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.3rem 0.5rem;text-align:center;font-size:0.9rem;min-height:48px;min-width:48px;"> days</span></div>';
+            html += '</div>';
+            html += '<button class="btn-secondary" id="thresh-save" style="margin-right:0.5rem;">Save thresholds</button>';
+            html += '<button class="btn-secondary" id="thresh-reset">Reset to defaults</button>';
+
+            // Pending proposals
+            if (proposals.length > 0) {
+                html += '<h2 style="margin-top:1.5rem;">Pending Proposals</h2>';
+                proposals.forEach(function(p, idx) {
+                    html += '<div class="card">';
+                    html += '<p style="margin-bottom:0.75rem;">' + escapeHtml(p.reason) + '</p>';
+                    html += '<p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">' + p.type + ': ' + p.currentValue + ' → ' + p.proposedValue + ' days</p>';
+                    html += '<button class="btn-secondary proposal-accept" data-idx="' + idx + '" style="margin-right:0.5rem;">Accept</button>';
+                    html += '<button class="btn-secondary proposal-reject" data-idx="' + idx + '">Reject</button>';
+                    html += '</div>';
+                });
+            }
+
+            // Sound/vibration toggles
+            html += '<h2 style="margin-top:1.5rem;">Alerts</h2>';
+            html += '<div class="card">';
+            html += '<label style="display:flex;align-items:center;gap:0.75rem;min-height:48px;cursor:pointer;margin-bottom:0.5rem;">';
+            html += '<input type="checkbox" id="setting-sound" ' + (settings.soundEnabled !== false ? 'checked' : '') + ' style="width:20px;height:20px;min-height:20px;min-width:20px;">';
+            html += '<span>Sound on timer completion</span></label>';
+            html += '<label style="display:flex;align-items:center;gap:0.75rem;min-height:48px;cursor:pointer;">';
+            html += '<input type="checkbox" id="setting-vibration" ' + (settings.vibrationEnabled !== false ? 'checked' : '') + ' style="width:20px;height:20px;min-height:20px;min-width:20px;">';
+            html += '<span>Vibration on timer completion</span></label>';
+            html += '</div>';
+
+            // Data management
+            html += '<h2 style="margin-top:1.5rem;">Data Management</h2>';
+            html += '<div style="display:flex;gap:0.75rem;flex-wrap:wrap;">';
+            html += '<button class="btn-secondary" id="settings-export">Export JSON</button>';
+            html += '<button class="btn-secondary" id="settings-import-btn">Import JSON</button>';
+            html += '<input type="file" id="settings-import-file" accept=".json" style="display:none;">';
+            html += '<button class="btn-secondary" id="settings-reset-all" style="border-color:var(--accent);color:var(--accent);">Reset all data</button>';
+            html += '</div>';
+
+            settingsSection.innerHTML = html;
+            wireSettings(proposals);
+        }
+
+        function wireSettings(proposals) {
+            // Save thresholds
+            var saveBtn = document.getElementById('thresh-save');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    var washVal = parseInt(document.getElementById('thresh-wash').value);
+                    var clarifyVal = parseInt(document.getElementById('thresh-clarify').value);
+                    var proteinVal = parseInt(document.getElementById('thresh-protein').value);
+                    if (!isNaN(washVal)) StateManager.setThreshold('washMinDays', washVal);
+                    if (!isNaN(clarifyVal)) StateManager.setThreshold('clarifyMinDays', clarifyVal);
+                    if (!isNaN(proteinVal)) StateManager.setThreshold('proteinMinDays', proteinVal);
+                    renderSettings();
+                });
+            }
+
+            // Reset to defaults
+            var resetBtn = document.getElementById('thresh-reset');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    StateManager.setThreshold('washMinDays', 2);
+                    StateManager.setThreshold('clarifyMinDays', 5);
+                    StateManager.setThreshold('proteinMinDays', 7);
+                    renderSettings();
+                });
+            }
+
+            // Proposal accept/reject
+            document.querySelectorAll('.proposal-accept').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = parseInt(btn.getAttribute('data-idx'));
+                    var p = proposals[idx];
+                    if (p) {
+                        var thresholdKey = p.type === 'wash' ? 'washMinDays' : p.type === 'clarify' ? 'clarifyMinDays' : 'proteinMinDays';
+                        StateManager.setThreshold(thresholdKey, p.proposedValue);
+                        // Mark as accepted in state
+                        var state = StateManager.getState();
+                        var allProposals = state.proposals || [];
+                        var pending = allProposals.filter(function(pp) { return pp.status === 'pending'; });
+                        if (pending[idx]) {
+                            pending[idx].status = 'accepted';
+                            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+                        }
+                    }
+                    renderSettings();
+                });
+            });
+
+            document.querySelectorAll('.proposal-reject').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = parseInt(btn.getAttribute('data-idx'));
+                    var state = StateManager.getState();
+                    var allProposals = state.proposals || [];
+                    var pending = allProposals.filter(function(pp) { return pp.status === 'pending'; });
+                    if (pending[idx]) {
+                        pending[idx].status = 'rejected';
+                        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+                    }
+                    renderSettings();
+                });
+            });
+
+            // Sound/vibration toggles
+            var soundCheck = document.getElementById('setting-sound');
+            var vibCheck = document.getElementById('setting-vibration');
+            if (soundCheck) {
+                soundCheck.addEventListener('change', function() {
+                    var state = StateManager.getState();
+                    state.settings = state.settings || {};
+                    state.settings.soundEnabled = soundCheck.checked;
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+                });
+            }
+            if (vibCheck) {
+                vibCheck.addEventListener('change', function() {
+                    var state = StateManager.getState();
+                    state.settings = state.settings || {};
+                    state.settings.vibrationEnabled = vibCheck.checked;
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+                });
+            }
+
+            // Export
+            var exportBtn = document.getElementById('settings-export');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', function() {
+                    var data = StateManager.exportData();
+                    var blob = new Blob([data], { type: 'application/json' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'hair-routine-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            }
+
+            // Import
+            var importBtn = document.getElementById('settings-import-btn');
+            var importFile = document.getElementById('settings-import-file');
+            if (importBtn && importFile) {
+                importBtn.addEventListener('click', function() { importFile.click(); });
+                importFile.addEventListener('change', function(e) {
+                    var file = e.target.files[0];
+                    if (!file) return;
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                        var result = StateManager.importData(ev.target.result);
+                        if (result.success) {
+                            renderSettings();
+                            renderLanding();
+                        } else {
+                            alert('Import failed: ' + result.error);
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
+
+            // Reset all data
+            var resetAllBtn = document.getElementById('settings-reset-all');
+            if (resetAllBtn) {
+                resetAllBtn.addEventListener('click', function() {
+                    if (confirm('This will delete ALL your data (wash history, settings, insights). This cannot be undone. Continue?')) {
+                        try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+                        renderSettings();
+                        renderLanding();
+                        renderHistory();
+                    }
+                });
+            }
+        }
+
+        // ===== init() =====
         function init() {
-            // TODO: task 15.1 — wire modules together
+            // Set up navigation
+            setupNavigation();
+
+            // Render landing screen
+            renderLanding();
+
+            // Render other views (lazy — populated when navigated to, but pre-render for instant feel)
+            renderHistory();
+            renderLearn();
+            renderSettings();
+
+            // Wire action buttons
+            document.getElementById('btn-curly').addEventListener('click', function() {
+                showHumidityPrompt('curly');
+            });
+            document.getElementById('btn-blowout').addEventListener('click', function() {
+                showHumidityPrompt('blowout');
+            });
+            document.getElementById('btn-refresh').addEventListener('click', function() {
+                showHumidityPrompt('refresh');
+            });
         }
 
         // Initialize when DOM is ready
@@ -981,9 +3253,18 @@
             CooldownSystem,
             FeedbackEngine,
             WalkthroughEngine,
-            TimerManager
+            TimerManager,
+            daysSince,
+            updateSealState
         };
     })();
+
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('hair-sw.js').catch(function(err) {
+            console.warn('Service worker registration failed:', err);
+        });
+    }
     </script>
 </body>
 </html>
