@@ -154,3 +154,57 @@ Based on this research, the app should use these rules when selecting products:
 - HairAide. "Citric Acid in Hair Products." 2025. https://hairaide.com/ingredients/citric-acid/
 - HairAide. "Panthenol in Hair Products." 2025. https://hairaide.com/ingredients/panthenol/
 - Glooshi. "Polyquaternium-69." 2025. https://www.glooshi.com/polyquaternium-69/
+
+
+---
+
+## Appendix: Research Scorecard (QC Evaluation)
+
+**Date:** 2026-05-10
+**Scoring Level:** Full (10 sources, complex topic)
+**Evaluator:** Independent QC session (not authoring session)
+
+### Dimension Scores
+
+| Dimension | Checks | Pass | Fail | Unable | Score |
+|-----------|--------|------|------|--------|-------|
+| 1. Source Fidelity | 5/5 | 5 | 0 | 0 | 100% |
+| 2. Factual Currency | 3/3 | 3 | 0 | 0 | 100% |
+| 3. Coverage | 4/4 | 3 | 1 | 0 | 75% |
+| 4. Reasoning | 3/3 | 3 | 0 | 0 | 100% |
+| 5. Tagging | 5/5 | 4 | 1 | 0 | 80% |
+| 6. Actionability | 2/2 | 2 | 0 | 0 | 100% |
+| 7. Presentation | 2/2 | 2 | 0 | 0 | 100% |
+
+### Source Fidelity Details (mechanical positions 1, 3, 5, 7, 9)
+
+1. Wong/Lab Muffin (April 2024) — URL resolves, content confirms selective binding + self-limiting mechanism, fair representation → PASS
+2. LaTorre & Bhushan (J Vac Sci Technol A, 2005) — PMID 16676122 confirmed, journal/year match → PASS
+3. Rele & Mohile (J Cosmet Sci, 2003) — PMID 12715094 confirmed, abstract confirms coconut oil uniquely reduces protein loss → PASS
+4. Cosmetics & Toiletries "Your Hair on Acid" (2021) — URL resolves, article confirmed → PASS
+5. HairAide Panthenol (2025) — URL resolves, confirms panthenol penetrates shaft, increases diameter up to 10% → PASS
+
+### Adversarial Checks
+
+- Searched for contradicting evidence on amodimethicone self-limiting property: No contradictions found. Buildup concerns in literature apply to dimethicone (non-charged), not amodimethicone.
+- Searched for contradicting evidence on coconut oil penetration: Nuance found (low-porosity hair resists penetration) but Rele & Mohile findings not contradicted for damaged/normal porosity hair.
+- PQ-69 monomer composition verified against Glooshi source: Document uses abbreviation "DMAPMA" for "dimethylaminopropyl methacrylamide" — fair simplification.
+
+### Negative Criteria
+
+| Check | Result | Penalty |
+|-------|--------|---------|
+| N1: Verified without source | None found | 0% |
+| N2: Recs despite insufficient evidence | None | 0% |
+| N3: Confidence inflation | None | 0% |
+
+### Composite Score: 94%
+### Rating: Excellent — ship as-is
+
+### Key Failures
+- No explicit limitations section (Coverage)
+- No formal Verified/Inferred tagging (uses implicit confidence language)
+
+### Optional Improvements
+- Add limitations section noting INCI position analysis is heuristic, deposition claims are relative, and individual hair porosity affects delivery
+- Add explicit confidence tags for consistency with other project research documents
