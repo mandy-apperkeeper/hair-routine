@@ -78,6 +78,20 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 ## Current Status (update after each session)
 
 - **Spec:** Feature-complete (all 16 task groups done, optional tests skipped)
-- **v1 (live):** Working — quick-log, walkthrough, history, status bar, dew point detection, recommendations
-- **Remaining improvements:** 3 of 15 (Item 1 partial, Items 3 + 6 need usage data)
-- **Next high-value work:** Compensation logic (Session 8), then product inventory (Session 9)
+- **v1 (live):** Working — quick-log, walkthrough, history, status bar, dew point detection, recommendations, compensation logic
+- **Remaining improvements:** 2 of 15 (Items 3 + 6 need usage data)
+- **Next high-value work:** Product inventory (Session 9), then service worker (Session 10)
+
+## Design Principles (testing here first, generalize if effective)
+
+Derived from Sky Guide's approach. Evaluate after Session 9 ships:
+
+1. **Immediate value on open** — no navigation required to see what matters now
+2. **Content is the interface** — minimize chrome, maximize the thing itself
+3. **Progressive depth** — tap to learn more, never forced to see more
+4. **Context-aware defaults** — the app knows what's relevant based on time, history, conditions
+5. **Beautiful at rest** — even when idle, it looks intentional
+6. **Pre-populated over blank slate** — start with known data, let the user subtract rather than build from zero
+7. **Tap anything to go deeper** — any product/concept mentioned anywhere should be a link to its details
+
+Efficacy test: Does applying these to the inventory feature result in fewer "where do I find X?" moments and faster task completion than a traditional CRUD list would?
