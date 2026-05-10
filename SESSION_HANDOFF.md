@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 15)
+**Last updated:** May 10, 2026 (Session 16)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -9,14 +9,15 @@
 ## Current State
 
 ### What's Live & Working
-- **Schema version 7** (deduplication migration)
+- **Schema version 8** (new products + additionalSteps + OGX oil reclassification)
 - Landing page: single recommended action + "Something else?" toggle
 - Quick-log: **7-group step-based product selection** (Pre-wash | Shampoo | Bond Repair | Condition | Leave-in & Protect | Style | Finishing)
   - Shampoo has sub-menus: Regular / Clarifying
   - Condition has sub-menus: Conditioner 🧢 / Deep Conditioner 🧢 / Gloss 🧢
   - Heat cap badge on Condition group
+  - **Products with `additionalSteps` appear in multiple groups**
 - Post-wash attribution card: mechanism-based "what your routine targeted today"
-- Product inventory: **26 products** with full intelligence metadata
+- Product inventory: **30 products** with full intelligence metadata
 - Walkthrough engine: curly/blowout/refresh with humidity-based product substitution
 - **Humidity auto-detection only** — no manual prompt. Defaults to moderate on failure.
 - Dew point auto-detection via Open-Meteo API
@@ -26,84 +27,35 @@
 - Status tracker (compact — reduced padding)
 
 ### What Was Done This Session
-1. **v6: Full product step reorganization** — replaced step+subStep with 10 granular step values
-2. **Added 2 new products:** Maui Moisture Curl Smoothie, L'Oréal Elvive Total Repair 5 Balm
-3. **Wrote v5→v6 migration** — remaps all user inventory, removes subStep, adds new products
-4. **Replaced 4-phase quick-log UI** with 7-group system + sub-menus + heat cap badges
-5. **Removed humidity manual prompt** — silently defaults to moderate on auto-detect failure
-6. **Compacted status tracker** — less vertical space on landing
-7. **Removed garnier-serum-only compensation rule** — was noise, not actionable
-8. **Updated Pantene spray** — researched via INCIDecoder, renamed to "Miracle Rescue Instant Repair Leave-In", updated mechanisms to bond_repair + cuticle_smoothing (bis-aminopropyl dimethicone)
-9. **v7: Inventory deduplication** — fixes gel-gap card creating duplicate NYM gel entries
-10. **Updated lane detection** — now checks both `styling` and `heat_protection` step products
-11. **Added deep-condition treatment auto-detection** in quick-log save
+1. **Coconut oil pre-wash research** — confirmed via peer-reviewed studies (Rele & Mohile 2003, Ruetsch et al. 2001, Lourenço et al. 2024) that coconut oil uniquely penetrates hair cortex due to lauric acid's protein affinity + low molecular weight. Prevents hygral fatigue and protein loss.
+2. **OGX oils re-evaluation** — researched via INCIDecoder ingredient lists. These are primarily dimethiconol delivery vehicles (volatile silicones evaporate). Reclassified from pre_wash to finishing. Legitimate shine/frizz tool, not "no lasting benefit." Weak pre-wash (trace oil amount insufficient for cortex penetration).
+3. **Added 4 new products:** OGX Bond Protein Repair Heat Spray (supporting, blowout), Monday Moisture Leave-In (use-up), OGX Bond Protein Repair Sealing Serum (supporting, protein fill), Pure Coconut Oil (primary, pre-wash)
+4. **Implemented `additionalSteps` field** — products can now appear in multiple quick-log groups. OGX oils show in both Finishing (primary) and Pre-wash (secondary).
+5. **Updated `getProductsForGroup`** — filter logic now checks both `step` and `additionalSteps` for all group types (single-step, multi-step, sub-menu).
+6. **v7→v8 migration** — updates OGX oil metadata, adds 4 new products to existing user inventories.
+7. **Updated OGX oil entries** — new notes, mechanisms (cuticle_smoothing), step (finishing), additionalSteps ([pre_wash]), corrected outcome scores.
 
 ### What's NOT Done (carry to next session)
 
-#### Products to Add (3 researched, ready to code)
+#### Architecture: Product Intelligence System
+- IngredientKB + BeliefTracker → pre-wash recommendations → marginal contribution analysis → product discovery form → service worker/PWA
+- See `.kiro/specs/product-intelligence/` for full spec
 
-**OGX Bond Protein Repair 450°F Heat Protect Spray**
-- Step: `heat_protection`
-- Tier: supporting
-- Context: blowout
-- Mechanisms: `['heat_protection', 'cuticle_smoothing', 'protein_fill']`
-- Delivery: leave_on
-- Key ingredients: Amodimethicone (5th), Wheat Protein (7th), "bond plex" film-formers (not true bond repair)
-- Outcomes: { smoothness: 0.7, strength: 0.5, shine: 0.5 }
-- Cumulative: true (amodimethicone)
-- Source: [INCIDecoder](https://incidecoder.com/products/ogx-bond-protein-repair-450of-heat-protect-spray)
-
-**Monday Haircare Moisture Leave-In Conditioner**
-- Step: `leave_in`
-- Tier: supporting (or use-up — ask Mandy)
-- Context: every-wash
-- Mechanisms: `['conditioning']`
-- Delivery: leave_on
-- Key ingredients: Dimethicone (2nd, generic), Jojoba Oil (4th), PQ-37 (9th, light hold), Wheat Protein derivative (10th), Shea Butter, Sodium Hyaluronate
-- Outcomes: { smoothness: 0.5, shine: 0.4 }
-- Cumulative: false (dimethicone washes off)
-- Notes: Outclassed by L'Oréal 21-in-1 in every dimension. Generic dimethicone vs targeted amodimethicone.
-- Source: [INCIDecoder](https://incidecoder.com/products/monday-haircare-moisture-leave-in-conditioner)
-
-**OGX Bond Protein Repair Sealing Serum**
-- Step: `finishing`
-- Tier: supporting (or use-up — ask Mandy)
-- Context: as-needed
-- Mechanisms: `['protein_fill']`
-- Delivery: leave_on
-- Key ingredients: Wheat Protein (6th), "bond plex" film-formers (7th-8th), Hydrolyzed Keratin (9th), Camellia Oil, Arginine
-- **NO SILICONES** — purely protein-based. Different tool than Garnier Filler Serum (amodimethicone cuticle) — this fills cortex.
-- Outcomes: { strength: 0.6, smoothness: 0.3 }
-- Cumulative: false (no silicone to seal protein in)
-- Source: [INCIDecoder](https://incidecoder.com/products/ogx-bond-protein-repair-serum)
-
-#### Research Needed (requested by Mandy, not yet done)
-
-1. **Pure coconut oil as pre-wash** — Mandy wants to add actual coconut oil. Research WHY it's the best pre-wash oil for her hair type (2C-3A, coarse, very thick, weathered cuticle, post-TE recovery). The science: coconut oil is one of few oils that penetrates the cortex (lauric acid affinity for hair protein). Needs proper research with sources.
-
-2. **OGX oils: pre-wash AND post-wash/styling use** — Mandy says the OGX Coconut Oil and Argan Oil may be useful both pre-wash (on dry hair) AND post-wash/styling (on damp/styled hair). Currently they're tagged `pre_wash` only. Research whether volatile-silicone-based oil products provide different benefits at different application points. The current notes say "no lasting benefit" — verify if that's true for ALL use cases or just post-wash.
-
-3. **Product tier decisions** — Ask Mandy: are Monday leave-in and OGX serum "supporting cast" or "use-up queue"?
-
-#### Architecture Note: Products in Multiple Steps
-The current system assumes one step per product. Mandy's point about OGX oils being useful both pre AND post challenges this. Options:
-- A) Allow `step` to be an array (breaking change, touches UI grouping logic)
-- B) Create separate inventory entries for different use contexts (e.g., "OGX Coconut Oil (pre-wash)" and "OGX Coconut Oil (finishing)")
-- C) Show products in multiple groups based on a new `additionalSteps` field
-
-This is a design decision — don't implement without discussing with Mandy.
+#### Research Documentation
+- Write up coconut oil and OGX oil research findings into `research/` folder for reference (sources, methodology, conclusions)
 
 ---
 
 ## Schema
 
-**Version:** 7 (live)
-**Intelligence shape (v6+, no subStep):**
+**Version:** 8 (live)
+**Intelligence shape (v6+, no subStep, v8 adds additionalSteps):**
 ```js
 intelligence: {
     mechanisms: string[],
     delivery: 'rinse_off' | 'leave_on' | 'unknown',
     step: 'pre_wash' | 'shampoo' | 'bond_repair' | 'conditioner' | 'deep_condition' | 'gloss' | 'leave_in' | 'heat_protection' | 'styling' | 'finishing',
+    additionalSteps?: string[],  // Optional — product appears in these groups too
     outcomes: { [key: string]: number },
     cumulative: boolean,
     interactions: Array<{ with: string, type: string, note: string }>
@@ -116,7 +68,7 @@ intelligence: {
 
 ### Hair Science
 - Use amodimethicone conditioner EVERY wash. Dove is "using-up" only — never recommend it.
-- OGX oils: volatile silicones + oil. Current assessment "no lasting benefit" — PENDING RE-EVALUATION per Mandy's request.
+- OGX oils: volatile silicones + dimethiconol film + trace oil. Reclassified as finishing products (shine/frizz). Weak pre-wash — pure coconut oil is the right tool for that job. Argan oil specifically does NOT penetrate hair cortex (stays in outer 5µm, increases water affinity).
 - No product rotation needed for any category.
 - Dew point is the weather metric (not relative humidity). Auto-detect, don't ask. Default moderate on failure.
 - Abbey Yung 11-step method is the reference model for logging.
@@ -128,15 +80,16 @@ intelligence: {
 
 ### Architecture
 - Single-file HTML app, localStorage, no backend, offline-first, GitHub Pages.
-- Schema version 7. Intelligence uses granular `step` values (no subStep).
+- Schema version 8. Intelligence uses granular `step` values (no subStep). Optional `additionalSteps` array for multi-group products.
 - Treatments are separate from products in the data model.
-- Products CAN appear in multiple activity categories (but currently limited to one step — needs design decision).
+- Products CAN appear in multiple activity categories via `additionalSteps` field.
 - No humidity prompt — auto-detect only, silent fallback to moderate.
 
 ### Product
 - "Using-up" protocol: track bottles being finished, explain compensation, remove when empty.
 - Inventory tiers: Primary Rotation, Supporting Cast, Use-Up Queue.
 - Mandy owns: NYM Curl Talk gel, Maui Moisture Curl Smoothie, L'Oréal Elvive Total Repair 5 Balm, OGX Bond Protein Repair Heat Spray, Monday Moisture Leave-In, OGX Bond Protein Repair Sealing Serum, pure coconut oil.
+- Pure coconut oil is the correct pre-wash oil (penetrates cortex, prevents hygral fatigue). OGX oils are finishing products, not pre-wash tools.
 - Elvive Glycolic Gloss 5-Min Lamination = same product as EverPure Glossing Lamination Mask. One entry only.
 - Goal of logging is data gathering for correlations, not minimal taps.
 
@@ -167,6 +120,7 @@ intelligence: {
 | 13 | Schema rename (phase→step, added subStep) | Complete |
 | 14 | Step reorganization planning + new product research | Complete (design) |
 | 15 | **Step reorganization implementation, humidity fix, tracker compact, Pantene research, dedup fix** | Complete |
+| 16 | **Coconut oil research, OGX oil re-evaluation, 4 new products, additionalSteps feature, schema v8** | Complete |
 
 ---
 

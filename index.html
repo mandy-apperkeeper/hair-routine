@@ -1050,7 +1050,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 7;
+        const CURRENT_VERSION = 8;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -1385,12 +1385,13 @@
             {
                 id: 'ogx-coconut-oil', name: 'Coconut Miracle Penetrating Oil', brand: 'OGX',
                 tier: 'use-up', context: 'as-needed', usingUp: true,
-                notes: 'Volatile silicones + coconut oil. Temporary shine only, no lasting benefit.',
+                notes: 'Dimethiconol film + trace coconut oil. Useful as finishing (shine/frizz). Weak pre-wash — use pure coconut oil instead.',
                 intelligence: {
-                    mechanisms: ['penetrating_oil'],
+                    mechanisms: ['cuticle_smoothing'],
                     delivery: 'leave_on',
-                    step: 'pre_wash',
-                    outcomes: { shine: 0.3 },
+                    step: 'finishing',
+                    additionalSteps: ['pre_wash'],
+                    outcomes: { shine: 0.5, frizz_control: 0.4, smoothness: 0.4 },
                     cumulative: false,
                     interactions: []
                 }
@@ -1398,13 +1399,70 @@
             {
                 id: 'ogx-argan-oil', name: 'Moroccan Argan Oil', brand: 'OGX',
                 tier: 'use-up', context: 'as-needed', usingUp: true,
-                notes: 'Volatile silicones + argan oil. Temporary shine only, no lasting benefit.',
+                notes: 'Dimethiconol film + trace argan oil. Finishing only — argan does not penetrate hair cortex effectively.',
                 intelligence: {
-                    mechanisms: [],
+                    mechanisms: ['cuticle_smoothing'],
                     delivery: 'leave_on',
-                    step: 'pre_wash',
-                    outcomes: { shine: 0.2 },
+                    step: 'finishing',
+                    additionalSteps: ['pre_wash'],
+                    outcomes: { shine: 0.4, frizz_control: 0.3, smoothness: 0.3 },
                     cumulative: false,
+                    interactions: []
+                }
+            },
+            // Supporting Cast — Heat Protection (Blowout)
+            {
+                id: 'ogx-bond-heat-spray', name: 'Bond Protein Repair 450°F Heat Protect Spray', brand: 'OGX',
+                tier: 'supporting', context: 'blowout', usingUp: false,
+                notes: 'Amodimethicone (5th) + wheat protein (7th) + film-formers. Real heat protection with protein fill. Not true bond repair despite branding.',
+                intelligence: {
+                    mechanisms: ['heat_protection', 'cuticle_smoothing', 'protein_fill'],
+                    delivery: 'leave_on',
+                    step: 'heat_protection',
+                    outcomes: { smoothness: 0.7, strength: 0.5, shine: 0.5 },
+                    cumulative: true,
+                    interactions: []
+                }
+            },
+            // Use-Up Queue — Leave-in
+            {
+                id: 'monday-moisture-leave-in', name: 'Moisture Leave-In Conditioner', brand: 'Monday Haircare',
+                tier: 'use-up', context: 'every-wash', usingUp: true,
+                notes: 'Generic dimethicone (2nd) + jojoba oil + PQ-37 (light hold). Outclassed by L\'Or\u00E9al 21-in-1 in every dimension.',
+                intelligence: {
+                    mechanisms: ['conditioning'],
+                    delivery: 'leave_on',
+                    step: 'leave_in',
+                    outcomes: { smoothness: 0.5, shine: 0.4 },
+                    cumulative: false,
+                    interactions: [{ with: 'loreal-21in1', type: 'outclassed_by', note: 'Generic dimethicone vs targeted amodimethicone' }]
+                }
+            },
+            // Supporting Cast — Finishing (Protein)
+            {
+                id: 'ogx-bond-protein-serum', name: 'Bond Protein Repair Sealing Serum', brand: 'OGX',
+                tier: 'supporting', context: 'as-needed', usingUp: false,
+                notes: 'NO SILICONES. Wheat protein (6th) + hydrolyzed keratin (9th) + film-formers. Fills cortex with protein. Different tool than Garnier serum (cuticle).',
+                intelligence: {
+                    mechanisms: ['protein_fill'],
+                    delivery: 'leave_on',
+                    step: 'finishing',
+                    outcomes: { strength: 0.6, smoothness: 0.3 },
+                    cumulative: false,
+                    interactions: [{ with: 'garnier-filler-serum', type: 'complements', note: 'This fills cortex (protein), Garnier smooths cuticle (amodimethicone)' }]
+                }
+            },
+            // Primary Rotation — Pre-wash
+            {
+                id: 'pure-coconut-oil', name: 'Pure Coconut Oil', brand: 'Generic',
+                tier: 'primary', context: 'every-wash', usingUp: false,
+                notes: 'Penetrates hair cortex (lauric acid affinity for keratin). Prevents hygral fatigue and protein loss during washing. Best pre-wash oil for damaged/weathered hair.',
+                intelligence: {
+                    mechanisms: ['penetrating_oil', 'hygral_fatigue_protection'],
+                    delivery: 'rinse_off',
+                    step: 'pre_wash',
+                    outcomes: { strength: 0.6, damage_prevention: 0.8 },
+                    cumulative: true,
                     interactions: []
                 }
             },
@@ -1560,8 +1618,8 @@
                     'got2b-gel': 'styling',
                     'garnier-filler-serum': 'finishing',
                     'dove-10in1-serum': 'finishing',
-                    'ogx-coconut-oil': 'pre_wash',
-                    'ogx-argan-oil': 'pre_wash',
+                    'ogx-coconut-oil': 'finishing',
+                    'ogx-argan-oil': 'finishing',
                     'everpure-bond-shampoo': 'shampoo',
                     'dove-bond-shampoo': 'shampoo',
                     'dove-intensive-shampoo': 'shampoo',
@@ -1651,6 +1709,99 @@
                     });
                 }
                 state.version = 7;
+            }
+
+            // v7 → v8: Add 4 new products, update OGX oils (step→finishing, add additionalSteps)
+            if (state.version < 8) {
+                if (Array.isArray(state.inventory)) {
+                    var hasProduct = function(id) {
+                        return state.inventory.some(function(p) { return p.id === id; });
+                    };
+
+                    // Update OGX Coconut Oil: step pre_wash → finishing, add additionalSteps, update notes/mechanisms
+                    state.inventory.forEach(function(product) {
+                        if (product.id === 'ogx-coconut-oil') {
+                            product.notes = 'Dimethiconol film + trace coconut oil. Useful as finishing (shine/frizz). Weak pre-wash \u2014 use pure coconut oil instead.';
+                            product.intelligence.mechanisms = ['cuticle_smoothing'];
+                            product.intelligence.step = 'finishing';
+                            product.intelligence.additionalSteps = ['pre_wash'];
+                            product.intelligence.outcomes = { shine: 0.5, frizz_control: 0.4, smoothness: 0.4 };
+                        }
+                        if (product.id === 'ogx-argan-oil') {
+                            product.notes = 'Dimethiconol film + trace argan oil. Finishing only \u2014 argan does not penetrate hair cortex effectively.';
+                            product.intelligence.mechanisms = ['cuticle_smoothing'];
+                            product.intelligence.step = 'finishing';
+                            product.intelligence.additionalSteps = ['pre_wash'];
+                            product.intelligence.outcomes = { shine: 0.4, frizz_control: 0.3, smoothness: 0.3 };
+                        }
+                    });
+
+                    // Add new products
+                    if (!hasProduct('ogx-bond-heat-spray')) {
+                        state.inventory.push({
+                            id: 'ogx-bond-heat-spray', name: 'Bond Protein Repair 450\u00B0F Heat Protect Spray', brand: 'OGX',
+                            tier: 'supporting', context: 'blowout', usingUp: false,
+                            notes: 'Amodimethicone (5th) + wheat protein (7th) + film-formers. Real heat protection with protein fill. Not true bond repair despite branding.',
+                            intelligence: {
+                                mechanisms: ['heat_protection', 'cuticle_smoothing', 'protein_fill'],
+                                delivery: 'leave_on',
+                                step: 'heat_protection',
+                                outcomes: { smoothness: 0.7, strength: 0.5, shine: 0.5 },
+                                cumulative: true,
+                                interactions: []
+                            }
+                        });
+                    }
+
+                    if (!hasProduct('monday-moisture-leave-in')) {
+                        state.inventory.push({
+                            id: 'monday-moisture-leave-in', name: 'Moisture Leave-In Conditioner', brand: 'Monday Haircare',
+                            tier: 'use-up', context: 'every-wash', usingUp: true,
+                            notes: 'Generic dimethicone (2nd) + jojoba oil + PQ-37 (light hold). Outclassed by L\'Or\u00E9al 21-in-1 in every dimension.',
+                            intelligence: {
+                                mechanisms: ['conditioning'],
+                                delivery: 'leave_on',
+                                step: 'leave_in',
+                                outcomes: { smoothness: 0.5, shine: 0.4 },
+                                cumulative: false,
+                                interactions: [{ with: 'loreal-21in1', type: 'outclassed_by', note: 'Generic dimethicone vs targeted amodimethicone' }]
+                            }
+                        });
+                    }
+
+                    if (!hasProduct('ogx-bond-protein-serum')) {
+                        state.inventory.push({
+                            id: 'ogx-bond-protein-serum', name: 'Bond Protein Repair Sealing Serum', brand: 'OGX',
+                            tier: 'supporting', context: 'as-needed', usingUp: false,
+                            notes: 'NO SILICONES. Wheat protein (6th) + hydrolyzed keratin (9th) + film-formers. Fills cortex with protein. Different tool than Garnier serum (cuticle).',
+                            intelligence: {
+                                mechanisms: ['protein_fill'],
+                                delivery: 'leave_on',
+                                step: 'finishing',
+                                outcomes: { strength: 0.6, smoothness: 0.3 },
+                                cumulative: false,
+                                interactions: [{ with: 'garnier-filler-serum', type: 'complements', note: 'This fills cortex (protein), Garnier smooths cuticle (amodimethicone)' }]
+                            }
+                        });
+                    }
+
+                    if (!hasProduct('pure-coconut-oil')) {
+                        state.inventory.push({
+                            id: 'pure-coconut-oil', name: 'Pure Coconut Oil', brand: 'Generic',
+                            tier: 'primary', context: 'every-wash', usingUp: false,
+                            notes: 'Penetrates hair cortex (lauric acid affinity for keratin). Prevents hygral fatigue and protein loss during washing. Best pre-wash oil for damaged/weathered hair.',
+                            intelligence: {
+                                mechanisms: ['penetrating_oil', 'hygral_fatigue_protection'],
+                                delivery: 'rinse_off',
+                                step: 'pre_wash',
+                                outcomes: { strength: 0.6, damage_prevention: 0.8 },
+                                cumulative: true,
+                                interactions: []
+                            }
+                        });
+                    }
+                }
+                state.version = 8;
             }
         }
 
@@ -4930,13 +5081,23 @@
                 // For 'condition' group, match conditioner/deep_condition/gloss steps
                 if (group.key === 'condition') {
                     return inventory.filter(function(p) {
-                        return p.intelligence && (p.intelligence.step === 'conditioner' || p.intelligence.step === 'deep_condition' || p.intelligence.step === 'gloss');
+                        if (!p.intelligence) return false;
+                        if (p.intelligence.step === 'conditioner' || p.intelligence.step === 'deep_condition' || p.intelligence.step === 'gloss') return true;
+                        if (Array.isArray(p.intelligence.additionalSteps)) {
+                            return p.intelligence.additionalSteps.indexOf('conditioner') !== -1 || p.intelligence.additionalSteps.indexOf('deep_condition') !== -1 || p.intelligence.additionalSteps.indexOf('gloss') !== -1;
+                        }
+                        return false;
                     });
                 }
                 // For 'shampoo' group, match shampoo step
                 if (group.key === 'shampoo') {
                     return inventory.filter(function(p) {
-                        return p.intelligence && p.intelligence.step === 'shampoo';
+                        if (!p.intelligence) return false;
+                        if (p.intelligence.step === 'shampoo') return true;
+                        if (Array.isArray(p.intelligence.additionalSteps)) {
+                            return p.intelligence.additionalSteps.indexOf('shampoo') !== -1;
+                        }
+                        return false;
                     });
                 }
                 return [];
@@ -4944,12 +5105,24 @@
             if (group.steps) {
                 // Multi-step group (leave_in + heat_protection)
                 return inventory.filter(function(p) {
-                    return p.intelligence && group.steps.indexOf(p.intelligence.step) !== -1;
+                    if (!p.intelligence) return false;
+                    if (group.steps.indexOf(p.intelligence.step) !== -1) return true;
+                    if (Array.isArray(p.intelligence.additionalSteps)) {
+                        for (var i = 0; i < group.steps.length; i++) {
+                            if (p.intelligence.additionalSteps.indexOf(group.steps[i]) !== -1) return true;
+                        }
+                    }
+                    return false;
                 });
             }
             // Single-step group
             return inventory.filter(function(p) {
-                return p.intelligence && p.intelligence.step === group.key;
+                if (!p.intelligence) return false;
+                if (p.intelligence.step === group.key) return true;
+                if (Array.isArray(p.intelligence.additionalSteps)) {
+                    return p.intelligence.additionalSteps.indexOf(group.key) !== -1;
+                }
+                return false;
             });
         }
 

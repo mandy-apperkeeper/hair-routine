@@ -13,9 +13,9 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 ## Tech Stack
 
 - Single HTML file with embedded CSS + JS (no build step, no framework)
-- localStorage for all persistence (schema v3)
+- localStorage for all persistence (schema v8)
 - Open-Meteo API for dew point auto-detection
-- Service worker (`hair-sw.js`) for v2 offline support (v1 has none yet)
+- Service worker (`hair-sw.js`) — exists but not registered in v1
 - GitHub Pages deployment (push to main = live)
 - No dependencies, no npm, no bundler
 
@@ -23,14 +23,15 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 
 | File | Role |
 |------|------|
-| `index.html` | **Live v1 app** — quick-log, walkthrough, history, status bar, recommendations |
-| `hair-routine-v2.html` | Full spec build (walkthrough engine, learn section, settings) — not yet live |
-| `hair-sw.js` | Service worker for v2 |
+| `index.html` | **Live app** (~5300 lines) — quick-log, walkthrough, history, status bar, recommendations, product inventory |
+| `hair-routine-v2.html` | Original spec build (superseded by v1 for live use) |
+| `hair-sw.js` | Service worker (exists, not yet registered) |
 | `NEXT_STEPS.md` | Session plan with prioritized work items |
 | `SESSION_HANDOFF.md` | Current state, decisions, what's next |
-| `IMPLEMENTATION_IMPROVEMENTS.md` | 15-item roadmap (12 done, 3 remaining) |
 | `research/` | 5-phase product relationship research (complete) |
 | `HAIR_CONSULTATION_HANDOFF.md` | Hair science + product reference from original consultation |
+| `.kiro/specs/daily-plan/design.md` | Next major feature — auto-generated daily plan UX |
+| `.kiro/specs/product-intelligence/` | Intelligence system spec (partially implemented) |
 
 ## Architecture (v1 — the live app)
 
@@ -50,20 +51,26 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 - **Amodimethicone conditioner every wash.** Dove is "using-up" only — never recommend it.
 - **No product rotation.** Research confirmed rotation is a myth. Never build rotation logic.
 - **Dew point, not relative humidity.** Auto-detect via Open-Meteo. Manual selector is fallback only (offline/API failure). The app informs, doesn't ask.
-- **Schema v3:** WashEvent includes `treatments: string[]` and `dewPoint: number | null`. State includes inventory.
+- **Schema v8.** Intelligence uses granular `step` values (no subStep). Optional `additionalSteps` array for multi-group products.
 - **Treatments are separate from products** in the data model (clarify, protein, deep-condition, bond-repair)
-- **OGX oils provide no lasting benefit** (volatile silicones). Don't recommend them.
+- **OGX oils are finishing products** (volatile silicones + dimethiconol film + trace oil). Legitimate shine/frizz tool. Weak pre-wash — pure coconut oil is the right tool for cortex penetration.
+- **Pure coconut oil is the correct pre-wash oil** — penetrates cortex (lauric acid protein affinity), prevents hygral fatigue. Argan oil does NOT penetrate (stays in outer 5µm).
 - **"Using-up" protocol:** Track bottles being finished, explain compensation, remove when empty.
 - **Hard floors:** wash ≥ 1 day, clarify ≥ 3 days, protein ≥ 5 days — never below these.
 - **Inventory tiers:** Primary Rotation, Supporting Cast, Use-Up Queue.
 - **Mandy owns NYM Curl Talk gel** (confirmed May 10, 2026).
 - **Abbey Yung 11-step method** is the reference model for logging (not a simplified 4-category version).
 - **Goal of logging is data gathering for correlations**, not minimal taps.
-- **Products CAN appear in multiple activity categories.**
-- **Phase-based UI grouping** for quick-log (Pre-wash | Wash | Post-wash | Style).
+- **Products CAN appear in multiple activity categories** via `additionalSteps` field (resolved — implemented in v8).
+- **7-group step-based quick-log** (Pre-wash | Shampoo | Bond Repair | Condition | Leave-in & Protect | Style | Finishing) with sub-menus and heat cap badges.
 - **Product intelligence is a system redesign**, not a quick mapping fix. Each product needs: mechanism, cumulative vs single-use, interactions, outcome contribution.
 - **Offline-first with online product discovery** for new additions.
 - **Both passive and active intelligence surfacing** — post-wash analysis + pre-wash recommendations.
+- **"Pre-shampoo treatment" is marketing** — bond repair works best after shampoo, sealed by conditioner.
+- **Heat cap benefits all conditioning-step products** (conditioner, deep conditioner, gloss).
+- **Pantene Miracle Rescue Leave-In is genuine bond repair** (bis-aminopropyl dimethicone).
+- **OGX Bond Protein Repair Sealing Serum is silicone-free protein fill** (different tool than Garnier serum).
+- **No humidity manual prompt** — silently defaults to moderate on auto-detect failure.
 
 ## Aesthetic
 
@@ -76,21 +83,24 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 
 ## Anti-Patterns (things that went wrong in past sessions)
 
-- Editing `index.html` without reading the full relevant section first (it's ~3800 lines)
-- Mixing v1 and v2 concerns — they're separate apps until convergence (Session 11)
+- Editing `index.html` without reading the full relevant section first (it's ~5300 lines)
 - Adding humidity prompts where auto-detection already handles it
 - Recommending Dove conditioner or OGX oils
 - Building product rotation features
 - Using relative humidity instead of dew point
 - Treating the spec's optional property tests as blocking work
+- Assuming schema version without checking (it's v8 now)
 
 ## Current Status (update after each session)
 
-- **Spec:** Original spec complete. Product Intelligence spec active at `.kiro/specs/product-intelligence/`.
-- **v1 (live):** Working — quick-log (phase-based, correct), walkthrough, history, status bar, dew point detection, recommendations, compensation logic, product inventory with intelligence metadata (step + subStep), post-wash attribution card.
-- **Schema:** Version 5. Intelligence uses `step` + optional `subStep`.
+- **Spec:** Original spec complete. Product Intelligence spec partially implemented. Daily Plan spec has design.md (no tasks.md yet).
+- **v1 (live):** Working — 7-group step-based quick-log with sub-menus + heat cap badges + additionalSteps support, walkthrough, history, status bar, dew point auto-detection (no manual prompt), recommendations, compensation logic, product inventory (30 products) with full intelligence metadata, post-wash attribution card, deep-condition auto-detection.
+- **Schema:** Version 8. Intelligence uses granular `step` values + optional `additionalSteps` array for multi-group products.
 - **Known broken:** Nothing currently broken.
 - **What's next:** IngredientKB + BeliefTracker → pre-wash recommendations → marginal contribution analysis → product discovery form → service worker/PWA.
+- **Pending research:** Coconut oil as pre-wash (science), OGX oils dual-use re-evaluation, product tier decisions for Monday/OGX serum.
+- **Pending design decision:** Products in multiple steps (array step vs separate entries vs additionalSteps field).
+- **What's next:** Daily Plan spec tasks.md → then implementation. Product Intelligence spec (IngredientKB, BeliefTracker) feeds into Daily Plan's recommendation engine.
 
 ## Design Principles (testing here first, generalize if effective)
 
