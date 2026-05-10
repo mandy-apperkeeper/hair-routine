@@ -808,7 +808,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 1;
+        const CURRENT_VERSION = 2;
 
         const DEFAULT_STATE = {
             version: CURRENT_VERSION,
@@ -847,6 +847,33 @@
             return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 11);
         }
 
+        /**
+         * Migrate state from older schema versions to current.
+         * Mutates the state object in place.
+         */
+        function migrateState(state) {
+            // v1 → v2: Add treatments array to all existing events
+            if (!state.version || state.version < 2) {
+                if (Array.isArray(state.events)) {
+                    state.events.forEach(function(ev) {
+                        if (!ev.treatments) {
+                            ev.treatments = [];
+                            // Infer treatments from products for existing events
+                            if (ev.products) {
+                                if (ev.products.includes('everpure-clarifying')) {
+                                    ev.treatments.push('clarify');
+                                }
+                                if (ev.products.includes('garnier-pre-shampoo') || ev.products.includes('olaplex-3')) {
+                                    ev.treatments.push('protein');
+                                }
+                            }
+                        }
+                    });
+                }
+                state.version = 2;
+            }
+        }
+
         const StateManager = (function() {
             let storageAvailable = true;
 
@@ -876,8 +903,8 @@
                     }
                     const parsed = JSON.parse(raw);
                     // Schema version check and migration
-                    if (parsed.version && parsed.version < CURRENT_VERSION) {
-                        parsed.version = CURRENT_VERSION;
+                    if (!parsed.version || parsed.version < CURRENT_VERSION) {
+                        migrateState(parsed);
                         writeToStorage(parsed);
                     }
                     return parsed;
@@ -996,8 +1023,8 @@
                         }
 
                         // Run migration if needed
-                        if (data.version < CURRENT_VERSION) {
-                            data.version = CURRENT_VERSION;
+                        if (!data.version || data.version < CURRENT_VERSION) {
+                            migrateState(data);
                         }
 
                         const result = writeToStorage(data);
@@ -1083,17 +1110,33 @@
             const PQ69_PRODUCTS = [PRODUCTS.NYM_GEL, PRODUCTS.GOT2B];
 
             function getLastEventByType(events, type) {
-                // type: 'wash' = any wash event, 'clarify' = event with clarifying product, 'protein' = event with protein product
+                // type: 'wash' = any wash event, 'clarify' = event with clarifying product or treatment, 'protein' = event with protein product or treatment
                 for (let i = events.length - 1; i >= 0; i--) {
                     const ev = events[i];
                     if (type === 'wash') {
                         return ev;
                     } else if (type === 'clarify') {
+                        // Check treatments array first (v2+), then fall back to products
+                        if (ev.treatments && ev.treatments.includes('clarify')) {
+                            return ev;
+                        }
                         if (ev.products && ev.products.includes(PRODUCTS.EVERPURE_CLARIFYING)) {
                             return ev;
                         }
                     } else if (type === 'protein') {
+                        // Check treatments array first (v2+), then fall back to products
+                        if (ev.treatments && ev.treatments.includes('protein')) {
+                            return ev;
+                        }
                         if (ev.products && (ev.products.includes(PRODUCTS.GARNIER_PRESHAMPOO) || ev.products.includes(PRODUCTS.OLAPLEX))) {
+                            return ev;
+                        }
+                    } else if (type === 'deep-condition') {
+                        if (ev.treatments && ev.treatments.includes('deep-condition')) {
+                            return ev;
+                        }
+                    } else if (type === 'bond-repair') {
+                        if (ev.treatments && ev.treatments.includes('bond-repair')) {
                             return ev;
                         }
                     }
