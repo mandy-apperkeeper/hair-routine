@@ -731,6 +731,16 @@
             margin-top: 0.3rem;
         }
 
+        .plan-step-useup-note {
+            font-size: 0.78rem;
+            color: var(--accent);
+            margin-top: 0.3rem;
+            padding: 0.3rem 0.5rem;
+            background: rgba(212, 165, 116, 0.08);
+            border-radius: 4px;
+            border-left: 2px solid var(--accent);
+        }
+
         .plan-skip-section {
             margin-top: 1rem;
             padding-top: 0.75rem;
@@ -1745,14 +1755,14 @@
     /**
      * Adaptive Hair Routine — v2
      * Single-file app with localStorage persistence.
-     * Modules: StateManager, CooldownSystem, FeedbackEngine, CompensationEngine, WalkthroughEngine, TimerManager
+     * Modules: StateManager, CooldownSystem, FeedbackEngine, CompensationEngine, UseUpRotation, WalkthroughEngine, TimerManager
      */
     (function() {
         'use strict';
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 11;
+        const CURRENT_VERSION = 12;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -2192,6 +2202,11 @@
                 soundEnabled: true,
                 vibrationEnabled: true
             },
+            useUpRotation: {
+                lastAssignedProductId: null,
+                lastAssignedDate: null,
+                washCountSinceLastRotation: 0
+            },
             lastExport: null
         };
 
@@ -2564,6 +2579,18 @@
                 }
                 state.version = 11;
             }
+
+            // v11 → v12: Add use-up rotation state
+            if (state.version < 12) {
+                if (!state.useUpRotation) {
+                    state.useUpRotation = {
+                        lastAssignedProductId: null,
+                        lastAssignedDate: null,
+                        washCountSinceLastRotation: 0
+                    };
+                }
+                state.version = 12;
+            }
         }
 
         const StateManager = (function() {
@@ -2631,6 +2658,10 @@
                     return readFromStorage();
                 },
 
+                saveState(state) {
+                    return writeToStorage(state);
+                },
+
                 saveWashEvent(event) {
                     const state = readFromStorage();
                     const washEvent = Object.assign({}, event);
@@ -2638,6 +2669,10 @@
                         washEvent.id = generateUUID();
                     }
                     state.events.push(washEvent);
+                    // Increment use-up rotation counter on each wash
+                    if (washEvent.lane === 'curly' || washEvent.lane === 'blowout') {
+                        UseUpRotation.incrementWashCount(state);
+                    }
                     return writeToStorage(state);
                 },
 
@@ -3750,6 +3785,145 @@
             };
         })();
 
+        // ===== UseUpRotation =====
+        // Automatically cycles use-up conditioners into the plan with compensation.
+        // Rule: every 3rd wash, assign a use-up conditioner. The leave-in (L'Oréal 21-in-1)
+        // compensates with amodimethicone. Alternates between available use-up conditioners.
+        var UseUpRotation = (function() {
+            var ROTATION_FREQUENCY = 3; // every Nth wash gets a use-up conditioner
+            var USE_UP_CONDITIONER_IDS = ['dove-bond-conditioner', 'dove-intensive-conditioner'];
+            var COMPENSATING_LEAVE_IN = 'loreal-21in1';
+
+            /**
+             * Determines whether today's plan should use a use-up conditioner.
+             * Returns null if no rotation needed, or { productId, productName, note } if it should rotate.
+             */
+            function shouldRotate(state) {
+                var inventory = state.inventory || [];
+                var rotation = state.useUpRotation || { lastAssignedProductId: null, lastAssignedDate: null, washCountSinceLastRotation: 0 };
+
+                // If already rotated today, return the same product (idempotent)
+                var today = new Date().toISOString().split('T')[0];
+                if (rotation.lastAssignedDate === today && rotation.lastAssignedProductId) {
+                    var todayProduct = null;
+                    for (var i = 0; i < inventory.length; i++) {
+                        if (inventory[i].id === rotation.lastAssignedProductId && inventory[i].usingUp) {
+                            todayProduct = inventory[i];
+                            break;
+                        }
+                    }
+                    if (todayProduct) {
+                        var note = 'Finishing bottle — ';
+                        if (todayProduct.id === 'dove-bond-conditioner') {
+                            note += 'generic smoothing only (dimethiconol). L\'Oréal 21-in-1 leave-in compensates with targeted amodimethicone repair.';
+                        } else if (todayProduct.id === 'dove-intensive-conditioner') {
+                            note += 'weakest conditioner. L\'Oréal 21-in-1 leave-in compensates with targeted amodimethicone repair.';
+                        }
+                        return { productId: todayProduct.id, productName: todayProduct.name, note: note };
+                    }
+                }
+
+                // Find which use-up conditioners are still in inventory and marked as using-up
+                var availableUseUps = [];
+                for (var i = 0; i < inventory.length; i++) {
+                    var product = inventory[i];
+                    if (USE_UP_CONDITIONER_IDS.indexOf(product.id) !== -1 && product.usingUp) {
+                        availableUseUps.push(product);
+                    }
+                }
+
+                // No use-up conditioners to rotate
+                if (availableUseUps.length === 0) return null;
+
+                // Check that the compensating leave-in is in inventory
+                var hasCompensation = false;
+                for (var i = 0; i < inventory.length; i++) {
+                    if (inventory[i].id === COMPENSATING_LEAVE_IN) {
+                        hasCompensation = true;
+                        break;
+                    }
+                }
+                if (!hasCompensation) return null;
+
+                // Check if it's time to rotate (every Nth wash)
+                var washCount = rotation.washCountSinceLastRotation || 0;
+                if (washCount < ROTATION_FREQUENCY - 1) return null;
+
+                // Pick the next use-up conditioner (alternate between available ones)
+                var lastUsed = rotation.lastAssignedProductId;
+                var nextProduct = null;
+
+                if (availableUseUps.length === 1) {
+                    nextProduct = availableUseUps[0];
+                } else {
+                    // Pick the one that wasn't used last time
+                    for (var i = 0; i < availableUseUps.length; i++) {
+                        if (availableUseUps[i].id !== lastUsed) {
+                            nextProduct = availableUseUps[i];
+                            break;
+                        }
+                    }
+                    if (!nextProduct) nextProduct = availableUseUps[0];
+                }
+
+                // Build the compensation note
+                var note = 'Finishing bottle — ';
+                if (nextProduct.id === 'dove-bond-conditioner') {
+                    note += 'generic smoothing only (dimethiconol). L\'Oréal 21-in-1 leave-in compensates with targeted amodimethicone repair.';
+                } else if (nextProduct.id === 'dove-intensive-conditioner') {
+                    note += 'weakest conditioner. L\'Oréal 21-in-1 leave-in compensates with targeted amodimethicone repair.';
+                }
+
+                return {
+                    productId: nextProduct.id,
+                    productName: nextProduct.name,
+                    note: note
+                };
+            }
+
+            /**
+             * Records that a use-up conditioner was assigned in today's plan.
+             * Called when the plan is generated with a rotation.
+             */
+            function recordRotation(state, productId) {
+                if (!state.useUpRotation) {
+                    state.useUpRotation = { lastAssignedProductId: null, lastAssignedDate: null, washCountSinceLastRotation: 0 };
+                }
+                state.useUpRotation.lastAssignedProductId = productId;
+                state.useUpRotation.lastAssignedDate = new Date().toISOString().split('T')[0];
+                state.useUpRotation.washCountSinceLastRotation = 0;
+            }
+
+            /**
+             * Increments the wash counter. Called when a wash event is saved.
+             */
+            function incrementWashCount(state) {
+                if (!state.useUpRotation) {
+                    state.useUpRotation = { lastAssignedProductId: null, lastAssignedDate: null, washCountSinceLastRotation: 0 };
+                }
+                state.useUpRotation.washCountSinceLastRotation++;
+            }
+
+            /**
+             * Removes a use-up conditioner from rotation (when bottle is finished).
+             * The product should also be removed from inventory separately.
+             */
+            function removeFromRotation(productId) {
+                var idx = USE_UP_CONDITIONER_IDS.indexOf(productId);
+                if (idx !== -1) {
+                    USE_UP_CONDITIONER_IDS.splice(idx, 1);
+                }
+            }
+
+            return {
+                shouldRotate: shouldRotate,
+                recordRotation: recordRotation,
+                incrementWashCount: incrementWashCount,
+                removeFromRotation: removeFromRotation,
+                ROTATION_FREQUENCY: ROTATION_FREQUENCY
+            };
+        })();
+
         // ===== WalkthroughEngine =====
         const WalkthroughEngine = (function() {
             // Internal state
@@ -4488,6 +4662,12 @@
                 var sealActive = (state.sealState && state.sealState.active) || false;
                 var conditions = { dewPoint: dewPoint, humidity: humidity, sealActive: sealActive };
 
+                // Check if today should use a use-up conditioner
+                var useUpSwap = null;
+                if (lane === 'curly' || lane === 'blowout') {
+                    useUpSwap = UseUpRotation.shouldRotate(state);
+                }
+
                 // Get base steps from WalkthroughEngine
                 var baseSteps = WalkthroughEngine.getStepsForLane(lane, humidity);
 
@@ -4500,12 +4680,20 @@
                         alternatives = rankProducts(stepType, conditions, inventory);
                     }
 
+                    // Apply use-up rotation: swap conditioner step
+                    var effectiveProductId = step.productId;
+                    var useUpNote = null;
+                    if (useUpSwap && stepType === 'conditioner') {
+                        effectiveProductId = useUpSwap.productId;
+                        useUpNote = useUpSwap.note;
+                    }
+
                     // Look up actual product name from inventory
                     var displayName = step.title;
                     var inventoryName = null;
-                    if (step.productId) {
+                    if (effectiveProductId) {
                         for (var p = 0; p < inventory.length; p++) {
-                            if (inventory[p].id === step.productId) {
+                            if (inventory[p].id === effectiveProductId) {
                                 inventoryName = inventory[p].name;
                                 break;
                             }
@@ -4516,7 +4704,7 @@
                         id: 'step-' + (index + 1),
                         number: index + 1,
                         stepType: stepType,
-                        productId: step.productId,
+                        productId: effectiveProductId,
                         productName: inventoryName || displayName,
                         stepLabel: displayName,
                         inventoryName: inventoryName,
@@ -4525,9 +4713,27 @@
                         timer: step.timer || null,
                         tip: step.tip || null,
                         phase: step.phase,
-                        alternatives: alternatives
+                        alternatives: alternatives,
+                        useUpNote: useUpNote
                     };
                 });
+
+                // If a use-up rotation was applied, record it (only once per day)
+                if (useUpSwap) {
+                    var hasConditionerStep = false;
+                    for (var s = 0; s < planSteps.length; s++) {
+                        if (planSteps[s].useUpNote) {
+                            hasConditionerStep = true;
+                            break;
+                        }
+                    }
+                    var today = new Date().toISOString().split('T')[0];
+                    var rotation = state.useUpRotation || {};
+                    if (hasConditionerStep && rotation.lastAssignedDate !== today) {
+                        UseUpRotation.recordRotation(state, useUpSwap.productId);
+                        StateManager.saveState(state);
+                    }
+                }
 
                 var skips = getSkipReasons(state);
 
@@ -5554,6 +5760,11 @@
             html += '</div>'; // end header
 
             html += '<p class="plan-step-instruction">' + escapeHtml(step.instruction) + '</p>';
+
+            // Use-up rotation note (explains why a use-up product is assigned today)
+            if (step.useUpNote) {
+                html += '<p class="plan-step-useup-note">🔄 ' + escapeHtml(step.useUpNote) + '</p>';
+            }
 
             // Badges
             var hasBadges = step.scienceBadge || step.timer;
@@ -8052,6 +8263,7 @@
             CooldownSystem,
             FeedbackEngine,
             CompensationEngine,
+            UseUpRotation,
             InventoryManager,
             WalkthroughEngine,
             PlanGenerator,
