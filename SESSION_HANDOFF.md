@@ -48,10 +48,23 @@
 4. **Service worker** — Still the highest-impact missing infrastructure
 5. **Verify end-to-end feedback loop** — Rating → storage → insight surfacing
 
+## Additional Design Decisions (Late Session)
+
+### Walkthrough Redesign (Items 2-4 from critique)
+- **Learn section** cross-references products by topic/ingredient (owned + wishlist)
+- **Routine fully suggested** — app decides lane, products, timing, substitutions. One tap to start, override available but not prompted.
+- **Single-page walkthrough** — all steps visible at once, scrollable, no pagination. Compact but thorough. Glanceable in the shower.
+- **Every step names its product** explicitly, no "X or Y" choices.
+- **Product rotation + compensation logic** — the app picks ONE product per step and explains why: "Using Dove to finish the bottle. L'Oréal 21-in-1 at step 5 covers the amodimethicone gap." The routine is a *system* where steps compensate for each other.
+- **Proactive suggestion** means the app decides everything. Mandy opens it and sees today's routine fully assembled.
+
+### Product Inventory Status Field Addition
+- `using-up` status needed alongside `own | wishlist | retired | trying` — signals "not first choice but finish the bottle"
+
 ## Open Questions
-- Ben mentioned "other changes too" for the inventory model — what else beyond the fields listed above?
 - Does the product inventory live in localStorage alongside wash events, or separate storage key?
 - Should discovery/wishlist products be pre-populated from the consultation handoff, or start empty?
+- How does the app know product relationships (which compensates for which)? Manual tagging per product, or inferred from ingredient overlap?
 
 ## Repo State
 - **Branch:** main
