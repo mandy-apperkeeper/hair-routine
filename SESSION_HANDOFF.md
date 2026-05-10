@@ -39,16 +39,45 @@ intelligence: {
 
 ## What's Next
 
+### PRIORITY: Product Step Reorganization (not yet implemented)
+
+The current `intelligence.step` values are WRONG. Products are mis-categorized. The correct mapping (discussed but not coded) is:
+
+**New step structure (replaces current pre_wash/wash/post_wash/style):**
+
+1. **pre_wash** = Oils ONLY (OGX Coconut Oil, OGX Argan Oil) — applied to dry hair before wetting
+2. **shampoo** = Cleansing step (EverPure Bond Repair, Dove Bond Strength, Dove Intensive Repair, EverPure Clarifying)
+3. **bond_repair** = RENAMED from "pre-shampoo treatment" — applied BETWEEN shampoo and conditioner, NOT before shampoo
+   - Olaplex 3, Garnier Hair Filler Pre-Shampoo, OGX Bond Protein Pre-Shampoo, L'Oréal Bond Repair Pre-Shampoo
+   - These are currently tagged `step: 'pre_wash'` which is WRONG — they go after shampoo, before conditioner
+4. **conditioner** = Garnier Color Repair, EverPure Bond Repair Cond, Dove Bond Strength Cond, Dove Intensive Repair Cond
+5. **glossing** = Wonder Water, Glossing Lamination Mask, Elvive 5-Minute Gloss Mask
+6. **deep_condition** = Dove Bond Strength Mask
+7. **leave_in** = L'Oréal 21-in-1 Spray, Pantene Bond Spray
+8. **heat_protection** = Marc Anthony Grow Long Shield
+9. **styling** = NYM Curl Talk Gel, Got2b Gel
+10. **finishing** = Garnier Filler Serum, Dove 10-in-1 Serum, OGX Coconut Oil, OGX Argan Oil
+
+**Key changes from current code:**
+- Current `step: 'pre_wash'` products (Olaplex, Garnier Filler, OGX Bond Protein, L'Oréal Bond Repair Pre-Shampoo) → move to `step: 'bond_repair'`
+- Current `step: 'pre_wash'` should ONLY contain oils
+- OGX oils currently tagged `step: 'post_wash'` → should appear in BOTH `pre_wash` AND `finishing` (multi-step products)
+- The 4-phase UI grouping (Pre-wash | Wash | Post-wash | Style) may need to expand or the sub-grouping within phases needs to reflect this order
+- "Pre-shampoo treatment" label should be renamed to "Bond Repair" in the UI
+
+**This also involves proper education/research integration** — the app should teach Mandy WHY bond repair goes between shampoo and conditioner (clean surface for absorption, conditioner seals it in).
+
 ### Product Intelligence System — Remaining Implementation
 
 Spec at `.kiro/specs/product-intelligence/`. Research complete (3 briefs, all scored 100%). Some implementation already done (attribution card, schema v5, phase-based quick-log). Remaining work:
 
-1. **IngredientKB** — Embedded knowledge base (~100-150 ingredients, ~40-60KB). Enables product discovery parser.
-2. **BeliefTracker** — Bayesian updating of per-product outcome beliefs. Normal-Normal conjugate, arithmetic only.
-3. **Pre-wash recommendation card** — Tier 1 active intelligence (domain rules + dew point). Landing page.
-4. **Marginal contribution analysis** — Compare ratings with/without each product (needs 3+ events per group).
-5. **Product discovery form** — Structured input + ingredient parsing against KB. Open Beauty Facts as progressive enhancement.
-6. **Service worker + PWA** — Offline support for bathroom use. Deferred until after intelligence system.
+1. **Product step reorganization** (above) — MUST happen first, fixes the data model
+2. **IngredientKB** — Embedded knowledge base (~100-150 ingredients, ~40-60KB). Enables product discovery parser.
+3. **BeliefTracker** — Bayesian updating of per-product outcome beliefs. Normal-Normal conjugate, arithmetic only.
+4. **Pre-wash recommendation card** — Tier 1 active intelligence (domain rules + dew point). Landing page.
+5. **Marginal contribution analysis** — Compare ratings with/without each product (needs 3+ events per group).
+6. **Product discovery form** — Structured input + ingredient parsing against KB. Open Beauty Facts as progressive enhancement.
+7. **Service worker + PWA** — Offline support for bathroom use. Deferred until after intelligence system.
 
 ### Confidence Thresholds (from Brief 2)
 - 0-2 events: Domain rules only
