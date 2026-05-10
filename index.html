@@ -3559,18 +3559,28 @@
             html += '<h3 style="color:var(--gold);margin-bottom:1rem;">Log a past event</h3>';
             html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.4rem;">What day?</label>';
             html += '<input type="date" id="quick-log-date" value="' + defaultDate + '" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.6rem 0.75rem;font-size:0.9rem;margin-bottom:1.25rem;min-height:48px;">';
-            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">What did you do?</label>';
-            html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem;">';
-            html += '<button class="btn-secondary quick-type-btn" data-quick="wash">Wash</button>';
-            html += '<button class="btn-secondary quick-type-btn" data-quick="clarify">Clarify</button>';
-            html += '<button class="btn-secondary quick-type-btn" data-quick="protein">Protein</button>';
-            html += '<button class="btn-secondary quick-type-btn" data-quick="deep">Deep condition</button>';
-            html += '</div>';
-            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Which lane? (if wash)</label>';
-            html += '<div style="display:flex;gap:0.5rem;margin-bottom:1rem;" id="quick-log-lanes">';
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Which lane?</label>';
+            html += '<div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;" id="quick-log-lanes">';
             html += '<button class="btn-secondary quick-lane-btn" data-lane="curly" style="border-color:var(--green);color:var(--green);">Curly</button>';
             html += '<button class="btn-secondary quick-lane-btn" data-lane="blowout">Blowout</button>';
+            html += '<button class="btn-secondary quick-lane-btn" data-lane="refresh">Refresh</button>';
             html += '</div>';
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">What treatments? <span style="color:var(--muted);">(select all that apply)</span></label>';
+            html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem;" id="quick-log-treatments">';
+            html += '<button class="btn-secondary quick-treatment-btn" data-treatment="clarify">Clarify</button>';
+            html += '<button class="btn-secondary quick-treatment-btn" data-treatment="protein">Protein</button>';
+            html += '<button class="btn-secondary quick-treatment-btn" data-treatment="deep-condition">Deep condition</button>';
+            html += '<button class="btn-secondary quick-treatment-btn" data-treatment="bond-repair">Bond repair</button>';
+            html += '</div>';
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">How did it turn out? <span style="color:var(--muted);">(optional)</span></label>';
+            html += '<div style="display:flex;gap:0.75rem;margin-bottom:1.25rem;" id="quick-log-rating">';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="1" style="font-size:1.3rem;padding:0.4rem 0.6rem;">😫</button>';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="2" style="font-size:1.3rem;padding:0.4rem 0.6rem;">😕</button>';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="3" style="font-size:1.3rem;padding:0.4rem 0.6rem;">😐</button>';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="4" style="font-size:1.3rem;padding:0.4rem 0.6rem;">😊</button>';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="5" style="font-size:1.3rem;padding:0.4rem 0.6rem;">🤩</button>';
+            html += '</div>';
+            html += '<button class="btn-primary" id="quick-log-save" style="width:100%;margin-top:0.5rem;">Save</button>';
             html += '</div>';
 
             showView('walkthrough');
@@ -3579,7 +3589,8 @@
 
             // State for quick log form
             var quickLane = 'curly';
-            var quickType = null;
+            var selectedTreatments = [];
+            var selectedRating = null;
 
             // Wire cancel
             document.getElementById('quick-log-cancel').addEventListener('click', function() {
@@ -3587,7 +3598,7 @@
                 document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
             });
 
-            // Wire lane buttons
+            // Wire lane buttons (single-select)
             walkSection.querySelectorAll('.quick-lane-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     quickLane = btn.getAttribute('data-lane');
@@ -3600,16 +3611,43 @@
                 });
             });
 
-            // Wire type buttons — selecting a type submits the form
-            walkSection.querySelectorAll('.quick-type-btn').forEach(function(btn) {
+            // Wire treatment buttons (multi-select toggle)
+            walkSection.querySelectorAll('.quick-treatment-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
-                    quickType = btn.getAttribute('data-quick');
-                    submitQuickLog(quickType, quickLane);
+                    var treatment = btn.getAttribute('data-treatment');
+                    var idx = selectedTreatments.indexOf(treatment);
+                    if (idx === -1) {
+                        selectedTreatments.push(treatment);
+                        btn.style.borderColor = 'var(--green)';
+                        btn.style.color = 'var(--green)';
+                    } else {
+                        selectedTreatments.splice(idx, 1);
+                        btn.style.borderColor = '';
+                        btn.style.color = '';
+                    }
                 });
+            });
+
+            // Wire rating buttons (single-select)
+            walkSection.querySelectorAll('.quick-rating-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    selectedRating = parseInt(btn.getAttribute('data-rating'));
+                    walkSection.querySelectorAll('.quick-rating-btn').forEach(function(b) {
+                        b.style.borderColor = '';
+                        b.style.background = '';
+                    });
+                    btn.style.borderColor = 'var(--gold)';
+                    btn.style.background = 'rgba(212, 165, 116, 0.15)';
+                });
+            });
+
+            // Wire save button
+            document.getElementById('quick-log-save').addEventListener('click', function() {
+                submitQuickLog(quickLane, selectedTreatments, selectedRating);
             });
         }
 
-        function submitQuickLog(type, lane) {
+        function submitQuickLog(lane, treatments, rating) {
             var dateInput = document.getElementById('quick-log-date');
             var dateStr = dateInput ? dateInput.value : null;
             if (!dateStr) {
@@ -3620,27 +3658,28 @@
             // Build the event date (noon local time to avoid timezone issues)
             var eventDate = new Date(dateStr + 'T12:00:00');
 
-            // Determine products and treatments based on type
-            var products;
-            var treatments = [];
-            switch (type) {
-                case 'wash':
-                    products = ['everpure-bond-repair', 'garnier-color-repair', 'loreal-21-in-1'];
-                    break;
-                case 'clarify':
-                    products = ['everpure-clarifying', 'garnier-color-repair'];
-                    treatments.push('clarify');
-                    break;
-                case 'protein':
-                    products = ['garnier-pre-shampoo', 'everpure-bond-repair', 'garnier-color-repair'];
-                    treatments.push('protein');
-                    break;
-                case 'deep':
-                    products = ['garnier-color-repair'];
-                    treatments.push('deep-condition');
-                    break;
-                default:
-                    products = [];
+            // Build products list based on lane and treatments
+            var products = [];
+            // Base wash products (always present — every event is a wash)
+            if (treatments.includes('clarify')) {
+                products.push('everpure-clarifying');
+            } else {
+                products.push('everpure-bond-repair');
+            }
+            products.push('garnier-color-repair');
+            products.push('loreal-21-in-1');
+
+            // Add treatment-specific products
+            if (treatments.includes('protein')) {
+                if (!products.includes('garnier-pre-shampoo')) {
+                    products.push('garnier-pre-shampoo');
+                }
+            }
+            // Lane-specific products
+            if (lane === 'curly') {
+                products.push('nym-curl-talk-gel');
+            } else if (lane === 'blowout') {
+                products.push('marc-anthony-blowout');
             }
 
             // Calculate interval days from previous event
@@ -3668,7 +3707,7 @@
                 products: products,
                 humidity: 'moderate',
                 dewPoint: null,
-                rating: null,
+                rating: rating || null,
                 intervalDays: intervalDays,
                 overrides: [],
                 notes: ''
