@@ -586,6 +586,57 @@
             color: var(--text-secondary);
         }
 
+        /* ===== Compensation Card ===== */
+        .compensation-card {
+            background: rgba(212, 165, 116, 0.05);
+            border: 1px solid rgba(212, 165, 116, 0.15);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .compensation-card.active {
+            display: block;
+        }
+
+        .compensation-card p {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .compensation-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        .compensation-card .comp-status {
+            font-size: 0.78rem;
+            color: var(--green);
+            font-weight: 500;
+        }
+
+        .compensation-card .comp-gap {
+            font-size: 0.78rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .compensation-card .comp-dismiss {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 0.25rem 0;
+            margin-top: 0.5rem;
+            text-decoration: underline;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+        }
+
         /* ===== Phase Labels ===== */
         .phase-label {
             font-family: system-ui, -apple-system, sans-serif;
@@ -754,6 +805,14 @@
                 <p id="insight-message"></p>
             </div>
 
+            <!-- Compensation card (contextual product statements) -->
+            <div class="compensation-card" id="compensation-card" aria-label="Product compensation info">
+            </div>
+
+            <!-- Gel gap reminder (persistent until dismissed, resurfaces weekly) -->
+            <div class="compensation-card" id="gel-gap-card" aria-label="Uncompensated gap reminder">
+            </div>
+
             <!-- Smart recommendation (shown when history exists) -->
             <div id="smart-recommendation" style="display:none;">
                 <div class="card" id="recommendation-card">
@@ -809,7 +868,7 @@
     /**
      * Adaptive Hair Routine — v2
      * Single-file app with localStorage persistence.
-     * Modules: StateManager, CooldownSystem, FeedbackEngine, WalkthroughEngine, TimerManager
+     * Modules: StateManager, CooldownSystem, FeedbackEngine, CompensationEngine, WalkthroughEngine, TimerManager
      */
     (function() {
         'use strict';
@@ -1823,6 +1882,163 @@
             };
         })();
 
+        // ===== CompensationEngine =====
+        var CompensationEngine = (function() {
+            /**
+             * Compensation rules derived from Phase 5 research.
+             * Each rule describes: what product is "weak," what function is lost,
+             * what compensates, and whether there's a net gap.
+             */
+            var COMPENSATION_RULES = [
+                {
+                    id: 'dove-bond-strength',
+                    trigger: function(products) { return products.includes('dove-bond-strength'); },
+                    message: 'Using Dove Bond Strength Conditioner today (finishing bottle). Generic smoothing only — lacks targeted cuticle repair. L\'Oréal 21-in-1 at step 5 delivers amodimethicone directly to damaged sites.',
+                    status: 'No gap in today\'s routine.',
+                    hasGap: false
+                },
+                {
+                    id: 'dove-intensive-repair',
+                    trigger: function(products) { return products.includes('dove-intensive-repair'); },
+                    message: 'Using Dove Intensive Repair Conditioner today (finishing bottle — weakest option). Generic silicone smoothing only. L\'Oréal 21-in-1 at step 5 provides the targeted repair this conditioner lacks.',
+                    status: 'Prioritize finishing this bottle. No functional gap.',
+                    hasGap: false
+                },
+                {
+                    id: 'skip-protein',
+                    trigger: function(products, treatments, proteinDays) {
+                        // Fires when it's a wash day and protein hasn't been done recently
+                        // but only if protein is "due" (past the interval)
+                        return proteinDays !== null && proteinDays >= 14 && !treatments.includes('protein');
+                    },
+                    message: 'No protein pre-shampoo today. Cortex protein fill is paused — no other product in the routine provides deep protein penetration.',
+                    status: 'Acceptable occasionally. Don\'t skip more than 2 consecutive wash days.',
+                    hasGap: true
+                },
+                {
+                    id: 'skip-olaplex',
+                    trigger: function(products, treatments, proteinDays, olaplexDays) {
+                        return olaplexDays !== null && olaplexDays >= 14 && !treatments.includes('bond-repair');
+                    },
+                    message: 'Olaplex 3 is overdue (' + 'days). Broken disulfide bonds remain broken — this is the only product that reconnects them.',
+                    // Dynamic message handled in getStatements()
+                    status: 'Weekly treatment keeps bonds maintained.',
+                    hasGap: true
+                },
+                {
+                    id: 'garnier-serum-only',
+                    trigger: function(products) { return products.includes('garnier-filler-serum') && !products.includes('loreal-21-in-1'); },
+                    message: 'Garnier Filler Serum today (concentrated amodimethicone). Stronger cuticle repair than the spray, but no conditioning hold. Best for repair-focused days.',
+                    status: 'Different strengths — both valid options.',
+                    hasGap: false
+                }
+            ];
+
+            /**
+             * The one critical uncompensated gap: no PQ-69 gel in inventory.
+             * This persists until the user dismisses it, then resurfaces after 7 days.
+             */
+            var GEL_GAP = {
+                message: 'Your one uncompensated gap: humidity barrier. No product in the collection provides PQ-69 film-forming hold.',
+                recommendation: 'NYM Curl Talk Flash Freeze Gel (~$8) would complete the system.',
+                dismissKey: 'gelGapDismissedAt'
+            };
+
+            function isGelGapDismissed() {
+                var dismissedAt = localStorage.getItem(GEL_GAP.dismissKey);
+                if (!dismissedAt) return false;
+                var dismissDate = new Date(dismissedAt);
+                var now = new Date();
+                var daysSinceDismiss = Math.floor((now - dismissDate) / (1000 * 60 * 60 * 24));
+                return daysSinceDismiss < 7;
+            }
+
+            function dismissGelGap() {
+                localStorage.setItem(GEL_GAP.dismissKey, new Date().toISOString());
+            }
+
+            function hasGelInInventory() {
+                // Check if any wash event has used a PQ-69 gel product
+                // If the user has logged a wash with gel, they have it
+                var state = StateManager.getState();
+                var events = state.events || [];
+                for (var i = 0; i < events.length; i++) {
+                    var prods = events[i].products || [];
+                    if (prods.includes('nym-curl-talk-gel') || prods.includes('got2b-ultra-glued')) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            /**
+             * Get compensation statements relevant to the current routine state.
+             * Returns an array of { message, status, hasGap } objects.
+             */
+            function getStatements() {
+                var state = StateManager.getState();
+                var events = state.events || [];
+                if (events.length === 0) return [];
+
+                // Get the most recent wash event to determine what products were used
+                var lastEvent = events[events.length - 1];
+                var products = lastEvent.products || [];
+                var treatments = lastEvent.treatments || [];
+
+                // Calculate days since protein and olaplex
+                var proteinDays = null;
+                var olaplexDays = null;
+                for (var i = events.length - 1; i >= 0; i--) {
+                    var t = events[i].treatments || [];
+                    var p = events[i].products || [];
+                    if (proteinDays === null && (t.includes('protein') || p.includes('garnier-pre-shampoo'))) {
+                        proteinDays = daysSince(events[i].date);
+                    }
+                    if (olaplexDays === null && (t.includes('bond-repair') || p.includes('olaplex-3'))) {
+                        olaplexDays = daysSince(events[i].date);
+                    }
+                    if (proteinDays !== null && olaplexDays !== null) break;
+                }
+
+                var statements = [];
+
+                for (var r = 0; r < COMPENSATION_RULES.length; r++) {
+                    var rule = COMPENSATION_RULES[r];
+                    if (rule.trigger(products, treatments, proteinDays, olaplexDays)) {
+                        var msg = rule.message;
+                        // Dynamic message for olaplex with actual days
+                        if (rule.id === 'skip-olaplex' && olaplexDays !== null) {
+                            msg = 'Olaplex 3 is overdue (' + olaplexDays + ' days). Broken disulfide bonds remain broken — this is the only product that reconnects them.';
+                        }
+                        statements.push({
+                            id: rule.id,
+                            message: msg,
+                            status: rule.status,
+                            hasGap: rule.hasGap
+                        });
+                    }
+                }
+
+                return statements;
+            }
+
+            /**
+             * Check if the gel gap reminder should be shown.
+             */
+            function shouldShowGelGap() {
+                if (hasGelInInventory()) return false;
+                if (isGelGapDismissed()) return false;
+                return true;
+            }
+
+            return {
+                getStatements: getStatements,
+                shouldShowGelGap: shouldShowGelGap,
+                dismissGelGap: dismissGelGap,
+                getGelGapInfo: function() { return GEL_GAP; }
+            };
+        })();
+
         // ===== WalkthroughEngine =====
         const WalkthroughEngine = (function() {
             // Internal state
@@ -2551,6 +2767,53 @@
                 insightMessage.textContent = insights[0].message;
             } else {
                 insightCard.classList.remove('active');
+            }
+
+            // Compensation card (contextual product statements)
+            var compCard = document.getElementById('compensation-card');
+            var compStatements = CompensationEngine.getStatements();
+            if (events.length > 0 && compStatements.length > 0) {
+                var compHtml = '';
+                for (var cs = 0; cs < compStatements.length; cs++) {
+                    var stmt = compStatements[cs];
+                    compHtml += '<p>' + escapeHtml(stmt.message) + '</p>';
+                    if (stmt.hasGap) {
+                        compHtml += '<p class="comp-gap">⚠️ ' + escapeHtml(stmt.status) + '</p>';
+                    } else {
+                        compHtml += '<p class="comp-status">✓ ' + escapeHtml(stmt.status) + '</p>';
+                    }
+                }
+                compCard.innerHTML = compHtml;
+                compCard.classList.add('active');
+            } else {
+                compCard.classList.remove('active');
+                compCard.innerHTML = '';
+            }
+
+            // Gel gap reminder (persistent until dismissed, resurfaces weekly)
+            var gelGapCard = document.getElementById('gel-gap-card');
+            if (CompensationEngine.shouldShowGelGap()) {
+                var gelInfo = CompensationEngine.getGelGapInfo();
+                var gelHtml = '<p class="comp-gap">⚠️ ' + escapeHtml(gelInfo.message) + '</p>';
+                gelHtml += '<p>' + escapeHtml(gelInfo.recommendation) + '</p>';
+                gelHtml += '<button class="comp-dismiss" id="gel-gap-dismiss">Dismiss for a week</button>';
+                gelGapCard.innerHTML = gelHtml;
+                gelGapCard.classList.add('active');
+
+                // Wire dismiss button (use setTimeout to ensure DOM is ready)
+                setTimeout(function() {
+                    var dismissBtn = document.getElementById('gel-gap-dismiss');
+                    if (dismissBtn) {
+                        dismissBtn.addEventListener('click', function() {
+                            CompensationEngine.dismissGelGap();
+                            gelGapCard.classList.remove('active');
+                            gelGapCard.innerHTML = '';
+                        });
+                    }
+                }, 0);
+            } else {
+                gelGapCard.classList.remove('active');
+                gelGapCard.innerHTML = '';
             }
         }
 
@@ -3786,6 +4049,7 @@
             StateManager,
             CooldownSystem,
             FeedbackEngine,
+            CompensationEngine,
             WalkthroughEngine,
             TimerManager,
             daysSince,
