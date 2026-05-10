@@ -8,14 +8,14 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
 
 ## Tasks
 
-- [-] 1. Project scaffolding and data layer
-  - [-] 1.1 Create `hair-routine-v2.html` with base HTML structure, CSS custom properties, and empty JS module pattern
+- [x] 1. Project scaffolding and data layer
+  - [x] 1.1 Create `hair-routine-v2.html` with base HTML structure, CSS custom properties, and empty JS module pattern
     - Set up the single-file skeleton: `<!DOCTYPE html>`, meta viewport, dark theme CSS variables (from existing v1), semantic HTML landmarks (`<main>`, `<nav>`, `<section>`), and the IIFE/module pattern for JS
     - Include all CSS from the design: touch targets (48×48dp min), typography (serif headings, system-ui body), dark color scheme, card/badge/timer/warning styles
     - Include the first-use empty state markup (hidden by default)
     - _Requirements: 11.1, 11.4, 11.5, 13.1, 13.5, 13.7_
 
-  - [ ] 1.2 Implement StateManager module (localStorage CRUD)
+  - [x] 1.2 Implement StateManager module (localStorage CRUD)
     - Implement `getState()`, `saveWashEvent(event)`, `getSealState()`, `setSealState(active)`, `getThresholds()`, `setThreshold(key, value)`
     - Initialize with default schema (`version: 1`, empty events array, default thresholds, inactive seal state, empty insights/proposals, default settings)
     - Handle `QuotaExceededError`, `JSON.parse` failures, and localStorage unavailability (private browsing detection)
@@ -33,8 +33,8 @@ Implementation proceeds bottom-up: data layer → logic modules → UI component
     - Generate arbitrary valid app states (events array, thresholds, seal state, insights, settings) and verify export-to-JSON then import-from-JSON produces identical state
     - **Validates: Requirements 9.4, 9.5**
 
-- [ ] 2. Cooldown System and Seal State
-  - [ ] 2.1 Implement CooldownSystem module
+- [-] 2. Cooldown System and Seal State
+  - [-] 2.1 Implement CooldownSystem module
     - Implement `checkWarnings(lane, humidity)`, `getTimeSince(eventType)`, `isOverride(warning)`, `recordOverride(warningType)`
     - Time-based warnings: too-soon-wash (< threshold days), too-soon-clarify, too-soon-protein
     - State-based warnings: lane-conflict-pq69 (blowout after PQ-69 gel), lane-conflict-seal (curly while sealed), seal-blocks-treatment

@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hair Routine</title>
+    <style>
+        /* ===== CSS Custom Properties ===== */
+        :root {
+            --bg: #1c1a1f;
+            --bg-warm: #221f24;
+            --card: #2a2630;
+            --card-hover: #332e3a;
+            --accent: #d4748a;
+            --accent2: #6b4c7a;
+            --text: #ede8e3;
+            --text-secondary: #b8b0a8;
+            --muted: #8a8078;
+            --gold: #d4a574;
+            --green: #7ab8a8;
+            --border: #3a3440;
+            --blue: #7a9ec4;
+            --rose: #c47a8a;
+            --surface: #252228;
+        }
+
+        /* ===== Reset ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ===== Base Typography ===== */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 1.5rem 1.25rem;
+            max-width: 640px;
+            margin: 0 auto;
+            padding-bottom: 5rem;
+            -webkit-font-smoothing: antialiased;
+            font-size: 1rem;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, .section-title {
+            font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            color: var(--gold);
+            margin-bottom: 0.25rem;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: var(--gold);
+            margin-bottom: 0.75rem;
+        }
+
+        h3 {
+            font-size: 1.05rem;
+            font-weight: 400;
+        }
+
+        .subtitle {
+            font-family: system-ui, -apple-system, sans-serif;
+            color: var(--muted);
+            font-size: 0.8rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 1.75rem;
+        }
+
+        /* ===== Section Title ===== */
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 400;
+            color: var(--gold);
+            margin: 1.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ===== View System ===== */
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* ===== Navigation ===== */
+        nav {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            padding: 0.75rem 0;
+        }
+
+        nav button {
+            padding: 0.6rem 0.9rem;
+            border-radius: 10px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+            min-height: 48px;
+            min-width: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        nav button:hover {
+            background: var(--card-hover);
+            color: var(--text);
+        }
+
+        nav button[aria-current="true"] {
+            background: var(--accent2);
+            color: var(--text);
+            border-color: var(--accent2);
+        }
+
+        /* ===== Cards ===== */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--green);
+            margin-bottom: 0.6rem;
+            letter-spacing: 0.01em;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            line-height: 1.65;
+            color: var(--text-secondary);
+        }
+
+        /* ===== Steps ===== */
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .step:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.6rem;
+            height: 1.6rem;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .product-name {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .product-note {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+            line-height: 1.55;
+        }
+
+        /* ===== Badges ===== */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 5px;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            margin-right: 0.3rem;
+            margin-top: 0.4rem;
+        }
+
+        .badge-gold { background: rgba(212, 165, 116, 0.2); color: var(--gold); }
+        .badge-green { background: rgba(122, 184, 168, 0.2); color: var(--green); }
+        .badge-purple { background: rgba(107, 76, 122, 0.3); color: #c4a0d4; }
+        .badge-red { background: rgba(212, 116, 138, 0.2); color: var(--accent); }
+        .badge-blue { background: rgba(122, 158, 196, 0.2); color: var(--blue); }
+
+        .badge-verified {
+            background: rgba(122, 184, 168, 0.2);
+            color: var(--green);
+            border: 1px solid rgba(122, 184, 168, 0.4);
+        }
+
+        .badge-best-practice {
+            background: transparent;
+            color: var(--gold);
+            border: 1px solid var(--gold);
+        }
+
+        /* ===== Tips and Warnings ===== */
+        .tip {
+            background: rgba(122, 184, 168, 0.08);
+            border-left: 3px solid var(--green);
+            padding: 1rem 1.25rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .tip strong { color: var(--green); }
+
+        .warning {
+            background: rgba(212, 116, 138, 0.08);
+            border-left: 3px solid var(--accent);
+            padding: 1rem 1.25rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .warning strong { color: var(--accent); }
+
+        /* ===== Warning Overlay (non-blocking banner) ===== */
+        .warning-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(212, 116, 138, 0.95);
+            color: var(--text);
+            padding: 1rem 1.25rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .warning-overlay.active {
+            display: flex;
+        }
+
+        .warning-overlay button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 48px;
+            min-width: 48px;
+            flex-shrink: 0;
+        }
+
+        /* ===== Timer ===== */
+        .timer-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .timer-display {
+            font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: var(--gold);
+            font-variant-numeric: tabular-nums;
+            margin: 0.5rem 0;
+            letter-spacing: 0.02em;
+        }
+
+        .timer-label {
+            font-family: system-ui, -apple-system, sans-serif;
+            color: var(--muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .timer-btn {
+            padding: 0.6rem 1.1rem;
+            border-radius: 8px;
+            border: none;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+            min-height: 48px;
+            min-width: 48px;
+        }
+
+        .timer-btn-start { background: var(--green); color: var(--bg); }
+        .timer-btn-stop { background: var(--accent); color: white; }
+        .timer-btn-reset { background: var(--card); color: var(--text-secondary); border: 1px solid var(--border); }
+        .timer-btn:hover { opacity: 0.85; }
+
+        /* ===== Decision Cards ===== */
+        .decision {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .decision-option {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 1rem 1.1rem;
+            margin-bottom: 0.6rem;
+            border-left: 3px solid var(--border);
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease;
+            min-height: 48px;
+        }
+
+        .decision-option:hover {
+            border-left-color: var(--green);
+            background: var(--card-hover);
+        }
+
+        .decision-option:active { transform: scale(0.98); }
+        .decision-option:last-child { margin-bottom: 0; }
+        .decision-option strong { color: var(--text); font-size: 0.9rem; }
+
+        /* ===== Tracker ===== */
+        .tracker-box {
+            background: rgba(122, 184, 168, 0.06);
+            border: 1px solid rgba(122, 184, 168, 0.2);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .tracker-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        .tracker-item:last-child { border-bottom: none; }
+        .tracker-label { color: var(--muted); }
+        .tracker-value { color: var(--text); font-weight: 500; }
+
+        /* ===== Buttons ===== */
+        .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 64px;
+            padding: 0 1.5rem;
+            border-radius: 14px;
+            background: var(--accent2);
+            border: none;
+            color: var(--text);
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            min-height: 48px;
+            min-width: 48px;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-primary:hover { background: var(--card-hover); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.15s ease, border-color 0.15s ease;
+            min-height: 48px;
+            min-width: 48px;
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            color: var(--text);
+            border-color: var(--green);
+        }
+
+        /* ===== Weather Box ===== */
+        .weather-box {
+            background: rgba(122, 158, 196, 0.06);
+            border: 1px solid rgba(122, 158, 196, 0.2);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .weather-btn {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--border);
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease;
+            min-height: 48px;
+            min-width: 48px;
+            width: 100%;
+            text-align: left;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+
+        .weather-btn:hover { border-left-color: var(--blue); }
+        .weather-btn.selected { border-left-color: var(--green); background: var(--card-hover); }
+
+        /* ===== Frizz Diagnostic ===== */
+        .frizz-card {
+            background: rgba(212, 165, 116, 0.06);
+            border: 1px solid rgba(212, 165, 116, 0.2);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .frizz-option {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--border);
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease;
+            min-height: 48px;
+        }
+
+        .frizz-option:hover { border-left-color: var(--gold); }
+        .frizz-option.selected { border-left-color: var(--gold); background: var(--card-hover); }
+
+        /* ===== Product Grid ===== */
+        .product-grid {
+            display: grid;
+            gap: 0.6rem;
+        }
+
+        .product-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        /* ===== Collapsible Sections ===== */
+        .toggle-section {
+            cursor: pointer;
+            user-select: none;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
+            padding: 0.5rem 0;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-section::after { content: ' \25B8'; color: var(--muted); margin-left: 0.5rem; }
+        .toggle-section.open::after { content: ' \25BE'; }
+
+        .collapsible {
+            display: none;
+            margin-top: 0.5rem;
+        }
+
+        .collapsible.open { display: block; }
+
+        /* ===== Empty State (first-use welcome) ===== */
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            color: var(--text-secondary);
+            display: none;
+        }
+
+        .empty-state.active {
+            display: block;
+        }
+
+        .empty-state h2 {
+            color: var(--gold);
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            line-height: 1.7;
+            max-width: 28rem;
+            margin: 0 auto 1rem;
+        }
+
+        /* ===== Insight Card (feedback engine) ===== */
+        .insight-card {
+            background: rgba(212, 165, 116, 0.08);
+            border: 1px solid rgba(212, 165, 116, 0.25);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .insight-card.active {
+            display: block;
+        }
+
+        .insight-card p {
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        /* ===== Phase Labels ===== */
+        .phase-label {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin: 1.25rem 0 0.5rem;
+            padding-left: 0.25rem;
+        }
+
+        /* ===== Responsive Layout ===== */
+        @media (min-width: 768px) {
+            body {
+                max-width: 720px;
+                padding: 2rem 2rem 5rem;
+            }
+
+            .product-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            body {
+                max-width: 860px;
+            }
+        }
+
+        /* ===== Reduced Motion ===== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+            }
+        }
+
+        /* ===== Focus Visible ===== */
+        :focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: 2px;
+        }
+
+        /* ===== Touch Target Spacing ===== */
+        button, [role="button"], a, input, select, textarea {
+            min-height: 48px;
+            min-width: 48px;
+        }
+
+        button + button, [role="button"] + [role="button"] {
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Warning Overlay (non-blocking banner) -->
+    <div class="warning-overlay" id="warning-overlay" role="alert" aria-live="assertive">
+        <span id="warning-overlay-message"></span>
+        <button id="warning-overlay-dismiss" aria-label="Dismiss warning">Got it</button>
+    </div>
+
+    <header>
+        <h1>Hair Routine</h1>
+        <p class="subtitle">2C-3A · Coarse · Very Thick · Adaptive Care</p>
+    </header>
+
+    <nav aria-label="Main navigation">
+        <button data-view="landing" aria-current="true">Home</button>
+        <button data-view="history">History</button>
+        <button data-view="learn">Learn</button>
+        <button data-view="settings">Settings</button>
+    </nav>
+
+    <main>
+        <!-- Landing Screen -->
+        <section id="landing" class="view active" aria-label="Landing">
+            <!-- First-use empty state (hidden by default, shown when no wash events) -->
+            <div class="empty-state" id="empty-state" aria-label="Welcome">
+                <h2>Welcome</h2>
+                <p>This app learns from your hair care routine over time. Tap a button below to start your first walkthrough — it'll guide you step by step.</p>
+                <p>After a few washes, you'll start seeing personalized insights about what works best for your hair.</p>
+            </div>
+
+            <!-- Status summary (populated by JS) -->
+            <div class="tracker-box" id="status-summary" aria-label="Status summary">
+                <div class="tracker-item">
+                    <span class="tracker-label">Last wash</span>
+                    <span class="tracker-value" id="status-wash">—</span>
+                </div>
+                <div class="tracker-item">
+                    <span class="tracker-label">Last clarify</span>
+                    <span class="tracker-value" id="status-clarify">—</span>
+                </div>
+                <div class="tracker-item">
+                    <span class="tracker-label">Seal state</span>
+                    <span class="tracker-value" id="status-seal">Inactive</span>
+                </div>
+            </div>
+
+            <!-- Insight card (hidden until feedback engine has data) -->
+            <div class="insight-card" id="insight-card" aria-label="Personalized insight">
+                <p id="insight-message"></p>
+            </div>
+
+            <!-- Primary action buttons -->
+            <button class="btn-primary" id="btn-curly" aria-label="Start curly day walkthrough">Curly</button>
+            <button class="btn-primary" id="btn-blowout" aria-label="Start blowout day walkthrough">Blowout</button>
+            <button class="btn-primary" id="btn-refresh" aria-label="Start refresh day walkthrough">Refresh</button>
+
+            <!-- Default guidance for new users -->
+            <div class="tip" id="default-guidance">
+                <strong>Getting started:</strong> Every 3-4 days is a good baseline. Your hair doesn't get oily — wash when it feels heavy from buildup or when you want to restyle.
+            </div>
+        </section>
+
+        <!-- Walkthrough View -->
+        <section id="walkthrough" class="view" aria-label="Step-by-step walkthrough">
+            <!-- Populated dynamically by WalkthroughEngine -->
+        </section>
+
+        <!-- History View -->
+        <section id="history" class="view" aria-label="Wash history">
+            <!-- Populated dynamically by History module -->
+        </section>
+
+        <!-- Learn Section -->
+        <section id="learn" class="view" aria-label="Science and reference">
+            <!-- Populated dynamically by Learn module -->
+        </section>
+
+        <!-- Settings View -->
+        <section id="settings" class="view" aria-label="Settings and thresholds">
+            <!-- Populated dynamically by Settings module -->
+        </section>
+    </main>
+
+    <script>
+    /**
+     * Adaptive Hair Routine — v2
+     * Single-file app with localStorage persistence.
+     * Modules: StateManager, CooldownSystem, FeedbackEngine, WalkthroughEngine, TimerManager
+     */
+    (function() {
+        'use strict';
+
+        // ===== StateManager =====
+        const STORAGE_KEY = 'hair-routine-data';
+        const CURRENT_VERSION = 1;
+
+        const DEFAULT_STATE = {
+            version: CURRENT_VERSION,
+            events: [],
+            thresholds: {
+                washMinDays: 2,
+                clarifyMinDays: 5,
+                proteinMinDays: 7,
+                treatmentWhileSealed: true
+            },
+            sealState: {
+                active: false,
+                appliedDate: null,
+                washesSinceApplied: 0
+            },
+            insights: [],
+            proposals: [],
+            settings: {
+                defaultHumidity: null,
+                soundEnabled: true,
+                vibrationEnabled: true
+            },
+            lastExport: null
+        };
+
+        const HARD_FLOORS = {
+            washMinDays: 1,
+            clarifyMinDays: 3,
+            proteinMinDays: 5
+        };
+
+        function generateUUID() {
+            if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                return crypto.randomUUID();
+            }
+            return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 11);
+        }
+
+        const StateManager = (function() {
+            let storageAvailable = true;
+
+            // Detect localStorage availability
+            try {
+                const testKey = '__hair_routine_storage_test__';
+                localStorage.setItem(testKey, '1');
+                localStorage.removeItem(testKey);
+            } catch (e) {
+                storageAvailable = false;
+                console.warn('localStorage unavailable (private browsing or disabled). Data will not persist.');
+            }
+
+            function deepClone(obj) {
+                return JSON.parse(JSON.stringify(obj));
+            }
+
+            function readFromStorage() {
+                if (!storageAvailable) {
+                    return deepClone(DEFAULT_STATE);
+                }
+
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw === null) {
+                        return deepClone(DEFAULT_STATE);
+                    }
+                    const parsed = JSON.parse(raw);
+                    // Schema version check and migration
+                    if (parsed.version && parsed.version < CURRENT_VERSION) {
+                        parsed.version = CURRENT_VERSION;
+                        writeToStorage(parsed);
+                    }
+                    return parsed;
+                } catch (e) {
+                    console.warn('Failed to parse localStorage data. Resetting to defaults.', e);
+                    return deepClone(DEFAULT_STATE);
+                }
+            }
+
+            function writeToStorage(state) {
+                if (!storageAvailable) {
+                    return { success: false, error: 'localStorage unavailable' };
+                }
+
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                    return { success: true };
+                } catch (e) {
+                    if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
+                        return { success: false, error: 'Storage is full — export your data and clear old events.' };
+                    }
+                    return { success: false, error: e.message };
+                }
+            }
+
+            return {
+                isStorageAvailable() {
+                    return storageAvailable;
+                },
+
+                getState() {
+                    return readFromStorage();
+                },
+
+                saveWashEvent(event) {
+                    const state = readFromStorage();
+                    const washEvent = Object.assign({}, event);
+                    if (!washEvent.id) {
+                        washEvent.id = generateUUID();
+                    }
+                    state.events.push(washEvent);
+                    return writeToStorage(state);
+                },
+
+                getSealState() {
+                    const state = readFromStorage();
+                    return state.sealState;
+                },
+
+                setSealState(active) {
+                    const state = readFromStorage();
+                    if (active) {
+                        state.sealState.active = true;
+                        state.sealState.appliedDate = new Date().toISOString();
+                        state.sealState.washesSinceApplied = 0;
+                    } else {
+                        state.sealState.active = false;
+                        state.sealState.appliedDate = null;
+                        state.sealState.washesSinceApplied = 0;
+                    }
+                    return writeToStorage(state);
+                },
+
+                getThresholds() {
+                    const state = readFromStorage();
+                    return state.thresholds;
+                },
+
+                setThreshold(key, value) {
+                    const state = readFromStorage();
+                    // Enforce hard floors
+                    let enforced = value;
+                    if (key in HARD_FLOORS) {
+                        enforced = Math.max(value, HARD_FLOORS[key]);
+                    }
+                    state.thresholds[key] = enforced;
+                    return writeToStorage(state);
+                },
+
+                exportData() {
+                    const state = readFromStorage();
+                    state.lastExport = new Date().toISOString();
+                    writeToStorage(state);
+                    return JSON.stringify(state);
+                },
+
+                importData(jsonString) {
+                    try {
+                        const data = JSON.parse(jsonString);
+
+                        // Validate required structure
+                        if (typeof data.version === 'undefined') {
+                            return { success: false, error: 'Invalid data: missing version field.' };
+                        }
+                        if (!Array.isArray(data.events)) {
+                            return { success: false, error: 'Invalid data: events must be an array.' };
+                        }
+                        if (typeof data.thresholds !== 'object' || data.thresholds === null) {
+                            return { success: false, error: 'Invalid data: thresholds must be an object.' };
+                        }
+                        // Validate thresholds has required keys
+                        const requiredThresholdKeys = ['washMinDays', 'clarifyMinDays', 'proteinMinDays', 'treatmentWhileSealed'];
+                        for (const key of requiredThresholdKeys) {
+                            if (!(key in data.thresholds)) {
+                                return { success: false, error: 'Invalid data: thresholds missing required key "' + key + '".' };
+                            }
+                        }
+                        if (typeof data.sealState !== 'object' || data.sealState === null) {
+                            return { success: false, error: 'Invalid data: sealState must be an object.' };
+                        }
+
+                        // Run migration if needed
+                        if (data.version < CURRENT_VERSION) {
+                            data.version = CURRENT_VERSION;
+                        }
+
+                        const result = writeToStorage(data);
+                        if (!result.success) {
+                            return result;
+                        }
+                        return { success: true };
+                    } catch (e) {
+                        return { success: false, error: 'Invalid JSON: ' + e.message };
+                    }
+                }
+            };
+        })();
+
+        // ===== CooldownSystem =====
+        const CooldownSystem = {
+            checkWarnings(lane, humidity) { /* TODO: task 2.1 */ },
+            getTimeSince(eventType) { /* TODO: task 2.1 */ },
+            isOverride(warning) { /* TODO: task 2.1 */ },
+            recordOverride(warningType) { /* TODO: task 2.1 */ }
+        };
+
+        // ===== FeedbackEngine =====
+        const FeedbackEngine = {
+            analyze() { /* TODO: task 4.1 */ },
+            getInsights() { /* TODO: task 4.1 */ },
+            getIntervalRatings() { /* TODO: task 4.1 */ },
+            getProductCorrelations() { /* TODO: task 4.2 */ },
+            getHumidityCorrelations() { /* TODO: task 4.2 */ },
+            proposeThresholdChange(type, direction) { /* TODO: task 4.3 */ },
+            checkOverridePatterns() { /* TODO: task 4.3 */ }
+        };
+
+        // ===== WalkthroughEngine =====
+        const WalkthroughEngine = {
+            start(lane, humidity) { /* TODO: task 6.1 */ },
+            getCurrentStep() { /* TODO: task 6.1 */ },
+            next() { /* TODO: task 6.1 */ },
+            back() { /* TODO: task 6.1 */ },
+            getProgress() { /* TODO: task 6.1 */ },
+            getStepsForLane(lane, humidity) { /* TODO: task 6.1 */ }
+        };
+
+        // ===== TimerManager =====
+        const TimerManager = {
+            start(durationSeconds, onComplete) { /* TODO: task 6.2 */ },
+            pause(timerId) { /* TODO: task 6.2 */ },
+            resume(timerId) { /* TODO: task 6.2 */ },
+            reset(timerId, durationSeconds) { /* TODO: task 6.2 */ },
+            getRemaining(timerId) { /* TODO: task 6.2 */ }
+        };
+
+        // ===== App Initialization =====
+        function init() {
+            // TODO: task 15.1 — wire modules together
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        // Expose modules for testing (removed in production)
+        window.__hairRoutine = {
+            StateManager,
+            CooldownSystem,
+            FeedbackEngine,
+            WalkthroughEngine,
+            TimerManager
+        };
+    })();
+    </script>
+</body>
+</html>
