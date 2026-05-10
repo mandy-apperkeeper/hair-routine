@@ -3611,20 +3611,24 @@
             // Build the event date (noon local time to avoid timezone issues)
             var eventDate = new Date(dateStr + 'T12:00:00');
 
-            // Determine products based on type
+            // Determine products and treatments based on type
             var products;
+            var treatments = [];
             switch (type) {
                 case 'wash':
                     products = ['everpure-bond-repair', 'garnier-color-repair', 'loreal-21-in-1'];
                     break;
                 case 'clarify':
                     products = ['everpure-clarifying', 'garnier-color-repair'];
+                    treatments.push('clarify');
                     break;
                 case 'protein':
                     products = ['garnier-pre-shampoo', 'everpure-bond-repair', 'garnier-color-repair'];
+                    treatments.push('protein');
                     break;
                 case 'deep':
                     products = ['garnier-color-repair'];
+                    treatments.push('deep-condition');
                     break;
                 default:
                     products = [];
@@ -3651,6 +3655,7 @@
                 id: generateUUID(),
                 date: eventDate.toISOString(),
                 lane: lane,
+                treatments: treatments,
                 products: products,
                 humidity: 'moderate',
                 dewPoint: null,
@@ -3663,7 +3668,7 @@
             StateManager.saveWashEvent(washEvent);
 
             // Update seal state if relevant (clarify or blowout with marc-anthony)
-            if (type === 'clarify' || (lane === 'blowout' && products.includes('marc-anthony-blowout'))) {
+            if (treatments.includes('clarify') || (lane === 'blowout' && products.includes('marc-anthony-blowout'))) {
                 updateSealState(washEvent);
             }
 
