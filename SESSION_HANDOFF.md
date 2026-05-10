@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 20)
+**Last updated:** May 10, 2026 (Session 21)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -9,72 +9,59 @@
 ## Current State
 
 ### What's Live & Working
-- **Schema version 10** (per-product experience & results ratings)
-- **Daily Plan view** — replaces lane-selection on landing page for users with history
-  - Auto-generated plan based on dew point, history, seal state, timing
-  - Scrollable step list — no first phase header (starts directly with steps)
-  - Shows both step name AND product brand name on each step
-  - [ℹ] info popup with "Learn more" link to science cards
-  - [swap] button for steps with alternatives in inventory
-  - Science badges are tappable — link directly to Learn section cards
-  - Timer buttons prominent ("⏱ 5 min — tap to start"), counts down cleanly in whole seconds
-  - Adjust overlay (3-layer progressive disclosure) — **auto-closes on Layer 1 selection with confirmation toast**
-  - **Changed steps highlighted with gold border animation after adjustment**
-  - **Frizzy adjustment actually swaps NYM gel → Got2b** (not just a tip)
-  - **"No wash needed" minimal screen** when washed today (with Refresh/Wash Anyway buttons)
-  - **Offline indicator** ("☁️ Weather unavailable") in plan subtitle
-  - Condensed checklist toggle (remembers preference)
-  - End-of-plan rating + deferred next-day rating
-  - Lane override ("Something else?" button)
-  - Compact top spacing (reduced body padding, nav, tracker, headers)
-- **PWA support** — service worker (stale-while-revalidate + network-first for API), manifest.json, Apple meta tags, install capability, update banner
-- **Dew point auto-detection on app load**
-- **Status tracker** renamed: "Protein" → "Bond Repair" for clarity
-- **Learn section** — new cards: Coconut Oil (cortex penetration), Bond Repair, Lamellar Conditioning
-- Quick-log, product inventory (30 products), walkthrough engine, history, compensation, gel gap
+- Everything from Session 20 remains working (see below for full list)
+- Deploy timestamp comment added to force CDN purge
+- Service worker v8 with one-time migration code
+- Schema v11 (Got2b ID unification)
 
-### What Was Done This Session (20)
-1. **Adjust overlay UX fix** — auto-closes after Layer 1 selection, shows confirmation toast ("🌊 Adjusted for frizz" etc.)
-2. **Changed step highlighting** — steps modified by adjustment get gold border animation (2s fade)
-3. **Frizzy adjustment upgraded** — actually swaps NYM Curl Talk gel to Got2b Ultra Glued (PQ-69 without glycerin) instead of just adding a tip
-4. **"No wash needed" screen** — shows when washed today and suggestion is refresh. Minimal card with "Refresh plan" and "Wash anyway" buttons
-5. **Offline indicator** — "☁️ Weather unavailable" in plan subtitle when dew point is null
-6. **Accessibility improvements** — role="list"/role="listitem" on plan steps, aria-labels, Escape key closes overlay, focus management, aria-live on toast
-7. **Service worker v7** — switched HTML to network-first (always fresh when online), added controllerchange auto-reload
-8. **Dew point caching** — localStorage cache for 3 hours to avoid repeated geolocation prompts
-9. **Compact UI** — nav buttons (48→36px), header, subtitle, tracker, plan header, first-use buttons (64→48px), welcome section, tip boxes all tightened
-10. **Debugging Safari caching issue** — unresolved, see Known Issues
+### What Was Done This Session (21)
+1. **Diagnosed iPhone Safari caching issue** — NOT a service worker problem
+   - Private tab on iPhone also shows old 3-button version → rules out SW
+   - `manifest.json` loads correctly on phone → phone CAN reach current deployment
+   - `/index.html?v=20260510` returns 404 on phone but 200 from ben-o-matic → phone is getting different responses
+   - Fresh deploy + CDN purge (commit `652d602`) confirmed working from ben-o-matic but phone still shows old version
+   - **Conclusion: Something on the phone is intercepting/proxying Safari requests** — most likely iCloud Private Relay or a content blocker/VPN profile
+
+2. **Added deploy timestamp** to index.html (line 2: `<!-- deploy: 2026-05-10T21:30 -->`)
 
 ### Known Issues (carry to next session)
 
-#### iPhone Safari not loading latest version — FIXED
-- Added one-time SW migration: on first load, unregisters ALL old service workers, clears all hair-routine caches, re-registers fresh SW, then reloads
-- Uses localStorage flag (`sw-force-refresh-v7`) so it only runs once per device
-- After migration, normal SW registration resumes with periodic update checks
-- Service worker bumped to v8
+#### iPhone Safari showing old version — UNRESOLVED
+**Root cause narrowed down:** NOT service worker, NOT CDN caching, NOT GitHub Pages deployment.
 
-#### Service worker caching friction (partially fixed)
-- Switched to network-first for HTML (v7) — new visits will always get fresh content
-- Added `controllerchange` auto-reload — when new SW takes control, page reloads automatically
-- The problem is the OLD SW (v5/v6) on existing devices won't update until it can fetch the new SW file
+Evidence:
+- Private tab shows old version (rules out SW + local cache)
+- `manifest.json` loads current version on phone (phone reaches correct server for other files)
+- `/index.html?v=20260510` returns 404 on phone but 200 from ben-o-matic
+- Fresh deploy confirmed serving new content from ben-o-matic immediately
+- Same WiFi network for both devices
 
-#### Got2b product ID inconsistency — FIXED
-- Unified to `got2b-ultra-glued` everywhere (inventory, step map, walkthrough, daily plan)
-- Schema v11 migration renames `got2b-gel` → `got2b-ultra-glued` in stored inventory and event history
+**Most likely cause:** iCloud Private Relay (Apple's proxy) serving cached/stale HTML responses. Private Relay is known to cache aggressively and can serve stale content even in private tabs.
+
+**Next steps to try:**
+1. Check Settings → [Apple ID name] → iCloud → Private Relay — turn OFF
+2. If no Private Relay, check Settings → General → VPN & Device Management for profiles
+3. If neither, try: Settings → Safari → Advanced → Experimental Features → NSURLSession WebSocket (toggle)
+4. Nuclear: restart the phone, then try private tab
+5. If ALL of the above fail: test from a completely different device (Mandy's iPad, another phone) to confirm it's device-specific
+
+**Whose phone:** Not confirmed — need to establish if this is Ben's iPhone or another device
 
 ### What's NOT Done (carry forward)
+- Same as Session 20 (Daily Plan polish, Product Intelligence, research docs)
+- iPhone caching resolution
 
-#### Daily Plan Polish (remaining)
-- Remove dead old UI code (old lane-selection, old walkthrough nav) — deferred: still needed for first-use flow
-- Full end-to-end test on iPad viewport
-- Verify all existing features still work (history, products, settings, export/import)
+---
 
-#### Product Intelligence System
-- IngredientKB + BeliefTracker → smarter product ranking
-- See `.kiro/specs/product-intelligence/`
-
-#### Research Documentation
-- Write up coconut oil and OGX oil findings into `research/`
+## Full Feature List (live)
+- **Daily Plan view** — auto-generated plan, scrollable steps, adjust overlay (auto-close + toast), frizzy=Got2b swap, "no wash needed" screen, offline indicator, condensed checklist, end-of-plan rating, lane override
+- **PWA support** — service worker v8 (network-first HTML, stale-while-revalidate API), manifest, install capability, update banner, one-time SW migration
+- **7-group step-based quick-log** with sub-menus + heat cap badges + multi-group products
+- **Product inventory** (30 products) with full intelligence metadata + per-product ratings
+- **Post-wash attribution card**
+- **Walkthrough engine**, history, status bar, dew point auto-detection, recommendations, compensation logic, gel gap
+- **Learn section** with science cards, frizz diagnostic
+- **Accessibility** — ARIA, focus management, keyboard nav, touch targets
 
 ---
 
@@ -86,11 +73,7 @@
 
 ## Cumulative Decisions (Do Not Revisit)
 
-All previous decisions remain. New this session:
-- **Adjust overlay auto-close:** Layer 1 selection closes overlay immediately (no need to tap "Done")
-- **Confirmation toast:** Green pill at bottom of screen, 2.5s duration, aria-live for screen readers
-- **Frizzy = Got2b swap:** Not just a tip — actually replaces NYM gel in the plan with Got2b Ultra Glued
-- **"No wash needed" threshold:** Shows when washDays === 0 AND suggestion is refresh
+All previous decisions remain. No new decisions this session.
 
 ---
 
@@ -99,7 +82,7 @@ All previous decisions remain. New this session:
 | File | Role |
 |------|------|
 | `index.html` | Live app (~7200+ lines) |
-| `hair-sw.js` | Service worker (cache v6) |
+| `hair-sw.js` | Service worker v8 |
 | `manifest.json` | PWA manifest |
 | `icon-192.svg`, `icon-512.svg` | App icons |
 | `.kiro/specs/daily-plan/` | Daily Plan spec (design + tasks) |
@@ -118,15 +101,15 @@ All previous decisions remain. New this session:
 | 17 | Doc sync, Daily Plan tasks.md, walkthrough fixes | Complete |
 | 18 | Per-product ratings | Complete |
 | 19 | PWA + Daily Plan + UX polish | Complete |
-| 20 | **Daily Plan polish: adjust UX, frizzy upgrade, no-wash, a11y** | Complete |
+| 20 | Daily Plan polish: adjust UX, frizzy upgrade, no-wash, a11y | Complete |
+| 21 | **iPhone Safari debugging — narrowed to device-level proxy/relay** | In Progress |
 
 ---
 
 ## Repo State
 
 - **Branch:** main
-- **Pushed:** All code changes pushed (commit `4daef9b`)
-- **GitHub Pages:** Verified deployed and serving latest code (confirmed via API fetch from ben-o-matic)
-- **UNRESOLVED:** Ben's iPhone Safari is showing an old cached version despite cache-buster URL, private tab, and clearing site data. The server IS serving the correct file (verified programmatically). This is a client-side caching issue that needs debugging in the next session — possibly iOS Safari's aggressive back-forward cache, or a DNS-level cache.
-- **Uncommitted:** SESSION_HANDOFF.md, NEXT_STEPS.md, .kiro/steering/session-context.md, plus deletions from prior session
-- **Local HTTP server** running on port 8080 (python) — can be used to bypass GitHub Pages caching for testing
+- **Latest commit:** `652d602` — Force CDN cache purge (deploy timestamp)
+- **Pushed:** Yes, confirmed deployed and serving from ben-o-matic
+- **GitHub Pages:** Serving correct content (verified from ben-o-matic)
+- **iPhone:** Still showing old version — device-level issue, not server-side
