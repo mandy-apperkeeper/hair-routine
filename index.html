@@ -3571,6 +3571,708 @@
             };
         })();
 
+        // ===== PlanGenerator =====
+        const PlanGenerator = (function() {
+
+            /**
+             * Suggests which lane to use today based on state and conditions.
+             * Returns: { lane: string, reason: string, confidence: 'high'|'medium'|'low' }
+             */
+            function suggestLane(state, dewPoint) {
+                var events = state.events || [];
+                var sealState = state.sealState || { active: false, washesSinceApplied: 0 };
+                var thresholds = state.thresholds || { washMinDays: 2, clarifyMinDays: 5, proteinMinDays: 7 };
+
+                // Find last wash info
+                var lastWashDate = null;
+                var lastWashLane = null;
+                for (var i = events.length - 1; i >= 0; i--) {
+                    if (events[i].lane === 'curly' || events[i].lane === 'blowout') {
+                        lastWashDate = events[i].date;
+                        lastWashLane = events[i].lane;
+                        break;
+                    }
+                }
+
+                var washDays = daysSince(lastWashDate);
+
+                // Determine typical interval from feedback engine
+                var typicalInterval = 3;
+                var intervalRatings = FeedbackEngine.getIntervalRatings();
+                if (intervalRatings && Object.keys(intervalRatings).length > 0) {
+                    var bestBucket = null;
+                    var bestRating = 0;
+                    for (var bucket in intervalRatings) {
+                        if (intervalRatings[bucket].average > bestRating && intervalRatings[bucket].count >= 3) {
+                            bestRating = intervalRatings[bucket].average;
+                            bestBucket = parseInt(bucket);
+                        }
+                    }
+                    if (bestBucket) typicalInterval = bestBucket;
+                }
+
+                // No history
+                if (washDays === null) {
+                    return { lane: 'curly', reason: 'First wash day — curly is a great starting point.', confidence: 'medium' };
+                }
+
+                // Seal active — can't do curly
+                if (sealState.active && sealState.washesSinceApplied < 4) {
+                    if (washDays <= 1) {
+                        return { lane: 'refresh', reason: 'Seal active, washed recently. Refresh to maintain.', confidence: 'high' };
+                    }
+                    return { lane: 'blowout', reason: 'Seal still active — blowout maintains the barrier.', confidence: 'high' };
+                }
+
+                // Washed today or yesterday — refresh
+                if (washDays <= 1) {
+                    return { lane: 'refresh', reason: 'Day ' + washDays + ' — a refresh can revive your style.', confidence: 'high' };
+                }
+
+                // At or past typical interval — wash day
+                if (washDays >= typicalInterval) {
+                    // Alternate lanes, default to curly
+                    var suggestedLane = 'curly';
+                    if (lastWashLane === 'curly') {
+                        // Could suggest blowout for variety, but default curly unless user prefers
+                        suggestedLane = 'curly';
+                    }
+                    return {
+                        lane: suggestedLane,
+                        reason: 'Day ' + washDays + ' — ready for a wash day.',
+                        confidence: 'high'
+                    };
+                }
+
+                // Between min and typical — suggest refresh or "no wash needed"
+                if (washDays >= 2 && washDays < typicalInterval) {
+                    return {
+                        lane: 'refresh',
+                        reason: 'Day ' + washDays + ' of ' + typicalInterval + '. Style might need a refresh.',
+                        confidence: 'medium'
+                    };
+                }
+
+                return { lane: 'refresh', reason: 'A light refresh should do.', confidence: 'medium' };
+            }
+
+            /**
+             * Ranks available products for a given step type based on domain rules.
+             * Returns: Array<{ productId, productName, rank, reason }>
+             */
+            function rankProducts(stepType, conditions, inventory) {
+                var dewPoint = conditions.dewPoint;
+                var sealActive = conditions.sealActive;
+                var candidates = [];
+
+                // Filter inventory to products matching this step type
+                for (var i = 0; i < inventory.length; i++) {
+                    var product = inventory[i];
+                    var intel = product.intelligence || {};
+                    var step = intel.step || '';
+                    var additionalSteps = intel.additionalSteps || [];
+
+                    if (step === stepType || additionalSteps.indexOf(stepType) !== -1) {
+                        candidates.push(product);
+                    }
+                }
+
+                if (candidates.length === 0) return [];
+
+                // Score each candidate
+                var scored = candidates.map(function(product) {
+                    var score = 50; // base score
+                    var reasons = [];
+
+                    // Domain rule: Amodimethicone conditioner always #1
+                    if (stepType === 'conditioner') {
+                        var mechs = (product.intelligence && product.intelligence.mechanisms) || [];
+                        if (mechs.indexOf('amodimethicone_conditioning') !== -1 || mechs.indexOf('ceramide_repair') !== -1) {
+                            score += 30;
+                            reasons.push('Amodimethicone — selective repair');
+                        }
+                    }
+
+                    // Domain rule: Got2b over NYM when dew point > 60°F
+                    if (stepType === 'styling' && dewPoint !== null && dewPoint > 60) {
+                        if (product.id === 'got2b-ultra-glued') {
+                            score += 20;
+                            reasons.push('Better humidity hold (PQ-69, no glycerin)');
+                        } else if (product.id === 'nym-curl-talk-gel') {
+                            score -= 10;
+                            reasons.push('Glycerin may attract moisture in high humidity');
+                        }
+                    }
+
+                    // Domain rule: NYM preferred in moderate/dry
+                    if (stepType === 'styling' && (dewPoint === null || dewPoint <= 60)) {
+                        if (product.id === 'nym-curl-talk-gel') {
+                            score += 15;
+                            reasons.push('Good hold for moderate conditions');
+                        }
+                    }
+
+                    // Domain rule: Pure coconut oil is #1 pre-wash
+                    if (stepType === 'pre_wash') {
+                        if (product.id === 'pure-coconut-oil') {
+                            score += 30;
+                            reasons.push('Penetrates cortex — prevents protein loss');
+                        } else {
+                            score -= 10;
+                            reasons.push('Weaker cortex penetration than coconut oil');
+                        }
+                    }
+
+                    // Domain rule: Don't use curly products while seal is active
+                    if (sealActive) {
+                        var curlyOnly = ['nym-curl-talk-gel', 'got2b-ultra-glued', 'maui-curl-smoothie'];
+                        if (curlyOnly.indexOf(product.id) !== -1) {
+                            score -= 50;
+                            reasons.push('Seal active — curly products conflict');
+                        }
+                    }
+
+                    // Domain rule: Heat protection required for blowout
+                    if (stepType === 'heat_protection') {
+                        if (product.id === 'marc-anthony-shield') {
+                            score += 25;
+                            reasons.push('Polysilicone-29 heat seal + humidity barrier');
+                        }
+                    }
+
+                    // Domain rule: Deprioritize "using-up" tier
+                    if (product.tier === 'use-up') {
+                        score -= 15;
+                        reasons.push('Using up — deprioritized');
+                    }
+
+                    // Boost products with high user ratings
+                    if (product.resultsRating && product.resultsRating >= 4) {
+                        score += 10;
+                        reasons.push('Rated highly by you');
+                    }
+                    if (product.experienceRating && product.experienceRating >= 4) {
+                        score += 5;
+                    }
+
+                    // Penalize products with low ratings
+                    if (product.resultsRating && product.resultsRating <= 2) {
+                        score -= 15;
+                        reasons.push('Low results rating');
+                    }
+
+                    return {
+                        productId: product.id,
+                        productName: product.name,
+                        score: score,
+                        reasons: reasons
+                    };
+                });
+
+                // Sort by score descending
+                scored.sort(function(a, b) { return b.score - a.score; });
+
+                // Assign ranks and format output
+                return scored.map(function(item, index) {
+                    return {
+                        productId: item.productId,
+                        productName: item.productName,
+                        rank: index + 1,
+                        reason: item.reasons.length > 0 ? item.reasons[0] : ''
+                    };
+                });
+            }
+
+            /**
+             * Returns items to skip today with reasons.
+             * Returns: Array<{ stepType, productName, reason, lastUsed }>
+             */
+            function getSkipReasons(state) {
+                var events = state.events || [];
+                var skips = [];
+
+                // Find last dates for treatments
+                var lastProteinDate = null;
+                var lastClarifyDate = null;
+                var lastDeepConditionDate = null;
+                var lastOlaplexDate = null;
+
+                for (var i = events.length - 1; i >= 0; i--) {
+                    var prods = events[i].products || [];
+                    var treats = events[i].treatments || [];
+
+                    if (!lastProteinDate) {
+                        if (treats.indexOf('protein') !== -1 || prods.indexOf('garnier-pre-shampoo') !== -1 || prods.indexOf('olaplex-3') !== -1) {
+                            lastProteinDate = events[i].date;
+                        }
+                    }
+                    if (!lastClarifyDate) {
+                        if (treats.indexOf('clarify') !== -1 || prods.indexOf('everpure-clarifying') !== -1 || prods.indexOf('kinky-curly-come-clean') !== -1) {
+                            lastClarifyDate = events[i].date;
+                        }
+                    }
+                    if (!lastDeepConditionDate) {
+                        if (treats.indexOf('deep-condition') !== -1) {
+                            lastDeepConditionDate = events[i].date;
+                        }
+                    }
+                    if (!lastOlaplexDate) {
+                        if (prods.indexOf('olaplex-3') !== -1) {
+                            lastOlaplexDate = events[i].date;
+                        }
+                    }
+
+                    if (lastProteinDate && lastClarifyDate && lastDeepConditionDate && lastOlaplexDate) break;
+                }
+
+                var proteinDays = daysSince(lastProteinDate);
+                var clarifyDays = daysSince(lastClarifyDate);
+                var deepConditionDays = daysSince(lastDeepConditionDate);
+                var olaplexDays = daysSince(lastOlaplexDate);
+
+                // Protein: skip if < 7 days
+                if (proteinDays !== null && proteinDays < 7) {
+                    skips.push({
+                        stepType: 'bond_repair',
+                        productName: 'Protein treatment',
+                        reason: 'Not due (last: ' + proteinDays + 'd ago)',
+                        lastUsed: proteinDays
+                    });
+                }
+
+                // Clarify: skip if < 7 days
+                if (clarifyDays !== null && clarifyDays < 7) {
+                    skips.push({
+                        stepType: 'shampoo_clarify',
+                        productName: 'Clarifying wash',
+                        reason: 'Not due (last: ' + clarifyDays + 'd ago)',
+                        lastUsed: clarifyDays
+                    });
+                }
+
+                // Deep condition: skip if < 14 days
+                if (deepConditionDays !== null && deepConditionDays < 14) {
+                    skips.push({
+                        stepType: 'deep_condition',
+                        productName: 'Deep condition',
+                        reason: 'Not due (last: ' + deepConditionDays + 'd ago)',
+                        lastUsed: deepConditionDays
+                    });
+                }
+
+                // Olaplex: skip if < 7 days
+                if (olaplexDays !== null && olaplexDays < 7) {
+                    skips.push({
+                        stepType: 'bond_repair',
+                        productName: 'Olaplex 3',
+                        reason: 'Not due (last: ' + olaplexDays + 'd ago)',
+                        lastUsed: olaplexDays
+                    });
+                }
+
+                // Seal conflicts
+                var sealState = state.sealState || { active: false };
+                if (sealState.active) {
+                    skips.push({
+                        stepType: 'styling',
+                        productName: 'Curl styling products',
+                        reason: 'Seal active — would conflict',
+                        lastUsed: null
+                    });
+                }
+
+                return skips;
+            }
+
+            /**
+             * Builds a complete plan for today.
+             * Returns: { lane, reason, confidence, dewPoint, steps: Array<Step>, skips: Array<Skip> }
+             * Each step: { id, number, stepType, productId, productName, instruction, scienceBadge, timer, phase, alternatives }
+             */
+            function buildPlan(lane, dewPoint, state) {
+                var humidity = 'moderate';
+                if (dewPoint !== null) {
+                    if (dewPoint < 35) humidity = 'dry';
+                    else if (dewPoint > 60) humidity = 'humid';
+                }
+
+                var inventory = state.inventory || [];
+                var sealActive = (state.sealState && state.sealState.active) || false;
+                var conditions = { dewPoint: dewPoint, humidity: humidity, sealActive: sealActive };
+
+                // Get base steps from WalkthroughEngine
+                var baseSteps = WalkthroughEngine.getStepsForLane(lane, humidity);
+
+                // Enrich each step with ranked alternatives from inventory
+                var planSteps = baseSteps.map(function(step, index) {
+                    var stepType = mapStepToType(step);
+                    var alternatives = [];
+
+                    if (step.productId) {
+                        alternatives = rankProducts(stepType, conditions, inventory);
+                    }
+
+                    return {
+                        id: 'step-' + (index + 1),
+                        number: index + 1,
+                        stepType: stepType,
+                        productId: step.productId,
+                        productName: step.title,
+                        instruction: step.instruction,
+                        scienceBadge: step.scienceBadge || null,
+                        timer: step.timer || null,
+                        tip: step.tip || null,
+                        phase: step.phase,
+                        alternatives: alternatives
+                    };
+                });
+
+                var skips = getSkipReasons(state);
+
+                return {
+                    lane: lane,
+                    dewPoint: dewPoint,
+                    humidity: humidity,
+                    steps: planSteps,
+                    skips: skips
+                };
+            }
+
+            /**
+             * Maps a walkthrough step object to a stepType string for product ranking.
+             */
+            function mapStepToType(step) {
+                var title = (step.title || '').toLowerCase();
+                if (title.indexOf('coconut') !== -1 || title.indexOf('pre-wash') !== -1) return 'pre_wash';
+                if (title.indexOf('shampoo') !== -1) return 'shampoo';
+                if (title.indexOf('bond repair') !== -1) return 'bond_repair';
+                if (title.indexOf('conditioner') !== -1) return 'conditioner';
+                if (title.indexOf('gloss') !== -1 || title.indexOf('wonder water') !== -1) return 'gloss';
+                if (title.indexOf('leave-in') !== -1) return 'leave_in';
+                if (title.indexOf('gel') !== -1) return 'styling';
+                if (title.indexOf('heat protection') !== -1 || title.indexOf('heat spray') !== -1) return 'heat_protection';
+                if (title.indexOf('finishing') !== -1 || title.indexOf('serum') !== -1) return 'finishing';
+                if (title.indexOf('dry') !== -1 || title.indexOf('scrunch') !== -1) return 'drying';
+                return 'other';
+            }
+
+            // Public API
+            return {
+                suggestLane: suggestLane,
+                rankProducts: rankProducts,
+                getSkipReasons: getSkipReasons,
+                buildPlan: buildPlan,
+                _mapStepToType: mapStepToType
+            };
+        })();
+
+        // ===== AdjustmentEngine =====
+        const AdjustmentEngine = (function() {
+
+            /**
+             * Adjusts a plan based on user observations.
+             * Returns a new plan object (does not mutate the original).
+             */
+            function adjust(currentPlan, observations) {
+                // Deep-copy the plan
+                var plan = JSON.parse(JSON.stringify(currentPlan));
+                var quick = observations.quick || null;
+                var context = observations.context || [];
+                var detailed = observations.detailed || [];
+
+                // Layer 1: Quick observation adjustments
+                if (quick === 'frizzy') {
+                    applyFrizzyAdjustments(plan);
+                } else if (quick === 'flat') {
+                    applyFlatAdjustments(plan);
+                } else if (quick === 'oily') {
+                    applyOilyAdjustments(plan);
+                } else if (quick === 'dry_rough') {
+                    applyDryRoughAdjustments(plan);
+                } else if (quick === 'holding_well') {
+                    applyHoldingWellAdjustments(plan);
+                }
+
+                // Layer 2: Context adjustments
+                if (context.indexOf('short_on_time') !== -1) {
+                    applyShortOnTimeAdjustments(plan);
+                }
+                if (context.indexOf('heat_styling') !== -1) {
+                    applyHeatStylingAdjustments(plan);
+                }
+                if (context.indexOf('exercised') !== -1) {
+                    applyExercisedAdjustments(plan);
+                }
+
+                // Layer 3: Detailed adjustments
+                if (detailed.indexOf('stiff') !== -1) {
+                    applyStiffAdjustments(plan);
+                }
+
+                // Re-number steps after any additions/removals
+                for (var i = 0; i < plan.steps.length; i++) {
+                    plan.steps[i].number = i + 1;
+                    plan.steps[i].id = 'step-' + (i + 1);
+                }
+
+                return plan;
+            }
+
+            function applyFrizzyAdjustments(plan) {
+                // Ensure Wonder Water / gloss step is present
+                var hasGloss = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
+                if (!hasGloss) {
+                    // Add gloss after conditioner
+                    var condIdx = -1;
+                    for (var i = 0; i < plan.steps.length; i++) {
+                        if (plan.steps[i].stepType === 'conditioner') { condIdx = i; break; }
+                    }
+                    if (condIdx !== -1) {
+                        plan.steps.splice(condIdx + 1, 0, {
+                            id: 'step-added-gloss',
+                            number: 0,
+                            stepType: 'gloss',
+                            productId: 'loreal-wonder-water',
+                            productName: 'Gloss',
+                            instruction: 'Spray onto freshly rinsed hair. Lamellar conditioning — deposits uniformly on wet cuticle.',
+                            scienceBadge: 'LAMELLAR CONDITIONING',
+                            timer: null,
+                            tip: 'Added for frizz control',
+                            phase: 'PREP & WASH',
+                            alternatives: []
+                        });
+                    }
+                }
+
+                // Upgrade gel to stronger hold if available
+                for (var j = 0; j < plan.steps.length; j++) {
+                    if (plan.steps[j].stepType === 'styling' && plan.steps[j].productId === 'nym-curl-talk-gel') {
+                        plan.steps[j].tip = (plan.steps[j].tip || '') + ' Consider Got2b for stronger hold if frizz persists.';
+                    }
+                }
+            }
+
+            function applyFlatAdjustments(plan) {
+                // Suggest lighter conditioner application
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'conditioner') {
+                        plan.steps[i].instruction = 'Light application — ends only. Skip roots entirely. Rinse thoroughly.';
+                        plan.steps[i].tip = 'Lighter application for flat hair';
+                    }
+                    // Remove heavy leave-ins
+                    if (plan.steps[i].stepType === 'leave_in') {
+                        plan.steps[i].tip = 'Use sparingly — ends only. Skip if hair feels weighed down.';
+                    }
+                }
+            }
+
+            function applyOilyAdjustments(plan) {
+                // Suggest clarifying if overdue
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'shampoo') {
+                        plan.steps[i].tip = 'Consider clarifying shampoo if buildup is noticeable.';
+                    }
+                    // Reduce leave-in
+                    if (plan.steps[i].stepType === 'leave_in') {
+                        plan.steps[i].instruction = 'Minimal amount — ends only. Skip mid-lengths.';
+                        plan.steps[i].tip = 'Less is more when hair feels oily';
+                    }
+                }
+                // Remove finishing oils from plan
+                plan.steps = plan.steps.filter(function(s) {
+                    return s.stepType !== 'finishing';
+                });
+            }
+
+            function applyDryRoughAdjustments(plan) {
+                // Longer conditioner time
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'conditioner' && plan.steps[i].timer) {
+                        plan.steps[i].timer.duration = 600; // 10 min instead of 5
+                        plan.steps[i].timer.label = 'Conditioner (extra time for dry hair)';
+                        plan.steps[i].tip = 'Extra conditioning time — hair needs moisture.';
+                    }
+                }
+                // Ensure pre-wash is present
+                var hasPreWash = plan.steps.some(function(s) { return s.stepType === 'pre_wash'; });
+                if (!hasPreWash) {
+                    plan.steps.unshift({
+                        id: 'step-added-prewash',
+                        number: 0,
+                        stepType: 'pre_wash',
+                        productId: 'pure-coconut-oil',
+                        productName: 'Coconut oil pre-wash',
+                        instruction: 'Apply to dry hair, mid-lengths to ends. Penetrates cortex to prevent protein loss.',
+                        scienceBadge: 'CORTEX PENETRATION',
+                        timer: { duration: 1200, label: 'Coconut oil pre-wash (20 min)' },
+                        tip: 'Added — hair is dry and needs cortex protection',
+                        phase: 'PREP & WASH',
+                        alternatives: []
+                    });
+                }
+            }
+
+            function applyHoldingWellAdjustments(plan) {
+                // Switch to refresh if currently a full wash
+                if (plan.lane !== 'refresh') {
+                    plan.lane = 'refresh';
+                    plan.steps = [
+                        {
+                            id: 'step-1', number: 1, stepType: 'other',
+                            productId: null, productName: 'Assess',
+                            instruction: 'Hair is holding well — minimal intervention needed.',
+                            scienceBadge: null, timer: null, tip: null,
+                            phase: 'PREP & WASH', alternatives: []
+                        },
+                        {
+                            id: 'step-2', number: 2, stepType: 'other',
+                            productId: null, productName: 'Light water mist',
+                            instruction: 'Spray bottle with water on any frizzy areas only. Scrunch upward.',
+                            scienceBadge: null, timer: null, tip: null,
+                            phase: 'STYLE', alternatives: []
+                        },
+                        {
+                            id: 'step-3', number: 3, stepType: 'other',
+                            productId: null, productName: 'Hairline touch-up',
+                            instruction: 'Smooth regrowth hairs with damp fingers or tiny bit of gel.',
+                            scienceBadge: null, timer: null, tip: null,
+                            phase: 'STYLE', alternatives: []
+                        }
+                    ];
+                }
+            }
+
+            function applyShortOnTimeAdjustments(plan) {
+                // Remove optional steps: pre-wash, gloss
+                plan.steps = plan.steps.filter(function(s) {
+                    return s.stepType !== 'pre_wash' && s.stepType !== 'gloss';
+                });
+                // Reduce conditioner time
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'conditioner' && plan.steps[i].timer) {
+                        plan.steps[i].timer.duration = 180; // 3 min
+                        plan.steps[i].timer.label = 'Conditioner (quick)';
+                        plan.steps[i].tip = 'Shortened — you\'re short on time';
+                    }
+                }
+            }
+
+            function applyHeatStylingAdjustments(plan) {
+                // Switch to blowout lane
+                if (plan.lane !== 'blowout') {
+                    plan.lane = 'blowout';
+                    // Rebuild with blowout steps
+                    var blowoutSteps = WalkthroughEngine.getStepsForLane('blowout', plan.humidity);
+                    plan.steps = blowoutSteps.map(function(step, index) {
+                        return {
+                            id: 'step-' + (index + 1),
+                            number: index + 1,
+                            stepType: PlanGenerator._mapStepToType(step),
+                            productId: step.productId,
+                            productName: step.title,
+                            instruction: step.instruction,
+                            scienceBadge: step.scienceBadge || null,
+                            timer: step.timer || null,
+                            tip: step.tip || null,
+                            phase: step.phase,
+                            alternatives: []
+                        };
+                    });
+                }
+                // Ensure heat protection step exists
+                var hasHeatProt = plan.steps.some(function(s) { return s.stepType === 'heat_protection'; });
+                if (!hasHeatProt) {
+                    // Find style phase start and insert before it
+                    var styleIdx = 0;
+                    for (var i = 0; i < plan.steps.length; i++) {
+                        if (plan.steps[i].phase === 'STYLE' || plan.steps[i].phase === 'PROTECT') {
+                            styleIdx = i;
+                            break;
+                        }
+                    }
+                    plan.steps.splice(styleIdx, 0, {
+                        id: 'step-added-heat',
+                        number: 0,
+                        stepType: 'heat_protection',
+                        productId: 'marc-anthony-shield',
+                        productName: 'Heat Protection Spray',
+                        instruction: 'Spray liberally root to tip. Every strand needs coverage.',
+                        scienceBadge: 'POLYSILICONE-29 HEAT SEAL',
+                        timer: null,
+                        tip: 'Added — you\'re heat styling today',
+                        phase: 'PROTECT',
+                        alternatives: []
+                    });
+                }
+            }
+
+            function applyExercisedAdjustments(plan) {
+                // Prioritize full wash over refresh
+                if (plan.lane === 'refresh') {
+                    plan.lane = 'curly';
+                    var curlySteps = WalkthroughEngine.getStepsForLane('curly', plan.humidity);
+                    plan.steps = curlySteps.map(function(step, index) {
+                        return {
+                            id: 'step-' + (index + 1),
+                            number: index + 1,
+                            stepType: 'other',
+                            productId: step.productId,
+                            productName: step.title,
+                            instruction: step.instruction,
+                            scienceBadge: step.scienceBadge || null,
+                            timer: step.timer || null,
+                            tip: step.tip || null,
+                            phase: step.phase,
+                            alternatives: []
+                        };
+                    });
+                }
+            }
+
+            function applyStiffAdjustments(plan) {
+                // Extra conditioning, note about protein
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'conditioner') {
+                        plan.steps[i].tip = 'Extra generous — stiff hair may indicate protein overload. Focus on moisture.';
+                        if (plan.steps[i].timer) {
+                            plan.steps[i].timer.duration = Math.max(plan.steps[i].timer.duration, 600);
+                            plan.steps[i].timer.label = 'Conditioner (extra time)';
+                        }
+                    }
+                    // Remove protein/bond repair step
+                    if (plan.steps[i].stepType === 'bond_repair') {
+                        plan.steps[i].tip = 'Consider skipping — stiff hair may not need protein right now.';
+                    }
+                }
+            }
+
+            /**
+             * Records a product swap on the plan.
+             */
+            function recordSwap(plan, stepId, fromProductId, toProductId, toProductName) {
+                if (!plan.productSwaps) plan.productSwaps = [];
+                plan.productSwaps.push({
+                    step: stepId,
+                    from: fromProductId,
+                    to: toProductId
+                });
+                // Update the step in the plan
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].id === stepId) {
+                        plan.steps[i].productId = toProductId;
+                        plan.steps[i].productName = toProductName;
+                        break;
+                    }
+                }
+                return plan;
+            }
+
+            return {
+                adjust: adjust,
+                recordSwap: recordSwap
+            };
+        })();
+
         // ===== TimerManager =====
         const TimerManager = (function() {
             // Internal state
@@ -5935,6 +6637,8 @@
             CompensationEngine,
             InventoryManager,
             WalkthroughEngine,
+            PlanGenerator,
+            AdjustmentEngine,
             TimerManager,
             daysSince,
             updateSealState
