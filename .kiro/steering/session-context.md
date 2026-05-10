@@ -13,7 +13,7 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 ## Tech Stack
 
 - Single HTML file with embedded CSS + JS (no build step, no framework)
-- localStorage for all persistence (schema v8)
+- localStorage for all persistence (schema v12)
 - Open-Meteo API for dew point auto-detection
 - Service worker (`hair-sw.js`) — exists but not registered in v1
 - GitHub Pages deployment (push to main = live)
@@ -51,7 +51,7 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 - **Amodimethicone conditioner every wash.** Dove is "using-up" only — never recommend it.
 - **No product rotation.** Research confirmed rotation is a myth. Never build rotation logic.
 - **Dew point, not relative humidity.** Auto-detect via Open-Meteo. Manual selector is fallback only (offline/API failure). The app informs, doesn't ask.
-- **Schema v11.** Intelligence uses granular `step` values (no subStep). Optional `additionalSteps` array for multi-group products. Per-product `experienceRating`, `resultsRating`, `experienceNote`, `resultsNote` fields. Got2b unified to `got2b-ultra-glued`.
+- **Schema v12.** Intelligence uses granular `step` values (no subStep). Optional `additionalSteps` array for multi-group products. Per-product `experienceRating`, `resultsRating`, `experienceNote`, `resultsNote` fields. Got2b unified to `got2b-ultra-glued`. Use-up rotation state (washCountSinceLastRotation, lastAssignedProductId, lastAssignedDate).
 - **Treatments are separate from products** in the data model (clarify, protein, deep-condition, bond-repair)
 - **OGX oils are finishing products** (volatile silicones + dimethiconol film + trace oil). Legitimate shine/frizz tool. Weak pre-wash — pure coconut oil is the right tool for cortex penetration.
 - **Pure coconut oil is the correct pre-wash oil** — penetrates cortex (lauric acid protein affinity), prevents hygral fatigue. Argan oil does NOT penetrate (stays in outer 5µm).
@@ -89,13 +89,13 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 - Building product rotation features
 - Using relative humidity instead of dew point
 - Treating the spec's optional property tests as blocking work
-- Assuming schema version without checking (it's v10 now)
+- Assuming schema version without checking (it's v12 now)
 
 ## Current Status (update after each session)
 
 - **Spec:** Original spec complete. Product Intelligence spec partially implemented. Daily Plan spec has design.md (no tasks.md yet).
-- **v1 (live):** Working — 7-group step-based quick-log with sub-menus + heat cap badges + multi-group products via additionalSteps, walkthrough, history, status bar, dew point auto-detection (no manual prompt), recommendations, compensation logic, product inventory (30 products) with full intelligence metadata + per-product experience/results ratings, post-wash attribution card, deep-condition auto-detection.
-- **Schema:** Version 10. Intelligence uses granular `step` values + optional `additionalSteps` array. Per-product experience/results ratings (v10).
+- **v1 (live):** Working — 7-group step-based quick-log with sub-menus + heat cap badges + multi-group products via additionalSteps, walkthrough, history, status bar, dew point auto-detection (no manual prompt), recommendations, compensation logic, product inventory (30 products) with full intelligence metadata + per-product experience/results ratings, post-wash attribution card, deep-condition auto-detection, use-up rotation (every 3rd wash cycles Dove conditioners with compensation).
+- **Schema:** Version 12. Intelligence uses granular `step` values + optional `additionalSteps` array. Per-product experience/results ratings (v10). Use-up rotation state (v12).
 - **Known broken:** Nothing currently broken.
 - **Pending:** Research documentation write-up (coconut oil + OGX oil findings into research/ folder).
 - **What's next:** Daily Plan spec tasks.md → then implementation. Product Intelligence spec (IngredientKB, BeliefTracker) feeds into Daily Plan's recommendation engine. Service worker/PWA independent.

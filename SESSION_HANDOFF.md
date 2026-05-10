@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 23)
+**Last updated:** May 10, 2026 (Session 24)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -16,7 +16,13 @@
 - Soft/mushy option removed from adjust overlay (texture tracking belongs in post-wash feedback, not plan adjustment)
 - Garnier Color Repair conditioner note updated to clarify rotation with use-up bottles
 
-### What Was Done This Session (23)
+### What Was Done This Session (24)
+1. **Dove Deep Dive research completed** — Full 4-round autonomous research investigating dimethiconol/silsesquioxane, SH-Polypeptide-121, non-selective frizz coating, and full formulation analysis. Result: confirms use-up tier placement. No unique benefit found. Score: 92.6%. Document: `research/DOVE_DEEP_DIVE.md`.
+2. **Data Adherence folded into global protocol** — Added "Data Adherence" section to `.kiro/researchsteeringandscore/deep-dive-auto.md`. Hair-routine's `research-data-adherence.md` now references it as domain-specific extension.
+3. **Confirmed Use-Up Rotation already implemented** — The `UseUpRotation` module, schema v12 migration, `buildPlan()` integration, and UI rendering were already in place from a prior session. Verified working: every 3rd wash cycles Dove conditioners with compensation notes. Updated session-context and handoff to reflect this.
+4. **Updated session-context.md** — Schema version corrected to v12, feature list updated to include use-up rotation.
+
+### What Was Done Session 23
 1. **Dove product placement discussion** — Mandy asked why Dove Bond Repair and Intensive Repair conditioners are ranked low. Explained the silicone chemistry (dimethiconol = non-selective, temporary vs. amodimethicone = selective, cumulative, self-limiting). Confirmed no unique benefit for her hair type that other products don't do better.
 2. **Created research-data-adherence.md steering file** — `.kiro/steering/research-data-adherence.md` (auto-inclusion on research files). Enforces that product tier changes require: specific mechanism + peer-reviewed source + delivery-format validation + not contradicted by existing findings. Prevents drift from evidence.
 3. **Scoped Dove deep-dive research** — Defined 4 research angles: (a) dimethiconol benefits for coarse hair specifically, (b) SH-Polypeptide-121 efficacy at low concentration in rinse-off, (c) non-selective coating for frizz management, (d) full formulation analysis beyond hero ingredients. NOT YET EXECUTED — queued for next session.
@@ -36,47 +42,11 @@ The iPhone is now loading the current version. The previous session's caching is
 
 ### What's NOT Done (carry forward)
 
-#### DOVE DEEP-DIVE RESEARCH (next priority — research)
-**Question:** Do Dove Bond Strength Repair and Intensive Repair conditioners offer any meaningful benefits for 2C-3A coarse/thick/dry hair that the current research undervalues?
+#### FOLD DATA ADHERENCE INTO GLOBAL PROTOCOL — DONE (Session 24)
+Completed. Global `deep-dive-auto.md` now has Data Adherence section. Hair-routine version is domain-specific extension.
 
-**Angles to investigate:**
-1. Dimethiconol/silsesquioxane — is a heavier non-selective film *preferable* for coarse hair (more cuticle layers, more surface area)?
-2. SH-Polypeptide-121 — actual MW, penetration data, efficacy at low concentration in rinse-off format
-3. Non-selective coating for frizz — amodimethicone targets damage sites, but frizz happens on healthy cuticle too. Does non-selective coating help?
-4. Full formulation — what else is in these products beyond the hero ingredients?
-
-**Constraint:** `research-data-adherence.md` steering file is active. Any tier change requires mechanism + source + delivery validation.
-
-**Protocol:** Use `deep-dive-auto.md` (autonomous research flow). Score with v2 rubric.
-
-#### FOLD DATA ADHERENCE INTO GLOBAL PROTOCOL
-- Add "Data Adherence" section to `~/.kiro/steering/deep-dive-auto.md`
-- Principle: no recommendation changes without mechanism + source + delivery-format validation
-- Keep hair-routine's `research-data-adherence.md` as domain-specific extension (hair-specific tier criteria)
-
-#### USE-UP PRODUCT ROTATION (next priority — code)
-**What Mandy wants:** The Daily Plan should automatically cycle use-up products into the routine, compensated by keeping other steps at high-quality products. Not manual swapping — the plan should do this for her.
-
-**Design approach (Mandy's direction):** Use the research files to build balanced product combinations. When a use-up product is assigned to one step, the other steps should use primary-tier products to maintain overall wash quality.
-
-**What this needs:**
-- Read research files (product mechanisms, interactions, delivery systems) to understand which products compensate for which
-- Define "balanced combinations" — sets of products across all steps where weak products in one slot are offset by strong products in others
-- Modify `PlanGenerator.buildPlan()` to rotate through these combinations rather than always defaulting to primary products
-- Track rotation state (which combination was used last)
-- Respect the established rule: never RECOMMEND Dove, but DO use it up by cycling it in with compensation
-
-**Research files to consult:**
-- `research/` folder — 5-phase product relationship research
-- `HAIR_CONSULTATION_HANDOFF.md` — product mechanisms and interactions
-- `HAIR_SCIENCE_VERIFICATION_REPORT.md` — verified science claims
-- Product `intelligence` metadata already in inventory (mechanisms, outcomes, interactions)
-
-**Use-up conditioners to cycle:**
-- `dove-bond-conditioner` — Dove Bond Strength Repair (dimethiconol, not targeted)
-- `dove-intensive-conditioner` — Dove Intensive Repair (weakest conditioner)
-
-**Compensation principle:** When Dove conditioner is assigned, ensure leave-in (L'Oréal 21-in-1 with PQ-37) and other steps are primary-tier to maintain overall protection.
+#### USE-UP PRODUCT ROTATION — DONE (confirmed Session 24)
+Already implemented: `UseUpRotation` module, schema v12, `buildPlan()` integration, UI rendering with compensation notes. Every 3rd wash cycles Dove conditioners with L'Oréal 21-in-1 compensation.
 
 #### Post-wash texture/curl retention tracking
 - Mandy's core concerns: frizz, dryness, difficulty with styling/curl retention
@@ -106,7 +76,7 @@ The iPhone is now loading the current version. The previous session's caching is
 
 ## Schema
 
-**Version:** 11 (Got2b ID unification)
+**Version:** 12 (Use-up rotation state)
 
 ---
 
@@ -152,6 +122,7 @@ All previous decisions remain, plus:
 | 21 | iPhone Safari debugging — narrowed to device-level proxy/relay | Complete |
 | 22 | Nav fix, geolocation fix, multi-select adjust, use-up rotation scoped | Complete |
 | 23 | **Dove placement discussion, research-data-adherence steering, deep-dive scoped** | Complete |
+| 24 | **Dove deep dive research, data adherence global fold-in, use-up rotation confirmed** | Complete |
 
 ---
 
