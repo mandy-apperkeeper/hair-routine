@@ -3070,15 +3070,24 @@
                 html += '<div class="empty-state active"><p>No wash events yet. Complete a walkthrough to start tracking.</p></div>';
             } else {
                 var ratingEmojis = { 1: '😫', 2: '😕', 3: '😐', 4: '😊', 5: '🤩' };
+                var treatmentLabels = { 'clarify': 'Clarify', 'protein': 'Protein', 'deep-condition': 'Deep Cond', 'bond-repair': 'Bond Repair' };
                 events.forEach(function(ev) {
                     var emoji = ev.rating ? ratingEmojis[ev.rating] : '—';
                     var interval = ev.intervalDays > 0 ? ev.intervalDays + ' days since last wash' : 'First wash';
+                    var treatmentBadges = '';
+                    if (ev.treatments && ev.treatments.length > 0) {
+                        ev.treatments.forEach(function(t) {
+                            var label = treatmentLabels[t] || t;
+                            treatmentBadges += '<span class="badge badge-green" style="margin-left:0.25rem;font-size:0.65rem;">' + label + '</span>';
+                        });
+                    }
                     html += '<div class="card" style="padding:1rem 1.25rem;position:relative;">';
                     html += '<button class="btn-secondary delete-event-btn" data-event-id="' + ev.id + '" aria-label="Delete wash event from ' + formatDateNice(ev.date) + '" style="position:absolute;top:0.5rem;right:0.5rem;min-height:32px;min-width:32px;padding:0.2rem 0.5rem;font-size:0.75rem;border-color:var(--accent);color:var(--accent);">✕</button>';
                     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding-right:2rem;">';
                     html += '<div>';
                     html += '<strong style="font-size:0.9rem;">' + formatDateNice(ev.date) + '</strong>';
                     html += '<span class="badge badge-purple" style="margin-left:0.5rem;">' + ev.lane + '</span>';
+                    html += treatmentBadges;
                     html += '</div>';
                     html += '<span style="font-size:1.3rem;">' + emoji + '</span>';
                     html += '</div>';
