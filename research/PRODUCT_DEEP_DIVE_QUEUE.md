@@ -12,6 +12,8 @@
 
 ## Output Structure Per Product
 
+### Full Research Document (`research/products/[product-id].md`)
+
 1. Executive Summary (2-3 sentences)
 2. Full INCI Analysis (ingredient-by-ingredient for key actives)
 3. Mechanism Assessment (what it actually does, with evidence)
@@ -19,15 +21,23 @@
 5. Efficacy for Hair Profile (specific to 2C-3A coarse/thick/dry)
 6. Comparison to Alternatives (other products in same step category)
 7. Tier Placement Validation (confirm or challenge current tier)
-8. **Key Takeaways (for in-app education)**
-   - What this product does for your hair (plain language)
-   - Why it's in your routine (or why it's being used up)
-   - What makes it good/bad at its job (mechanism in one sentence)
-   - What to look for if replacing it (key ingredients/properties to seek)
-   - What to avoid in a replacement (anti-patterns)
+8. **Practical Education Section (for in-app use)**
+   - **Why you're using this** — what role it fills, what would be missing without it
+   - **How to know it's working** — observable signs (feel, look, behavior) that confirm benefit
+   - **How to know it's NOT working** — signs of buildup, incompatibility, or diminishing returns
+   - **Why this over alternatives** — what makes it better/worse than other products in the same step
+   - **When to reach for something else** — conditions, hair states, or goals where a different product serves better
+   - **If you're shopping for a replacement** — key ingredients to seek, formats that matter, red flags to avoid
 9. Sources Index
 10. Self-Critique
 11. Scorecard
+
+### Tone & Audience
+
+- Written for Mandy as the user — science-literate, wants to understand WHY, not just WHAT
+- Accurate and mechanism-based but not jargon-heavy — explain the chemistry in plain terms
+- Same depth for all tiers (including use-up — understanding WHY something is inferior is educational)
+- Citations stay in the research doc; the in-app version can be distilled later if needed
 
 ## Execution Model
 
