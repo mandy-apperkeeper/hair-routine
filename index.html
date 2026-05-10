@@ -579,6 +579,475 @@
             margin: 0 auto 1rem;
         }
 
+        /* ===== Daily Plan View ===== */
+        .plan-header {
+            margin-bottom: 1rem;
+        }
+
+        .plan-header h2 {
+            font-family: 'Georgia', serif;
+            font-size: 1.4rem;
+            color: var(--text);
+            margin: 0 0 0.25rem;
+        }
+
+        .plan-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 0 0 0.75rem;
+        }
+
+        .plan-adjust-btn {
+            background: rgba(212, 165, 116, 0.1);
+            border: 1px solid rgba(212, 165, 116, 0.3);
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: var(--gold);
+            font-size: 0.85rem;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+        }
+
+        .plan-phase-header {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 1rem 0 0.4rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-step {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-step-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .plan-step-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--gold);
+            margin: 0;
+        }
+
+        .plan-step-actions {
+            display: flex;
+            gap: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .plan-step-actions button {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 4px;
+            min-height: 32px;
+            min-width: 32px;
+        }
+
+        .plan-step-actions button:hover {
+            background: var(--card-hover);
+        }
+
+        .plan-step-instruction {
+            font-size: 0.83rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin: 0.3rem 0 0;
+        }
+
+        .plan-step-badges {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-top: 0.4rem;
+        }
+
+        .plan-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .plan-badge-science {
+            background: rgba(122, 184, 168, 0.15);
+            color: var(--green);
+            border: 1px solid rgba(122, 184, 168, 0.3);
+        }
+
+        .plan-badge-timer {
+            background: rgba(122, 158, 196, 0.15);
+            color: var(--blue);
+            border: 1px solid rgba(122, 158, 196, 0.3);
+            cursor: pointer;
+        }
+
+        .plan-badge-timer.active {
+            background: rgba(122, 158, 196, 0.3);
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { opacity: 0.8; }
+            to { opacity: 1; }
+        }
+
+        .plan-badge-heatcap {
+            background: rgba(212, 165, 116, 0.15);
+            color: var(--gold);
+            border: 1px solid rgba(212, 165, 116, 0.3);
+        }
+
+        .plan-step-tip {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-style: italic;
+            margin-top: 0.3rem;
+        }
+
+        .plan-skip-section {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .plan-skip-header {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .plan-skip-item {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            opacity: 0.6;
+            padding: 0.3rem 0;
+        }
+
+        .plan-done-section {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .plan-done-section p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0 0 0.75rem;
+        }
+
+        .plan-rating-row {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-rating-row button {
+            font-size: 1.5rem;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            min-height: 48px;
+            min-width: 48px;
+        }
+
+        .plan-rating-row button.selected {
+            border-color: var(--gold);
+            background: rgba(212, 165, 116, 0.15);
+        }
+
+        .plan-skip-rating {
+            font-size: 0.8rem;
+            color: var(--muted);
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            min-height: 48px;
+        }
+
+        .plan-condensed-toggle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            min-height: 36px;
+        }
+
+        .plan-condensed .plan-step {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .plan-condensed .plan-step-instruction,
+        .plan-condensed .plan-step-tip,
+        .plan-condensed .plan-step-actions {
+            display: none;
+        }
+
+        .plan-condensed .plan-step-badges {
+            display: inline-flex;
+            margin-top: 0;
+            margin-left: 0.5rem;
+        }
+
+        .plan-condensed .plan-step-header {
+            align-items: center;
+        }
+
+        /* Adjustment overlay */
+        .adjust-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 500;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .adjust-overlay.visible {
+            display: flex;
+        }
+
+        .adjust-sheet {
+            background: var(--bg-warm);
+            border-radius: 16px 16px 0 0;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 480px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .adjust-sheet h3 {
+            font-family: 'Georgia', serif;
+            font-size: 1.1rem;
+            color: var(--text);
+            margin: 0 0 1rem;
+        }
+
+        .adjust-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .adjust-option {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            color: var(--text);
+            cursor: pointer;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .adjust-option.selected {
+            border-color: var(--gold);
+            background: rgba(212, 165, 116, 0.1);
+            color: var(--gold);
+        }
+
+        .adjust-more-link {
+            font-size: 0.82rem;
+            color: var(--gold);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 0;
+            min-height: 36px;
+        }
+
+        .adjust-layer {
+            display: none;
+        }
+
+        .adjust-layer.visible {
+            display: block;
+        }
+
+        /* Alternatives popup */
+        .alternatives-popup {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 600;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .alternatives-popup.visible {
+            display: flex;
+        }
+
+        .alternatives-sheet {
+            background: var(--bg-warm);
+            border-radius: 12px;
+            padding: 1.25rem;
+            width: 100%;
+            max-width: 360px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .alternatives-sheet h4 {
+            font-size: 0.95rem;
+            color: var(--text);
+            margin: 0 0 0.75rem;
+        }
+
+        .alt-item {
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.4rem;
+            cursor: pointer;
+        }
+
+        .alt-item.current {
+            border-color: var(--gold);
+            background: rgba(212, 165, 116, 0.08);
+        }
+
+        .alt-item-name {
+            font-size: 0.88rem;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .alt-item-reason {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.15rem;
+        }
+
+        /* Info popup */
+        .info-popup {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 600;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .info-popup.visible {
+            display: flex;
+        }
+
+        .info-sheet {
+            background: var(--bg-warm);
+            border-radius: 16px 16px 0 0;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 480px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .info-sheet h4 {
+            font-size: 1rem;
+            color: var(--gold);
+            margin: 0 0 0.5rem;
+        }
+
+        .info-sheet p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin: 0 0 0.5rem;
+        }
+
+        .info-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            min-height: 36px;
+            min-width: 36px;
+        }
+
+        /* Sticky timer bar */
+        .sticky-timer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            border-bottom: 1px solid var(--gold);
+            padding: 8px 16px;
+            z-index: 400;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--blue);
+        }
+
+        .sticky-timer.visible {
+            display: block;
+        }
+
+        /* Deferred rating banner */
+        .deferred-rating-banner {
+            display: none;
+            background: rgba(212, 165, 116, 0.08);
+            border: 1px solid rgba(212, 165, 116, 0.25);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .deferred-rating-banner.visible {
+            display: block;
+        }
+
+        .deferred-rating-banner p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin: 0 0 0.75rem;
+        }
+
         /* ===== Insight Card (feedback engine) ===== */
         .insight-card {
             background: rgba(212, 165, 116, 0.08);
@@ -1090,6 +1559,12 @@
     <main id="main-content">
         <!-- Landing Screen -->
         <section id="landing" class="view active" aria-label="Landing">
+            <!-- Deferred rating banner (shows next day if rating was skipped) -->
+            <div class="deferred-rating-banner" id="deferred-rating-banner">
+                <p>How did yesterday's wash turn out?</p>
+                <div class="plan-rating-row" id="deferred-rating-row"></div>
+            </div>
+
             <!-- First-use empty state (hidden by default, shown when no wash events) -->
             <div class="empty-state" id="empty-state" aria-label="Welcome">
                 <h2>Welcome</h2>
@@ -1102,6 +1577,9 @@
                 <span class="tracker-inline"><span class="tracker-label">Clarify</span> <span class="tracker-value" id="status-clarify">—</span></span>
                 <span class="tracker-inline"><span class="tracker-label">Protein</span> <span class="tracker-value" id="status-protein">—</span></span>
             </div>
+
+            <!-- Daily Plan (generated dynamically) -->
+            <div id="daily-plan-container"></div>
 
             <!-- Insight card (hidden until feedback engine has data) -->
             <div class="insight-card" id="insight-card" aria-label="Personalized insight">
@@ -1116,7 +1594,7 @@
             <div class="compensation-card" id="gel-gap-card" aria-label="Uncompensated gap reminder">
             </div>
 
-            <!-- Smart recommendation (shown when history exists) -->
+            <!-- Legacy recommendation (hidden when daily plan is active) -->
             <div id="smart-recommendation" style="display:none;">
                 <div class="card" id="recommendation-card">
                     <p class="product-note" id="recommendation-context" style="margin-bottom:0.75rem;"></p>
@@ -1175,6 +1653,77 @@
             <!-- Populated dynamically by Settings module -->
         </section>
     </main>
+
+    <!-- Sticky timer bar (shows when timer step scrolls out of view) -->
+    <div class="sticky-timer" id="sticky-timer" role="timer" aria-live="polite">
+        <span id="sticky-timer-label"></span>: <span id="sticky-timer-countdown"></span>
+        <button id="sticky-timer-pause" style="margin-left:0.5rem;min-height:32px;min-width:32px;background:none;border:1px solid var(--blue);border-radius:4px;color:var(--blue);font-size:0.75rem;cursor:pointer;">⏸</button>
+    </div>
+
+    <!-- Adjustment overlay (bottom sheet) -->
+    <div class="adjust-overlay" id="adjust-overlay" role="dialog" aria-label="Adjust your plan" aria-modal="true">
+        <div class="adjust-sheet">
+            <h3>Tell me about your hair</h3>
+
+            <!-- Layer 1: Quick observation -->
+            <div class="adjust-layer visible" id="adjust-layer-1">
+                <div class="adjust-options" id="adjust-quick-options">
+                    <button class="adjust-option" data-value="frizzy">🌊 Frizzy / poofy</button>
+                    <button class="adjust-option" data-value="flat">🪨 Flat / limp</button>
+                    <button class="adjust-option" data-value="holding_well">✨ Holding well</button>
+                    <button class="adjust-option" data-value="oily">🧴 Oily / heavy</button>
+                    <button class="adjust-option" data-value="dry_rough">🌿 Dry / rough</button>
+                </div>
+                <button class="adjust-more-link" id="adjust-show-layer-2">More →</button>
+            </div>
+
+            <!-- Layer 2: Context -->
+            <div class="adjust-layer" id="adjust-layer-2">
+                <div class="adjust-options" id="adjust-context-options">
+                    <button class="adjust-option" data-value="exercised">🏃 Exercised / sweaty</button>
+                    <button class="adjust-option" data-value="short_on_time">⏰ Short on time</button>
+                    <button class="adjust-option" data-value="heat_styling">🔥 Planning to heat style</button>
+                    <button class="adjust-option" data-value="slept_unprotected">🌙 Slept without protection</button>
+                </div>
+                <button class="adjust-more-link" id="adjust-show-layer-3">More detail →</button>
+            </div>
+
+            <!-- Layer 3: Detailed -->
+            <div class="adjust-layer" id="adjust-layer-3">
+                <div class="adjust-options" id="adjust-detailed-options">
+                    <button class="adjust-option" data-value="tangles">Tangles worse than usual</button>
+                    <button class="adjust-option" data-value="shedding">More shedding than normal</button>
+                    <button class="adjust-option" data-value="curl_dropping">Curl pattern dropping faster</button>
+                    <button class="adjust-option" data-value="stiff">Stiff / straw-like</button>
+                    <button class="adjust-option" data-value="scalp_itchy">Scalp itchy / flaky</button>
+                </div>
+            </div>
+
+            <div style="margin-top:1rem;text-align:center;">
+                <button class="btn-secondary" id="adjust-close" style="min-height:48px;">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alternatives popup -->
+    <div class="alternatives-popup" id="alternatives-popup" role="dialog" aria-label="Product alternatives" aria-modal="true">
+        <div class="alternatives-sheet" id="alternatives-sheet">
+            <h4 id="alternatives-title">Alternatives</h4>
+            <div id="alternatives-list"></div>
+            <button class="btn-secondary" id="alternatives-close" style="width:100%;margin-top:0.75rem;min-height:48px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Info popup -->
+    <div class="info-popup" id="info-popup" role="dialog" aria-label="Product information" aria-modal="true">
+        <div class="info-sheet" style="position:relative;">
+            <button class="info-close" id="info-close" aria-label="Close">✕</button>
+            <h4 id="info-title"></h4>
+            <p id="info-mechanism"></p>
+            <p id="info-reason"></p>
+            <div id="info-badge"></div>
+        </div>
+    </div>
 
     <script>
     /**
@@ -4704,6 +5253,10 @@
                 gelGapCard.classList.remove('active');
                 gelGapCard.innerHTML = '';
             }
+
+            // Render daily plan (replaces old lane selection for users with history)
+            renderDailyPlan();
+            checkDeferredRating();
         }
 
         // ===== Smart Recommendation Logic =====
@@ -4777,11 +5330,606 @@
             };
         }
 
+        // ===== Daily Plan Rendering =====
+        var detectedDewPoint = null;
+        var currentPlan = null;
+        var currentObservations = { quick: null, context: [], detailed: [] };
+        var planTimerActive = null; // { stepId, timerId }
+
+        function renderDailyPlan() {
+            var state = StateManager.getState();
+            var events = state.events || [];
+
+            // Don't show plan if no history (show first-use buttons instead)
+            if (events.length === 0) {
+                document.getElementById('daily-plan-container').innerHTML = '';
+                document.getElementById('first-use-buttons').style.display = '';
+                document.getElementById('smart-recommendation').style.display = 'none';
+                return;
+            }
+
+            // Hide legacy UI
+            document.getElementById('first-use-buttons').style.display = 'none';
+            document.getElementById('smart-recommendation').style.display = 'none';
+
+            // Get dew point (use cached if available, otherwise null)
+            var dewPoint = detectedDewPoint;
+
+            // Generate plan
+            var suggestion = PlanGenerator.suggestLane(state, dewPoint);
+            currentPlan = PlanGenerator.buildPlan(suggestion.lane, dewPoint, state);
+            currentPlan.reason = suggestion.reason;
+            currentPlan.confidence = suggestion.confidence;
+            currentPlan.productSwaps = [];
+
+            renderPlanView(currentPlan);
+        }
+
+        function renderPlanView(plan) {
+            var container = document.getElementById('daily-plan-container');
+            var html = '';
+
+            // Header
+            var dewPointStr = plan.dewPoint !== null ? 'Dew point ' + plan.dewPoint + '°F' : 'Weather unavailable';
+            var state = StateManager.getState();
+            var events = state.events || [];
+            var lastWashDate = null;
+            for (var i = events.length - 1; i >= 0; i--) {
+                if (events[i].lane === 'curly' || events[i].lane === 'blowout') {
+                    lastWashDate = events[i].date;
+                    break;
+                }
+            }
+            var washDays = daysSince(lastWashDate);
+            var dayStr = washDays !== null ? 'Day ' + washDays : '';
+
+            var laneLabel = plan.lane.charAt(0).toUpperCase() + plan.lane.slice(1) + ' Day';
+
+            html += '<div class="plan-header">';
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;">';
+            html += '<h2>Today\'s Plan</h2>';
+            html += '<button class="plan-condensed-toggle" id="plan-condensed-toggle" aria-label="Toggle condensed view">☰</button>';
+            html += '</div>';
+            html += '<p class="plan-subtitle">' + escapeHtml(laneLabel) + ' · ' + escapeHtml(dewPointStr) + (dayStr ? ' · ' + escapeHtml(dayStr) : '') + '</p>';
+            html += '<button class="plan-adjust-btn" id="plan-adjust-btn" aria-label="Adjust plan based on hair observations">Adjust — tell me about your hair →</button>';
+            html += '</div>';
+
+            // Steps grouped by phase
+            var currentPhase = null;
+            for (var s = 0; s < plan.steps.length; s++) {
+                var step = plan.steps[s];
+
+                // Phase header
+                if (step.phase !== currentPhase) {
+                    currentPhase = step.phase;
+                    html += '<div class="plan-phase-header">' + escapeHtml(currentPhase) + '</div>';
+                }
+
+                html += renderPlanStep(step);
+            }
+
+            // Skip section
+            if (plan.skips && plan.skips.length > 0) {
+                html += '<div class="plan-skip-section">';
+                html += '<div class="plan-skip-header">Skip today</div>';
+                for (var k = 0; k < plan.skips.length; k++) {
+                    var skip = plan.skips[k];
+                    html += '<div class="plan-skip-item">✗ ' + escapeHtml(skip.productName) + ' — ' + escapeHtml(skip.reason) + '</div>';
+                }
+                html += '</div>';
+            }
+
+            // Done section (rating)
+            html += '<div class="plan-done-section" id="plan-done-section">';
+            html += '<p>How\'d it turn out?</p>';
+            html += '<div class="plan-rating-row" id="plan-rating-row">';
+            var emojis = ['😫', '😕', '😐', '😊', '🤩'];
+            for (var e = 0; e < emojis.length; e++) {
+                html += '<button class="plan-rating-btn" data-rating="' + (e + 1) + '" aria-label="Rate ' + (e + 1) + ' of 5">' + emojis[e] + '</button>';
+            }
+            html += '</div>';
+            html += '<button class="plan-skip-rating" id="plan-skip-rating">Skip for now</button>';
+            html += '</div>';
+
+            // Lane override
+            html += '<div style="text-align:center;margin-top:1rem;">';
+            html += '<button class="btn-secondary" id="plan-change-lane" style="font-size:0.8rem;">Something else?</button>';
+            html += '</div>';
+
+            container.innerHTML = html;
+            wirePlanEvents();
+        }
+
+        function renderPlanStep(step) {
+            var html = '<div class="plan-step" id="' + step.id + '" data-step-type="' + (step.stepType || '') + '">';
+            html += '<div class="plan-step-header">';
+            html += '<p class="plan-step-title">' + escapeHtml(step.productName) + '</p>';
+
+            // Action buttons (only for steps with products)
+            if (step.productId) {
+                html += '<div class="plan-step-actions">';
+                html += '<button class="plan-info-btn" data-step-id="' + step.id + '" aria-label="Info about ' + escapeHtml(step.productName) + '">ℹ</button>';
+                if (step.alternatives && step.alternatives.length > 1) {
+                    html += '<button class="plan-rotate-btn" data-step-id="' + step.id + '" aria-label="Alternatives for ' + escapeHtml(step.productName) + '">↻</button>';
+                }
+                html += '</div>';
+            }
+            html += '</div>'; // end header
+
+            html += '<p class="plan-step-instruction">' + escapeHtml(step.instruction) + '</p>';
+
+            // Badges
+            var hasBadges = step.scienceBadge || step.timer;
+            if (hasBadges) {
+                html += '<div class="plan-step-badges">';
+                if (step.scienceBadge) {
+                    html += '<span class="plan-badge plan-badge-science">' + escapeHtml(step.scienceBadge) + '</span>';
+                }
+                if (step.timer) {
+                    var mins = Math.round(step.timer.duration / 60);
+                    html += '<button class="plan-badge plan-badge-timer" data-step-id="' + step.id + '" data-duration="' + step.timer.duration + '" aria-label="Start ' + mins + ' minute timer">⏱ ' + mins + ' min</button>';
+                }
+                html += '</div>';
+            }
+
+            // Tip
+            if (step.tip) {
+                html += '<p class="plan-step-tip">' + escapeHtml(step.tip) + '</p>';
+            }
+
+            html += '</div>'; // end plan-step
+            return html;
+        }
+
+        function wirePlanEvents() {
+            // Condensed toggle
+            var toggleBtn = document.getElementById('plan-condensed-toggle');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    var container = document.getElementById('daily-plan-container');
+                    container.classList.toggle('plan-condensed');
+                    // Remember preference
+                    try { localStorage.setItem('hair_plan_condensed', container.classList.contains('plan-condensed') ? '1' : '0'); } catch(e) {}
+                });
+                // Restore preference
+                try {
+                    if (localStorage.getItem('hair_plan_condensed') === '1') {
+                        document.getElementById('daily-plan-container').classList.add('plan-condensed');
+                    }
+                } catch(e) {}
+            }
+
+            // Adjust button
+            var adjustBtn = document.getElementById('plan-adjust-btn');
+            if (adjustBtn) {
+                adjustBtn.addEventListener('click', function() {
+                    openAdjustOverlay();
+                });
+            }
+
+            // Rating buttons
+            var ratingBtns = document.querySelectorAll('.plan-rating-btn');
+            ratingBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var rating = parseInt(btn.getAttribute('data-rating'));
+                    savePlanWashEvent(rating);
+                });
+            });
+
+            // Skip rating
+            var skipRatingBtn = document.getElementById('plan-skip-rating');
+            if (skipRatingBtn) {
+                skipRatingBtn.addEventListener('click', function() {
+                    savePlanWashEvent(null);
+                });
+            }
+
+            // Info buttons
+            document.querySelectorAll('.plan-info-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var stepId = btn.getAttribute('data-step-id');
+                    openInfoPopup(stepId);
+                });
+            });
+
+            // Rotate buttons
+            document.querySelectorAll('.plan-rotate-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var stepId = btn.getAttribute('data-step-id');
+                    openAlternativesPopup(stepId);
+                });
+            });
+
+            // Timer buttons
+            document.querySelectorAll('.plan-badge-timer').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var stepId = btn.getAttribute('data-step-id');
+                    var duration = parseInt(btn.getAttribute('data-duration'));
+                    startPlanTimer(stepId, duration, btn);
+                });
+            });
+
+            // Change lane button
+            var changeLaneBtn = document.getElementById('plan-change-lane');
+            if (changeLaneBtn) {
+                changeLaneBtn.addEventListener('click', function() {
+                    showLaneOverride();
+                });
+            }
+        }
+
+        function savePlanWashEvent(rating) {
+            if (!currentPlan) return;
+
+            var today = new Date().toISOString().split('T')[0];
+            var products = [];
+            for (var i = 0; i < currentPlan.steps.length; i++) {
+                if (currentPlan.steps[i].productId) {
+                    products.push(currentPlan.steps[i].productId);
+                }
+            }
+
+            var event = {
+                date: today,
+                lane: currentPlan.lane,
+                products: products,
+                dewPoint: currentPlan.dewPoint,
+                humidity: currentPlan.humidity,
+                rating: rating,
+                observations: currentObservations,
+                planAdjusted: currentObservations.quick !== null || currentObservations.context.length > 0 || currentObservations.detailed.length > 0,
+                productSwaps: currentPlan.productSwaps || []
+            };
+
+            StateManager.saveWashEvent(event);
+            updateSealState(event);
+
+            // If rating was skipped, store deferred prompt
+            if (rating === null) {
+                try {
+                    localStorage.setItem('hair_deferred_rating_date', today);
+                    localStorage.setItem('hair_deferred_rating_event_idx', String((StateManager.getState().events || []).length - 1));
+                } catch(e) {}
+            }
+
+            // Reset plan state
+            currentPlan = null;
+            currentObservations = { quick: null, context: [], detailed: [] };
+
+            // Re-render landing
+            renderLanding();
+        }
+
+        function openAdjustOverlay() {
+            var overlay = document.getElementById('adjust-overlay');
+            overlay.classList.add('visible');
+
+            // Reset selections to match current observations
+            document.querySelectorAll('#adjust-quick-options .adjust-option').forEach(function(btn) {
+                btn.classList.toggle('selected', btn.getAttribute('data-value') === currentObservations.quick);
+            });
+            document.querySelectorAll('#adjust-context-options .adjust-option').forEach(function(btn) {
+                btn.classList.toggle('selected', currentObservations.context.indexOf(btn.getAttribute('data-value')) !== -1);
+            });
+            document.querySelectorAll('#adjust-detailed-options .adjust-option').forEach(function(btn) {
+                btn.classList.toggle('selected', currentObservations.detailed.indexOf(btn.getAttribute('data-value')) !== -1);
+            });
+
+            // Wire events
+            document.querySelectorAll('#adjust-quick-options .adjust-option').forEach(function(btn) {
+                btn.onclick = function() {
+                    var val = btn.getAttribute('data-value');
+                    // Single-select: toggle off if already selected
+                    if (currentObservations.quick === val) {
+                        currentObservations.quick = null;
+                        btn.classList.remove('selected');
+                    } else {
+                        currentObservations.quick = val;
+                        document.querySelectorAll('#adjust-quick-options .adjust-option').forEach(function(b) { b.classList.remove('selected'); });
+                        btn.classList.add('selected');
+                    }
+                    applyAdjustments();
+                };
+            });
+
+            document.querySelectorAll('#adjust-context-options .adjust-option').forEach(function(btn) {
+                btn.onclick = function() {
+                    var val = btn.getAttribute('data-value');
+                    var idx = currentObservations.context.indexOf(val);
+                    if (idx !== -1) {
+                        currentObservations.context.splice(idx, 1);
+                        btn.classList.remove('selected');
+                    } else {
+                        currentObservations.context.push(val);
+                        btn.classList.add('selected');
+                    }
+                    applyAdjustments();
+                };
+            });
+
+            document.querySelectorAll('#adjust-detailed-options .adjust-option').forEach(function(btn) {
+                btn.onclick = function() {
+                    var val = btn.getAttribute('data-value');
+                    var idx = currentObservations.detailed.indexOf(val);
+                    if (idx !== -1) {
+                        currentObservations.detailed.splice(idx, 1);
+                        btn.classList.remove('selected');
+                    } else {
+                        currentObservations.detailed.push(val);
+                        btn.classList.add('selected');
+                    }
+                    applyAdjustments();
+                };
+            });
+
+            // Layer reveal buttons
+            document.getElementById('adjust-show-layer-2').onclick = function() {
+                document.getElementById('adjust-layer-2').classList.add('visible');
+            };
+            document.getElementById('adjust-show-layer-3').onclick = function() {
+                document.getElementById('adjust-layer-3').classList.add('visible');
+            };
+
+            // Close button
+            document.getElementById('adjust-close').onclick = function() {
+                overlay.classList.remove('visible');
+            };
+
+            // Close on backdrop tap
+            overlay.onclick = function(e) {
+                if (e.target === overlay) overlay.classList.remove('visible');
+            };
+        }
+
+        function applyAdjustments() {
+            if (!currentPlan) return;
+            // Re-generate plan from base, then apply adjustments
+            var state = StateManager.getState();
+            var suggestion = PlanGenerator.suggestLane(state, detectedDewPoint);
+            var basePlan = PlanGenerator.buildPlan(suggestion.lane, detectedDewPoint, state);
+            basePlan.reason = suggestion.reason;
+            basePlan.confidence = suggestion.confidence;
+            basePlan.productSwaps = currentPlan.productSwaps || [];
+
+            currentPlan = AdjustmentEngine.adjust(basePlan, currentObservations);
+            renderPlanView(currentPlan);
+        }
+
+        function openInfoPopup(stepId) {
+            var step = null;
+            if (currentPlan) {
+                for (var i = 0; i < currentPlan.steps.length; i++) {
+                    if (currentPlan.steps[i].id === stepId) { step = currentPlan.steps[i]; break; }
+                }
+            }
+            if (!step) return;
+
+            document.getElementById('info-title').textContent = step.productName;
+            document.getElementById('info-mechanism').textContent = step.instruction;
+            document.getElementById('info-reason').textContent = step.tip || '';
+
+            var badgeHtml = '';
+            if (step.scienceBadge) {
+                badgeHtml = '<span class="plan-badge plan-badge-science">' + escapeHtml(step.scienceBadge) + '</span>';
+            }
+            document.getElementById('info-badge').innerHTML = badgeHtml;
+
+            var popup = document.getElementById('info-popup');
+            popup.classList.add('visible');
+
+            document.getElementById('info-close').onclick = function() { popup.classList.remove('visible'); };
+            popup.onclick = function(e) { if (e.target === popup) popup.classList.remove('visible'); };
+        }
+
+        function openAlternativesPopup(stepId) {
+            var step = null;
+            if (currentPlan) {
+                for (var i = 0; i < currentPlan.steps.length; i++) {
+                    if (currentPlan.steps[i].id === stepId) { step = currentPlan.steps[i]; break; }
+                }
+            }
+            if (!step || !step.alternatives || step.alternatives.length === 0) return;
+
+            document.getElementById('alternatives-title').textContent = 'Alternatives for: ' + step.productName;
+
+            var listHtml = '';
+            for (var a = 0; a < step.alternatives.length; a++) {
+                var alt = step.alternatives[a];
+                var isCurrent = alt.productId === step.productId;
+                listHtml += '<div class="alt-item' + (isCurrent ? ' current' : '') + '" data-product-id="' + escapeHtml(alt.productId) + '" data-product-name="' + escapeHtml(alt.productName) + '">';
+                listHtml += '<div class="alt-item-name">' + (isCurrent ? '← ' : '') + escapeHtml(alt.productName) + '</div>';
+                if (alt.reason) {
+                    listHtml += '<div class="alt-item-reason">' + escapeHtml(alt.reason) + '</div>';
+                }
+                listHtml += '</div>';
+            }
+            document.getElementById('alternatives-list').innerHTML = listHtml;
+
+            var popup = document.getElementById('alternatives-popup');
+            popup.classList.add('visible');
+
+            // Wire alternative selection
+            document.querySelectorAll('#alternatives-list .alt-item').forEach(function(item) {
+                item.onclick = function() {
+                    var newProductId = item.getAttribute('data-product-id');
+                    var newProductName = item.getAttribute('data-product-name');
+                    if (newProductId !== step.productId) {
+                        currentPlan = AdjustmentEngine.recordSwap(currentPlan, stepId, step.productId, newProductId, newProductName);
+                        renderPlanView(currentPlan);
+                    }
+                    popup.classList.remove('visible');
+                };
+            });
+
+            document.getElementById('alternatives-close').onclick = function() { popup.classList.remove('visible'); };
+            popup.onclick = function(e) { if (e.target === popup) popup.classList.remove('visible'); };
+        }
+
+        function startPlanTimer(stepId, duration, btn) {
+            // Stop any existing timer
+            if (planTimerActive) {
+                TimerManager.reset(planTimerActive.timerId, 0);
+            }
+
+            var timerId = TimerManager.start(duration, function() {
+                // Timer complete
+                btn.classList.remove('active');
+                btn.textContent = '✓ Done';
+                var stickyBar = document.getElementById('sticky-timer');
+                stickyBar.classList.remove('visible');
+                planTimerActive = null;
+            });
+
+            planTimerActive = { stepId: stepId, timerId: timerId };
+            btn.classList.add('active');
+
+            // Update display
+            var updateDisplay = setInterval(function() {
+                if (!planTimerActive || planTimerActive.timerId !== timerId) {
+                    clearInterval(updateDisplay);
+                    return;
+                }
+                var remaining = TimerManager.getRemaining(timerId);
+                if (remaining === null || remaining <= 0) {
+                    clearInterval(updateDisplay);
+                    return;
+                }
+                var mins = Math.floor(remaining / 60);
+                var secs = remaining % 60;
+                var timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                btn.textContent = '⏱ ' + timeStr;
+
+                // Sticky bar
+                var stickyBar = document.getElementById('sticky-timer');
+                var stepEl = document.getElementById(stepId);
+                if (stepEl) {
+                    var rect = stepEl.getBoundingClientRect();
+                    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+                        stickyBar.classList.add('visible');
+                        document.getElementById('sticky-timer-label').textContent = currentPlan.steps.find(function(s) { return s.id === stepId; }).productName;
+                        document.getElementById('sticky-timer-countdown').textContent = timeStr;
+                    } else {
+                        stickyBar.classList.remove('visible');
+                    }
+                }
+            }, 1000);
+        }
+
+        function showLaneOverride() {
+            // Show a simple lane picker
+            var container = document.getElementById('daily-plan-container');
+            var html = '<div class="card" style="text-align:center;padding:1.5rem;">';
+            html += '<p style="margin-bottom:1rem;color:var(--text-secondary);">Switch to a different plan:</p>';
+            html += '<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">';
+            html += '<button class="btn-primary plan-lane-pick" data-lane="curly" style="flex:1;min-width:80px;">🌀 Curly</button>';
+            html += '<button class="btn-primary plan-lane-pick" data-lane="blowout" style="flex:1;min-width:80px;">💨 Blowout</button>';
+            html += '<button class="btn-primary plan-lane-pick" data-lane="refresh" style="flex:1;min-width:80px;">✨ Refresh</button>';
+            html += '</div>';
+            html += '<button class="btn-secondary" id="plan-lane-cancel" style="margin-top:0.75rem;width:100%;">Cancel</button>';
+            html += '</div>';
+            container.innerHTML = html;
+
+            document.querySelectorAll('.plan-lane-pick').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var lane = btn.getAttribute('data-lane');
+                    var state = StateManager.getState();
+                    currentPlan = PlanGenerator.buildPlan(lane, detectedDewPoint, state);
+                    currentPlan.reason = 'You chose ' + lane + '.';
+                    currentPlan.confidence = 'high';
+                    currentPlan.productSwaps = [];
+                    currentObservations = { quick: null, context: [], detailed: [] };
+                    renderPlanView(currentPlan);
+                });
+            });
+
+            document.getElementById('plan-lane-cancel').addEventListener('click', function() {
+                if (currentPlan) {
+                    renderPlanView(currentPlan);
+                } else {
+                    renderDailyPlan();
+                }
+            });
+        }
+
+        function checkDeferredRating() {
+            try {
+                var deferredDate = localStorage.getItem('hair_deferred_rating_date');
+                if (!deferredDate) return;
+
+                var hoursSince = (Date.now() - new Date(deferredDate).getTime()) / (1000 * 60 * 60);
+
+                // Show if 12-48 hours have passed
+                if (hoursSince >= 12 && hoursSince <= 48) {
+                    var banner = document.getElementById('deferred-rating-banner');
+                    var row = document.getElementById('deferred-rating-row');
+                    var emojis = ['😫', '😕', '😐', '😊', '🤩'];
+                    var rowHtml = '';
+                    for (var e = 0; e < emojis.length; e++) {
+                        rowHtml += '<button class="plan-rating-btn" data-rating="' + (e + 1) + '" aria-label="Rate ' + (e + 1) + ' of 5">' + emojis[e] + '</button>';
+                    }
+                    row.innerHTML = rowHtml;
+                    banner.classList.add('visible');
+
+                    row.querySelectorAll('.plan-rating-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            var rating = parseInt(btn.getAttribute('data-rating'));
+                            var eventIdx = parseInt(localStorage.getItem('hair_deferred_rating_event_idx') || '-1');
+                            var state = StateManager.getState();
+                            if (eventIdx >= 0 && state.events && state.events[eventIdx]) {
+                                state.events[eventIdx].deferredRating = rating;
+                                state.events[eventIdx].deferredRatingDate = new Date().toISOString().split('T')[0];
+                                if (StateManager.isStorageAvailable()) {
+                                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+                                }
+                            }
+                            localStorage.removeItem('hair_deferred_rating_date');
+                            localStorage.removeItem('hair_deferred_rating_event_idx');
+                            banner.classList.remove('visible');
+                        });
+                    });
+                } else if (hoursSince > 48) {
+                    // Expired — remove
+                    localStorage.removeItem('hair_deferred_rating_date');
+                    localStorage.removeItem('hair_deferred_rating_event_idx');
+                }
+            } catch(e) {}
+        }
+
+        function detectDewPointForPlan() {
+            if (!navigator.geolocation || !navigator.onLine) return;
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=dew_point_2m&temperature_unit=fahrenheit';
+
+                    fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined })
+                        .then(function(resp) {
+                            if (!resp.ok) return;
+                            return resp.json();
+                        })
+                        .then(function(data) {
+                            if (!data) return;
+                            var dewPoint = data && data.current && data.current.dew_point_2m;
+                            if (dewPoint !== undefined && dewPoint !== null) {
+                                detectedDewPoint = Math.round(dewPoint);
+                                // Re-render plan with actual dew point
+                                renderDailyPlan();
+                            }
+                        })
+                        .catch(function() { /* silent — plan works without weather */ });
+                },
+                function() { /* geolocation denied — plan works without it */ },
+                { timeout: 5000 }
+            );
+        }
+
         // ===== Humidity Prompt =====
         var selectedLane = null;
         var selectedHumidity = null;
 
-        var detectedDewPoint = null;
+        // detectedDewPoint is declared earlier (before Daily Plan code) for plan generation access
 
         function showHumidityPrompt(lane) {
             selectedLane = lane;
@@ -6573,6 +7721,9 @@
         function init() {
             // Set up navigation
             setupNavigation();
+
+            // Auto-detect dew point for daily plan (non-blocking)
+            detectDewPointForPlan();
 
             // Render landing screen
             renderLanding();
