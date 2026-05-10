@@ -1,90 +1,62 @@
-# Hair Routine — Session Handoff (May 10, 2026, Sessions 9+10)
+# Hair Routine — Session Handoff (May 10, 2026, Session 11)
 
 ## What Happened
 
-### Session 9: Product Inventory (complete)
-- Schema v3 migration seeds 24 products from consultation
-- InventoryManager module with full CRUD
-- Inventory view grouped by tier and routine context
-- Gel gap now checks inventory + "Add to inventory" button
+### Session 11: Product Intelligence System — Scoping
 
-### Session 10: Logging UX Overhaul (partially complete, needs redesign)
+No code was written this session. The session was spent scoping a major new feature: a **Product Intelligence System** that gives the app deep understanding of what each product does, how products interact, and how they contribute to outcomes.
 
-**Done:**
-- Landing page redesigned: single recommended action, "Something else?" toggle for alternatives
-- Quick-log rebuilt with multi-select activities + inline product selection per activity
-- "Log a wash day" button added to History page
-- Clarify auto-detected from product selection
+**Problem identified:** The quick-log product categorization from Session 10 was wrong because the app treats products as interchangeable items in generic buckets. It doesn't understand mechanisms, interactions, or outcome contributions. This limits the correlation engine's ability to explain *why* a wash day went well or poorly.
 
-**Problem identified (not yet solved):**
-The product categorization in the quick-log is wrong. Products are mis-assigned to activities because I was guessing instead of properly mapping them to the Abbey Yung method steps. The current ACTIVITY_PRODUCTS mapping needs a complete redo based on:
+**Vision agreed:**
 
-1. The Abbey Yung method has 8-11 steps — the logging should reflect that
-2. Products can belong to multiple steps (OGX oils = pre-wash oil OR finishing)
-3. The Glossing Lamination Mask is NOT a clarifying shampoo — it's its own "glossing" step (alongside Wonder Water and the 5-minute mask)
-4. Heat protection and leave-in are separate steps
-5. The goal is gathering data for correlations, not minimizing taps
+1. **Offline core (localStorage):** Full product intelligence for current inventory — each product has mechanism, interactions, step placement, outcome contributions. Correlation engine uses this to reason about outcomes. Quick-log groups by mechanism-based phases.
 
-### Research-Backed Step Mapping (draft, needs Mandy's confirmation)
+2. **Online discovery:** A way to evaluate new products, understand how they fit the routine, check for conflicts, and add them to inventory with full intelligence metadata. Once added, works offline.
 
-From Phase 1 research + consultation + Mandy's feedback:
+3. **Intelligence surfaces both passively and actively:**
+   - Passive: smarter correlations, better "why did today work?" explanations after logging
+   - Active: recommendations before a wash day ("based on dew point and last wash, consider adding X because Y")
 
-1. **Pre-wash oil** — OGX Coconut Oil, OGX Argan Oil, (pure coconut oil is science-backed per Rele & Mohile 2003)
-2. **Pre-shampoo treatment** — Olaplex 3, Garnier Hair Filler Pre-Shampoo, OGX Bond Protein Pre-Shampoo, L'Oreal Bond Repair Pre-Shampoo
-3. **Shampoo** — EverPure Bond Repair, Dove Bond Strength, Dove Intensive Repair
-4. **Clarify** — EverPure Clarifying Shampoo only
-5. **Conditioner** — Garnier Color Repair, EverPure Bond Repair Cond, Dove Bond Strength Cond, Dove Intensive Repair Cond
-6. **Glossing/Rinse** — Wonder Water, Glossing Lamination Mask, Elvive 5-Minute Gloss Mask (own category — quick treatments that aren't conditioning masks)
-7. **Deep condition** — Dove Bond Strength Mask
-8. **Leave-in** — L'Oreal 21-in-1 Spray, Pantene Bond Spray
-9. **Heat protection** — Marc Anthony Grow Long Shield
-10. **Styling** — NYM Curl Talk Gel, Got2b Gel
-11. **Finishing** — Garnier Filler Serum, Dove 10-in-1 Serum, OGX Coconut Oil, OGX Argan Oil
+### Design Decisions Made
+- Product intelligence = full system, not just a mapping fix
+- Each product needs: mechanism (what it physically does), cumulative vs single-use, interactions (enables/blocks), outcome contribution (shine, definition, volume, strength, smoothness)
+- Offline-first with online product discovery for new additions
+- Both passive (post-wash analysis) and active (pre-wash recommendations) intelligence surfacing
+- The 11-step Abbey Yung mapping is still the reference for logging steps, but products are grouped by mechanism-based phases in the UI
 
-**Multi-category products:**
-- OGX oils: Pre-wash oil + Finishing
-- Garnier Filler Serum: Leave-in + Finishing
-- Dove 10-in-1 Serum: Leave-in + Finishing
-
-**Open design question:** How to present 11 steps without being tedious. Options:
-- Show all 11 but pre-select the "usual" ones based on last wash (tap to deselect what you skipped)
-- Collapse into phases (Pre-wash | Wash | Post-wash | Style) with products under each
-- Progressive: show the steps you typically do, "Add step" for unusual ones
-
-### Files Changed
-- `hair-routine/index.html` — Landing redesign, quick-log rebuild (3 iterations), history log button, product categorization fix
-- `hair-routine/NEXT_STEPS.md` — Session 9 complete, Session 10 plan
-- `hair-routine/SESSION_HANDOFF.md` — This file
-- `hair-routine/.kiro/steering/session-context.md` — Status updated
+### Open Questions for Next Session (spec drafting)
+1. **Online product discovery mechanism:** AI-assisted (needs backend/API — breaks current architecture) vs structured form (pure client-side, more user effort) vs hybrid? This is the biggest architectural decision.
+2. **Product data model specifics:** What fields exactly? How granular are mechanisms? (e.g., "seals cuticle" vs "deposits aminosilicone film on cuticle surface via electrostatic attraction")
+3. **Interaction rules:** Hardcoded knowledge graph? Or derivable from mechanism tags? (e.g., "anything that coats the shaft blocks anything that needs to penetrate")
+4. **Recommendation confidence:** How much data before the app recommends actively? Same thresholds as current feedback engine (5+ events)?
+5. **Migration path:** How does this integrate with existing inventory (24 products in schema v3)? Additive metadata or restructure?
 
 ## Current State
 
 ### What's Live (GitHub Pages)
 - Landing: single recommended action + "Something else?" toggle
-- Quick-log: multi-select activities with inline products (CATEGORIZATION IS WRONG — needs Session 11 fix)
+- Quick-log: multi-select activities with inline products (**CATEGORIZATION STILL WRONG** — not fixed this session)
 - Product inventory: 24 products, tier management, CRUD
 - Compensation card + gel gap with inventory integration
 - **URL:** https://mandy-apperkeeper.github.io/hair-routine/
 
 ### What's Broken / Needs Fixing
 - ACTIVITY_PRODUCTS mapping is incorrect — products in wrong categories
-- Need to implement the 11-step Abbey Yung mapping properly
-- Need to decide on UX pattern for presenting many steps without tedium
+- This will be fixed as part of the Product Intelligence System spec, not as a standalone patch
 
 ## What's Next
 
-1. **Session 11: Fix quick-log product mapping** — Implement the corrected step mapping, decide on UX pattern (pre-select usual, collapse into phases, or progressive), get Mandy's confirmation on step list
-2. **Session 12: Service worker + PWA** — Offline support for bathroom use
-3. **Session 13: v1-v2 convergence** — Audit and merge
+1. **Session 12: Draft Product Intelligence System spec** — Answer the open questions above, then draft a formal spec with requirements and tasks. This is complex enough for a spec (touches data model, inventory, quick-log, feedback engine, walkthrough recommendations, potentially needs a backend).
+2. **After spec:** Implement in phases — data model first, then logging UI, then passive intelligence, then active recommendations, then online discovery last.
+3. **Service worker + PWA** — Still needed but deferred until after product intelligence lands (it affects what gets cached).
 
 ## Decisions Made (New This Session)
-- Product inventory stored as full list in localStorage (not sparse overlay)
-- Landing page guides with single recommendation, alternatives hidden behind toggle
-- Quick-log uses multi-select activities with inline product selection
-- Clarify auto-detected from product selection (no separate toggle)
-- Products CAN appear in multiple activity categories
-- Abbey Yung 11-step method is the reference model for logging (not a simplified 4-category version)
-- The goal of logging is data gathering for correlations, not minimal taps
+- Product intelligence is a full system redesign, not a quick mapping fix
+- Intelligence surfaces both passively (post-wash) and actively (pre-wash)
+- Offline-first with online discovery for new products
+- Products need mechanism, interaction, and outcome metadata
+- This warrants a formal spec before implementation begins
 
 ## Decisions Made (Cumulative, Still Active)
 - Use amodimethicone conditioner EVERY wash. Dove is "using-up" only — never recommend it.
@@ -96,8 +68,12 @@ From Phase 1 research + consultation + Mandy's feedback:
 - Schema version 3: WashEvent includes treatments, dewPoint. State includes inventory.
 - Mandy owns NYM Curl Talk gel (confirmed May 10, 2026).
 - Inventory tiers: Primary Rotation, Supporting Cast, Use-Up Queue.
+- Abbey Yung 11-step method is the reference model for logging.
+- The goal of logging is data gathering for correlations, not minimal taps.
+- Products CAN appear in multiple activity categories.
+- Phase-based UI grouping for quick-log (Pre-wash | Wash | Post-wash | Style).
 
 ## Repo State
 - **Branch:** main
-- **Remote:** origin/main in sync
+- **Remote:** origin/main in sync (no changes this session)
 - **Pages URL:** https://mandy-apperkeeper.github.io/hair-routine/
