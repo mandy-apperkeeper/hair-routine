@@ -23,10 +23,16 @@
 
 **8C. Gel gap reminder** — Persistent card shown when no PQ-69 gel has been used. Dismissable for 7 days, then resurfaces. Disappears permanently once gel is used in a wash.
 
+**Note:** Mandy confirmed she HAS the NYM Curl Talk gel. The gel gap reminder will disappear after her first curly day walkthrough with it. The proper fix is the inventory feature (Session 9).
+
+### Sky Guide Design Research
+
+Analyzed Sky Guide's UX for principles applicable to the product inventory feature. Added 7 design principles to the steering file with an efficacy test: evaluate after Session 9 whether they reduced friction vs. standard CRUD.
+
 ### Files Changed
 - `hair-routine/index.html` — CompensationEngine module, compensation card HTML/CSS, renderLanding wiring
 - `hair-routine/.kiro/specs/adaptive-hair-routine/requirements.md` — Requirement 8 rewritten
-- `hair-routine/.kiro/steering/session-context.md` — Created (new)
+- `hair-routine/.kiro/steering/session-context.md` — Created + updated with design principles
 - `hair-routine/NEXT_STEPS.md` — Sessions 7+8 marked complete
 - `hair-routine/IMPLEMENTATION_IMPROVEMENTS.md` — Item 1 status updated
 - `hair-routine/SESSION_HANDOFF.md` — This file
@@ -78,10 +84,15 @@
 
 ## What's Next (Priority Order)
 
-1. **Wire compensation logic into recommendation card (Session 8)** — Use Phase 5 findings to generate contextual statements ("Using X today because Y. Z compensates at step N.")
-2. **Product inventory spec (Session 9)** — Data model designed (session 4), research complete, ready to spec
-3. **Service worker for v1 (Session 10)** — v2 has `hair-sw.js` but v1 (`index.html`) has no offline support yet
-4. **v1→v2 convergence planning (Session 11)** — Audit, decide switchover strategy, execute
+1. **Product inventory spec + build (Session 9)** — Data model designed (session 4), research complete, Sky Guide design principles ready to apply
+2. **Service worker for v1 (Session 10)** — v2 has `hair-sw.js` but v1 (`index.html`) has no offline support yet
+3. **v1→v2 convergence planning (Session 11)** — Audit, decide switchover strategy, execute
+
+### Session 9 Pending Decisions (proposed answers, need confirmation)
+
+1. **Storage key:** Same localStorage key (add `inventory: []` to existing state, bump to schema v3). One export = full backup.
+2. **Pre-population:** Pre-populate with known products from consultation handoff. Mandy subtracts what she doesn't have. NYM gel included (confirmed owned).
+3. **Scope:** Add/remove + tier assignment + using-up status. Skip "bottles remaining estimate" for v1.
 
 ## Decisions Made (Cumulative, Still Active)
 
@@ -92,17 +103,16 @@
 - Treatments are separate from products in the data model (clarify, protein, deep-condition, bond-repair).
 - Dew point is the weather metric (not relative humidity). Auto-detect, don't ask.
 - Schema version 2: WashEvent includes `treatments: string[]` and `dewPoint: number | null`.
+- Mandy owns NYM Curl Talk gel (confirmed May 10, 2026).
 
 ## Open Questions
 
-- Does the product inventory live in localStorage alongside wash events, or separate storage key?
-- Should discovery/wishlist products be pre-populated from the consultation handoff, or start empty?
 - When does v2 (`hair-routine-v2.html`) replace v1 (`index.html`) as the live app? What's the switchover criteria?
 
 ## Repo State
 
 - **Branch:** main
-- **Last commit:** `5e2aa7b` — docs(research): add QC scorecard to Phase 2 formulation position rules
-- **Uncommitted:** None
+- **Last commit:** `3fdc8f4` — docs(steering): add Sky Guide design principles for inventory feature evaluation
+- **Uncommitted:** None (this handoff file will be committed next)
 - **Remote:** origin/main in sync with HEAD
 - **Pages URL:** https://mandy-apperkeeper.github.io/hair-routine/
