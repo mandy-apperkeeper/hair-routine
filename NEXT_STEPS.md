@@ -29,25 +29,26 @@
 
 The highest-value feature that's fully ready to build.
 
-### 8A. Define compensation data structure
-- **What:** Encode the Phase 5 compensation table as a JS data structure in `index.html`
-- **Content:** Product → function lost → compensating product → compensating step → gap status
-- **Format:** Array of compensation rules, keyed by product ID
+### 8A. Define compensation data structure ✅
+- Encoded Phase 5 compensation table as JS data structure in `index.html`
+- 5 compensation rules: Dove Bond Strength, Dove Intensive Repair, skip-protein (14+ days overdue),
+  skip-olaplex (14+ days overdue), Garnier serum alternative
+- Removed Wonder Water rule (would fire every wash, no actionable info)
 
-### 8B. Wire into recommendation card
-- **What:** When a wash event is logged (or on landing screen load), check which products were used, look up compensation rules, generate contextual statement
-- **Examples:**
-  - "Using Dove today. L'Oréal 21-in-1 at step 5 compensates — no gap."
-  - "No pre-shampoo today. Protein fill paused — acceptable for one wash."
-  - "No gel yet — humidity barrier is an uncompensated gap."
-- **Touches:** `index.html` (recommendation card rendering + compensation data)
+### 8B. Wire into recommendation card ✅
+- Compensation card renders on landing screen between insight card and recommendation card
+- Shows contextual statements based on last wash event's products
+- Green "✓ No gap" status for compensated scenarios
+- Orange "⚠️" status for uncompensated gaps
+- Uses escapeHtml for all user-facing text
 
-### 8C. Persistent gel gap reminder
-- **What:** Until NYM Curl Talk gel is purchased, show a subtle persistent note: "Your one uncompensated gap: humidity barrier (PQ-69 gel). ~$8 to complete the system."
-- **Dismissable:** Yes, but resurfaces weekly
-- **Touches:** `index.html` (landing screen)
+### 8C. Persistent gel gap reminder ✅
+- Shows when no gel has ever been used in wash history
+- Dismissable ("Dismiss for a week" button)
+- Resurfaces after 7 days via localStorage timestamp
+- Disappears permanently once a wash event includes gel
 
-**Effort total:** ~1 full session (data structure + rendering + edge cases)
+**Status: Complete.**
 
 ---
 

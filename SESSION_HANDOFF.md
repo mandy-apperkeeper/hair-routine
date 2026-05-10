@@ -1,4 +1,4 @@
-# Hair Routine — Session Handoff (May 10, 2026, Session 7)
+# Hair Routine — Session Handoff (May 10, 2026, Session 7+8)
 
 ## What Happened This Session
 
@@ -8,13 +8,28 @@
 
 **7B. Created steering file** — `hair-routine/.kiro/steering/session-context.md` with `inclusion: always`. Covers tech stack, key files, architecture, established decisions, aesthetic, anti-patterns, and current status. Future sessions will auto-load this context.
 
-**7C. Verified auto dew point is complete** — No code changes needed. The walkthrough already skips the manual selector when dew point is auto-detected. Manual selector only shows on failure. On step 1, the app shows a subtle info line ("💧 72°F dew point · humid"). The quick-log form has no humidity selector (past events don't need it). Marked Item 1 as fully done in IMPLEMENTATION_IMPROVEMENTS.md.
+**7C. Verified auto dew point is complete** — No code changes needed. Implementation already matches target behavior. Marked Item 1 as fully done.
+
+### Session 8: Compensation Logic (complete)
+
+**8A. CompensationEngine module** — Added between FeedbackEngine and WalkthroughEngine. Encodes Phase 5 research as 5 compensation rules:
+- Dove Bond Strength → L'Oréal 21-in-1 compensates (no gap)
+- Dove Intensive Repair → L'Oréal 21-in-1 compensates (no gap)
+- Protein overdue (14+ days) → uncompensated gap warning
+- Olaplex overdue (14+ days) → uncompensated gap warning
+- Garnier Serum alternative → different strengths, both valid
+
+**8B. Compensation card on landing screen** — Renders between insight card and recommendation card. Shows contextual statements based on last wash event's products. Green status for compensated, orange for gaps.
+
+**8C. Gel gap reminder** — Persistent card shown when no PQ-69 gel has been used. Dismissable for 7 days, then resurfaces. Disappears permanently once gel is used in a wash.
 
 ### Files Changed
+- `hair-routine/index.html` — CompensationEngine module, compensation card HTML/CSS, renderLanding wiring
 - `hair-routine/.kiro/specs/adaptive-hair-routine/requirements.md` — Requirement 8 rewritten
 - `hair-routine/.kiro/steering/session-context.md` — Created (new)
-- `hair-routine/NEXT_STEPS.md` — Session 7 marked complete
-- `hair-routine/IMPLEMENTATION_IMPROVEMENTS.md` — Item 1 status updated to Done
+- `hair-routine/NEXT_STEPS.md` — Sessions 7+8 marked complete
+- `hair-routine/IMPLEMENTATION_IMPROVEMENTS.md` — Item 1 status updated
+- `hair-routine/SESSION_HANDOFF.md` — This file
 
 ## Current State
 
@@ -22,6 +37,7 @@
 - `index.html` — quick-log form with multi-select treatments, emoji rating, lane-specific products, refresh lane
 - Auto dew point detection (Open-Meteo) with manual fallback
 - Smart recommendation card on landing screen
+- **Compensation card** — contextual product statements based on last wash + gel gap reminder
 - Status bar tracks: last wash, last clarify, last protein, last deep condition, seal state
 - Treatment badges on history event cards
 - **URL:** https://mandy-apperkeeper.github.io/hair-routine/
