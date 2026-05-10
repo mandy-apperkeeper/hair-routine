@@ -5813,8 +5813,9 @@
                     clearInterval(updateDisplay);
                     return;
                 }
-                var mins = Math.floor(remaining / 60);
-                var secs = remaining % 60;
+                var totalSecs = Math.floor(remaining);
+                var mins = Math.floor(totalSecs / 60);
+                var secs = totalSecs % 60;
                 var timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
                 btn.textContent = '⏱ ' + timeStr;
 
