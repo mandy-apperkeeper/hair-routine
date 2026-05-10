@@ -4029,14 +4029,14 @@
         }
 
         function renderWalkthroughStep() {
-            var step = WalkthroughEngine.getCurrentStep();
-            if (!step) {
+            var steps = WalkthroughEngine.getStepsForLane(selectedLane, selectedHumidity);
+            if (!steps || steps.length === 0) {
                 renderCompletion();
                 return;
             }
 
-            var progress = WalkthroughEngine.getProgress();
             var walkSection = document.getElementById('walkthrough');
+            var inv = StateManager.getState().inventory || [];
 
             // Stop any existing timer update interval
             if (timerUpdateInterval) {
@@ -4045,186 +4045,214 @@
             }
 
             var html = '';
-            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">';
+
+            // Header bar
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;position:sticky;top:0;background:var(--bg);padding:0.5rem 0;z-index:10;">';
             html += '<button class="btn-secondary" id="wt-back-home" aria-label="Back to Home">← Home</button>';
-            html += '<span style="color:var(--muted);font-size:0.82rem;">Step ' + progress.current + ' of ' + progress.total + '</span>';
+            html += '<button class="btn-secondary" id="wt-wake-lock" aria-label="Keep screen on" style="font-size:0.75rem;padding:0.4rem 0.6rem;">☀️ Screen on</button>';
             html += '</div>';
 
-            // Conditions indicator (shows auto-detected dew point on first step)
-            if (progress.current === 1 && detectedDewPoint !== null) {
+            // Conditions indicator
+            if (detectedDewPoint !== null) {
                 var condIcon = selectedHumidity === 'dry' ? '☀️' : (selectedHumidity === 'humid' ? '💧' : '🌤️');
-                html += '<p style="color:var(--muted);font-size:0.75rem;text-align:center;margin-bottom:0.5rem;">' + condIcon + ' ' + detectedDewPoint + '°F dew point · ' + selectedHumidity + '</p>';
+                html += '<p style="color:var(--muted);font-size:0.75rem;text-align:center;margin-bottom:0.75rem;">' + condIcon + ' ' + detectedDewPoint + '°F dew point · ' + selectedHumidity + '</p>';
             }
 
-            // Phase label
-            html += '<p class="phase-label">' + (step.phase || '') + '</p>';
+            // Render all steps
+            var currentPhase = '';
+            for (var i = 0; i < steps.length; i++) {
+                var step = steps[i];
 
-            // Step card
-            html += '<div class="card">';
-            html += '<h3 style="color:var(--text);font-size:1.05rem;margin-bottom:0.5rem;">' + escapeHtml(step.title) + '</h3>';
-
-            // Show product name from inventory if productId is set
-            if (step.productId) {
-                var inv = StateManager.getState().inventory || [];
-                var matchedProduct = inv.find(function(p) { return p.id === step.productId; });
-                if (matchedProduct) {
-                    html += '<p style="color:var(--gold);font-size:0.9rem;margin-bottom:0.5rem;font-weight:600;">' + escapeHtml(matchedProduct.brand + ' ' + matchedProduct.name) + '</p>';
+                // Phase header
+                if (step.phase && step.phase !== currentPhase) {
+                    currentPhase = step.phase;
+                    html += '<p class="phase-label">' + escapeHtml(currentPhase) + '</p>';
                 }
-            }
 
-            html += '<p style="margin-bottom:0.75rem;">' + escapeHtml(step.instruction) + '</p>';
-
-            if (step.scienceBadge) {
-                html += '<span class="badge badge-green badge-verified">' + escapeHtml(step.scienceBadge) + '</span>';
-            }
-            if (step.tip) {
-                html += '<div class="tip" style="margin-top:0.75rem;"><strong>Tip:</strong> ' + escapeHtml(step.tip) + '</div>';
-            }
-
-            // Timer
-            if (step.timer) {
-                var mins = Math.floor(step.timer.duration / 60);
-                var secs = step.timer.duration % 60;
-                var timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
-                html += '<div class="timer-box" id="timer-box">';
-                html += '<p class="timer-label">' + escapeHtml(step.timer.label) + '</p>';
-                html += '<p class="timer-display" id="timer-display" aria-live="assertive" aria-atomic="true">' + timeStr + '</p>';
-                html += '<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">';
-                html += '<button class="timer-btn timer-btn-start" id="timer-start">Start</button>';
-                html += '<button class="timer-btn timer-btn-stop" id="timer-pause" style="display:none;">Pause</button>';
-                html += '<button class="timer-btn timer-btn-reset" id="timer-reset">Reset</button>';
+                // Step card
+                html += '<div class="card" style="margin-bottom:0.75rem;">';
+                html += '<div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:0.3rem;">';
+                html += '<span style="color:var(--muted);font-size:0.75rem;font-weight:600;">' + step.number + '</span>';
+                html += '<h3 style="color:var(--text);font-size:1rem;margin:0;">' + escapeHtml(step.title) + '</h3>';
                 html += '</div>';
+
+                // Product name
+                if (step.productId) {
+                    var matchedProduct = inv.find(function(p) { return p.id === step.productId; });
+                    if (matchedProduct) {
+                        html += '<p style="color:var(--gold);font-size:0.85rem;margin-bottom:0.3rem;font-weight:600;">' + escapeHtml(matchedProduct.brand + ' ' + matchedProduct.name) + '</p>';
+                    }
+                }
+
+                html += '<p style="font-size:0.85rem;margin-bottom:0.5rem;">' + escapeHtml(step.instruction) + '</p>';
+
+                if (step.scienceBadge) {
+                    html += '<span class="badge badge-green badge-verified" style="font-size:0.65rem;">' + escapeHtml(step.scienceBadge) + '</span>';
+                }
+                if (step.tip) {
+                    html += '<div class="tip" style="margin-top:0.5rem;font-size:0.8rem;"><strong>Tip:</strong> ' + escapeHtml(step.tip) + '</div>';
+                }
+
+                // Inline timer
+                if (step.timer) {
+                    var mins = Math.floor(step.timer.duration / 60);
+                    var secs = step.timer.duration % 60;
+                    var timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                    html += '<div class="timer-box" id="timer-box-' + i + '" style="margin-top:0.5rem;padding:0.5rem;">';
+                    html += '<div style="display:flex;align-items:center;gap:0.75rem;justify-content:center;">';
+                    html += '<span class="timer-display" id="timer-display-' + i + '" style="font-size:1.1rem;">' + timeStr + '</span>';
+                    html += '<button class="timer-btn timer-btn-start" data-timer-idx="' + i + '" data-duration="' + step.timer.duration + '" style="padding:0.3rem 0.6rem;font-size:0.8rem;">Start</button>';
+                    html += '<button class="timer-btn timer-btn-stop" id="timer-pause-' + i + '" style="display:none;padding:0.3rem 0.6rem;font-size:0.8rem;">Pause</button>';
+                    html += '<button class="timer-btn timer-btn-reset" data-timer-idx="' + i + '" data-duration="' + step.timer.duration + '" style="padding:0.3rem 0.6rem;font-size:0.8rem;">Reset</button>';
+                    html += '</div>';
+                    html += '</div>';
+                }
+
                 html += '</div>';
             }
 
-            html += '</div>';
-
-            // Navigation buttons
-            html += '<div style="display:flex;gap:0.75rem;margin-top:1.25rem;">';
-            if (progress.current > 1) {
-                html += '<button class="btn-secondary" id="wt-back" style="flex:1;" aria-label="Previous step">← Back</button>';
-            }
-            html += '<button class="btn-primary" id="wt-next" style="flex:1;margin-bottom:0;" aria-label="' + (progress.current === progress.total ? 'Finish' : 'Next step') + '">' + (progress.current === progress.total ? 'Finish' : 'Next →') + '</button>';
+            // Done button at bottom
+            html += '<div style="margin-top:1.5rem;">';
+            html += '<button class="btn-primary" id="wt-done" style="width:100%;" aria-label="Finish walkthrough">Done ✓</button>';
             html += '</div>';
 
             walkSection.innerHTML = html;
 
-            // Wire navigation
-            var backHomeBtn = document.getElementById('wt-back-home');
-            if (backHomeBtn) {
-                backHomeBtn.addEventListener('click', function() {
-                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                    showView('landing');
-                    document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
-                    renderLanding();
-                });
-            }
-
-            var backBtn = document.getElementById('wt-back');
-            if (backBtn) {
-                backBtn.addEventListener('click', function() {
-                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                    WalkthroughEngine.back();
-                    renderWalkthroughStep();
-                });
-            }
-
-            var nextBtn = document.getElementById('wt-next');
-            if (nextBtn) {
-                nextBtn.addEventListener('click', function() {
-                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                    var nextStep = WalkthroughEngine.next();
-                    if (nextStep === null) {
-                        renderCompletion();
-                    } else {
-                        renderWalkthroughStep();
-                    }
-                });
-            }
-
-            // Wire timer
-            if (step.timer) {
-                wireTimer(step.timer.duration);
-            }
-        }
-
-        function wireTimer(duration) {
-            var display = document.getElementById('timer-display');
-            var startBtn = document.getElementById('timer-start');
-            var pauseBtn = document.getElementById('timer-pause');
-            var resetBtn = document.getElementById('timer-reset');
-            var timerBox = document.getElementById('timer-box');
-
-            currentTimerId = null;
-
-            function formatTime(seconds) {
-                var m = Math.floor(seconds / 60);
-                var s = Math.floor(seconds % 60);
-                return m + ':' + (s < 10 ? '0' : '') + s;
-            }
-
-            function updateDisplay() {
-                if (currentTimerId === null) return;
-                var remaining = TimerManager.getRemaining(currentTimerId);
-                display.textContent = formatTime(remaining);
-                var state = TimerManager.getState(currentTimerId);
-                if (state === 'completed') {
-                    display.style.color = 'var(--green)';
-                    startBtn.style.display = 'none';
-                    pauseBtn.style.display = 'none';
-                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                }
-            }
-
-            startBtn.addEventListener('click', function() {
-                var state = currentTimerId !== null ? TimerManager.getState(currentTimerId) : 'idle';
-                if (state === 'paused') {
-                    TimerManager.resume(currentTimerId);
-                    startBtn.style.display = 'none';
-                    pauseBtn.style.display = '';
-                } else {
-                    currentTimerId = TimerManager.start(duration, function() {
-                        // Timer completed
-                        display.style.color = 'var(--green)';
-                        display.textContent = '0:00';
-                        startBtn.style.display = 'none';
-                        pauseBtn.style.display = 'none';
-                        // Vibrate if available
-                        var settings = StateManager.getState().settings || {};
-                        if (settings.vibrationEnabled !== false && navigator.vibrate) {
-                            navigator.vibrate([200, 100, 200]);
-                        }
-                    });
-                    startBtn.style.display = 'none';
-                    pauseBtn.style.display = '';
-                }
-                // Start display update interval
-                if (timerUpdateInterval) clearInterval(timerUpdateInterval);
-                timerUpdateInterval = setInterval(updateDisplay, 250);
+            // Wire back-home button
+            document.getElementById('wt-back-home').addEventListener('click', function() {
+                if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+                releaseWakeLock();
+                showView('landing');
+                document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
+                renderLanding();
             });
 
-            pauseBtn.addEventListener('click', function() {
-                if (currentTimerId !== null) {
-                    TimerManager.pause(currentTimerId);
-                    startBtn.textContent = 'Resume';
+            // Wire done button
+            document.getElementById('wt-done').addEventListener('click', function() {
+                if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+                releaseWakeLock();
+                renderCompletion();
+            });
+
+            // Wire wake lock button
+            var wakeLockBtn = document.getElementById('wt-wake-lock');
+            wakeLockBtn.addEventListener('click', function() {
+                toggleWakeLock(wakeLockBtn);
+            });
+
+            // Wire all timer start/pause/reset buttons
+            walkSection.querySelectorAll('.timer-btn-start').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = parseInt(btn.getAttribute('data-timer-idx'));
+                    var duration = parseInt(btn.getAttribute('data-duration'));
+                    var display = document.getElementById('timer-display-' + idx);
+                    var pauseBtn = document.getElementById('timer-pause-' + idx);
+
+                    var state = currentTimerId !== null ? TimerManager.getState(currentTimerId) : 'idle';
+                    if (state === 'paused') {
+                        TimerManager.resume(currentTimerId);
+                        btn.style.display = 'none';
+                        pauseBtn.style.display = '';
+                    } else {
+                        currentTimerId = TimerManager.start(duration, function() {
+                            display.style.color = 'var(--green)';
+                            display.textContent = '0:00 ✓';
+                            btn.style.display = 'none';
+                            pauseBtn.style.display = 'none';
+                            var settings = StateManager.getState().settings || {};
+                            if (settings.vibrationEnabled !== false && navigator.vibrate) {
+                                navigator.vibrate([200, 100, 200]);
+                            }
+                        });
+                        btn.style.display = 'none';
+                        pauseBtn.style.display = '';
+                    }
+
+                    if (timerUpdateInterval) clearInterval(timerUpdateInterval);
+                    timerUpdateInterval = setInterval(function() {
+                        if (currentTimerId === null) return;
+                        var remaining = TimerManager.getRemaining(currentTimerId);
+                        display.textContent = Math.floor(remaining / 60) + ':' + (remaining % 60 < 10 ? '0' : '') + Math.floor(remaining % 60);
+                        if (TimerManager.getState(currentTimerId) === 'completed') {
+                            if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+                        }
+                    }, 250);
+                });
+            });
+
+            walkSection.querySelectorAll('.timer-btn-stop').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = btn.id.replace('timer-pause-', '');
+                    var startBtn = walkSection.querySelector('.timer-btn-start[data-timer-idx="' + idx + '"]');
+                    if (currentTimerId !== null) {
+                        TimerManager.pause(currentTimerId);
+                        startBtn.textContent = 'Resume';
+                        startBtn.style.display = '';
+                        btn.style.display = 'none';
+                        if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
+                    }
+                });
+            });
+
+            walkSection.querySelectorAll('.timer-btn-reset').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = parseInt(btn.getAttribute('data-timer-idx'));
+                    var duration = parseInt(btn.getAttribute('data-duration'));
+                    var display = document.getElementById('timer-display-' + idx);
+                    var startBtn = walkSection.querySelector('.timer-btn-start[data-timer-idx="' + idx + '"]');
+                    var pauseBtn = document.getElementById('timer-pause-' + idx);
+                    if (currentTimerId !== null) {
+                        TimerManager.reset(currentTimerId, duration);
+                    }
+                    display.textContent = Math.floor(duration / 60) + ':' + (duration % 60 < 10 ? '0' : '') + Math.floor(duration % 60);
+                    display.style.color = '';
+                    startBtn.textContent = 'Start';
                     startBtn.style.display = '';
                     pauseBtn.style.display = 'none';
                     if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                    updateDisplay();
-                }
+                });
             });
+        }
 
-            resetBtn.addEventListener('click', function() {
-                if (currentTimerId !== null) {
-                    TimerManager.reset(currentTimerId, duration);
-                }
-                display.textContent = formatTime(duration);
-                display.style.color = '';
-                startBtn.textContent = 'Start';
-                startBtn.style.display = '';
-                pauseBtn.style.display = 'none';
-                if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-            });
+        // Wake Lock API
+        var wakeLock = null;
+
+        function toggleWakeLock(btn) {
+            if (wakeLock !== null) {
+                releaseWakeLock();
+                btn.textContent = '☀️ Screen on';
+                btn.style.background = '';
+            } else {
+                requestWakeLock(btn);
+            }
+        }
+
+        function requestWakeLock(btn) {
+            if ('wakeLock' in navigator) {
+                navigator.wakeLock.request('screen').then(function(lock) {
+                    wakeLock = lock;
+                    if (btn) {
+                        btn.textContent = '🔒 Screen locked on';
+                        btn.style.background = 'rgba(122, 184, 168, 0.2)';
+                    }
+                    wakeLock.addEventListener('release', function() {
+                        wakeLock = null;
+                        if (btn) {
+                            btn.textContent = '☀️ Screen on';
+                            btn.style.background = '';
+                        }
+                    });
+                }).catch(function(err) {
+                    console.warn('Wake Lock failed:', err);
+                });
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+            }
         }
 
         // ===== Completion Screen =====
