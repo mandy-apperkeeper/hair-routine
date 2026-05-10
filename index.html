@@ -5723,18 +5723,50 @@
             }
             if (!step) return;
 
-            document.getElementById('info-title').textContent = step.productName;
+            // Map science badges to Learn section card IDs
+            var badgeToLearnId = {
+                'CORTEX PENETRATION': 'learn-coconut-oil',
+                'CERAMIDE + AMODIMETHICONE': 'learn-amodimethicone',
+                'BOND REPAIR': 'learn-bond-repair',
+                'LAMELLAR CONDITIONING': 'learn-lamellar',
+                'PQ-69 HUMIDITY BARRIER': 'learn-pq69',
+                'PQ-37 BARRIER': 'learn-pq69',
+                'POLYSILICONE-29 HEAT SEAL': 'learn-polysilicone29',
+                'HEAT PROTECTANT': 'learn-heat-damage'
+            };
+
+            document.getElementById('info-title').textContent = step.inventoryName || step.productName;
             document.getElementById('info-mechanism').textContent = step.instruction;
             document.getElementById('info-reason').textContent = step.tip || '';
 
             var badgeHtml = '';
             if (step.scienceBadge) {
                 badgeHtml = '<span class="plan-badge plan-badge-science">' + escapeHtml(step.scienceBadge) + '</span>';
+                var learnId = badgeToLearnId[step.scienceBadge];
+                if (learnId) {
+                    badgeHtml += '<br><button id="info-learn-link" style="margin-top:0.75rem;background:none;border:none;color:var(--gold);font-size:0.85rem;cursor:pointer;text-decoration:underline;min-height:48px;">Learn more about this →</button>';
+                }
             }
             document.getElementById('info-badge').innerHTML = badgeHtml;
 
             var popup = document.getElementById('info-popup');
             popup.classList.add('visible');
+
+            // Wire learn link
+            var learnLink = document.getElementById('info-learn-link');
+            if (learnLink && step.scienceBadge) {
+                var targetId = badgeToLearnId[step.scienceBadge];
+                learnLink.onclick = function() {
+                    popup.classList.remove('visible');
+                    showView('learn');
+                    document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
+                    document.querySelector('nav button[data-view="learn"]').setAttribute('aria-current', 'true');
+                    setTimeout(function() {
+                        var card = document.getElementById(targetId);
+                        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                };
+            }
 
             document.getElementById('info-close').onclick = function() { popup.classList.remove('visible'); };
             popup.onclick = function(e) { if (e.target === popup) popup.classList.remove('visible'); };
@@ -6913,52 +6945,70 @@
             // === How Your Routine Works ===
             html += '<h2>How Your Routine Works</h2>';
 
-            html += '<div class="card"><h3>Amodimethicone (Conditioner)</h3>';
+            html += '<div class="card" id="learn-amodimethicone"><h3>Amodimethicone (Conditioner)</h3>';
             html += '<p>A modified silicone that selectively binds to damaged areas of the cuticle. Unlike dimethicone, it doesn\'t coat uniformly — it fills gaps in weathered cuticle layers (your hair has 8-10 cuticle layers). Cumulative binding means each wash adds more protection.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Bhushan, B. (2010). Biophysics of Human Hair. Springer.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Ceramide R (Conditioner)</h3>';
+            html += '<div class="card" id="learn-ceramide"><h3>Ceramide R (Conditioner)</h3>';
             html += '<p>Intercellular lipid that repairs the cement between cuticle cells. Works synergistically with amodimethicone — ceramide repairs the structure while amodimethicone seals the surface. Found in Garnier Color Repair conditioner.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Robbins, C. (2012). Chemical and Physical Behavior of Human Hair. 5th ed. Springer.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>PQ-69 (Gel)</h3>';
+            html += '<div class="card" id="learn-pq69"><h3>PQ-69 (Gel)</h3>';
             html += '<p>Polyquaternium-69 forms a humidity-resistant film around each curl clump. Creates the "gel cast" that protects curl definition during drying. Once dry, scrunch to break the cast and reveal soft, defined curls. Provides up to 72 hours humidity resistance.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: BASF Care Chemicals technical data sheet, Luvigel Supreme (PQ-69).</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Polysilicone-29 (Blowout Spray)</h3>';
+            html += '<div class="card" id="learn-polysilicone29"><h3>Polysilicone-29 (Blowout Spray)</h3>';
             html += '<p>Heat-activated silicone that cross-links at 140°C+ to form a durable seal. Unlike water-soluble silicones, this persists through 3+ washes until clarified. Blocks humidity penetration and provides thermal protection up to 230°C. Found in Marc Anthony Blowout Spray.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Dow Corning (now Dow) technical literature on heat-activated polysilicones.</p>';
             html += '</div>';
 
+            html += '<div class="card" id="learn-coconut-oil"><h3>Coconut Oil Pre-Wash (Cortex Penetration)</h3>';
+            html += '<p>Coconut oil is the only common oil proven to penetrate the hair cortex. Its lauric acid has high affinity for hair protein, allowing it to reduce protein loss during washing by up to 39%. Applied to dry hair before shampooing, it prevents hygral fatigue (repeated swelling/deswelling damage). Argan oil does NOT penetrate — it stays in the outer 5µm.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Rele, A.S. & Mohile, R.B. (2003). Effect of mineral oil, sunflower oil, and coconut oil on prevention of hair damage. J. Cosmet. Sci.</p>';
+            html += '</div>';
+
+            html += '<div class="card" id="learn-bond-repair"><h3>Bond Repair (Bis-Aminopropyl Dimethicone)</h3>';
+            html += '<p>Disulfide bonds between keratin chains break from heat, UV, and chemical processing. Bond repair ingredients (like bis-aminopropyl dimethicone in Olaplex/Pantene) reconnect these bonds. Applied after shampoo on clean wet hair, sealed in by conditioner. Unlike protein treatments, this repairs the internal structure rather than coating the surface.</p>';
+            html += '<span class="badge badge-verified">VERIFIED</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Olaplex patent literature; Pantene formulation data (bis-aminopropyl dimethicone).</p>';
+            html += '</div>';
+
+            html += '<div class="card" id="learn-lamellar"><h3>Lamellar Conditioning (Wonder Water)</h3>';
+            html += '<p>Lamellar technology uses liquid crystal structures that deposit uniformly on wet hair cuticle in seconds. Unlike traditional conditioners that need time to adsorb, lamellar products coat instantly and evenly. Provides smoothing without weight. Best applied to freshly rinsed hair before styling products.</p>';
+            html += '<span class="badge badge-best-practice">BEST PRACTICE</span>';
+            html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: L\'Oréal R&D (2019). Lamellar conditioning technology white paper.</p>';
+            html += '</div>';
+
             // === What Can Go Wrong ===
             html += '<h2 style="margin-top:1.5rem;">What Can Go Wrong</h2>';
 
-            html += '<div class="card"><h3>Heat Damage Threshold (140°C)</h3>';
+            html += '<div class="card" id="learn-heat-damage"><h3>Heat Damage Threshold (140°C)</h3>';
             html += '<p>Above 140°C without protection, keratin protein denatures irreversibly. The alpha-helix structure unwinds and cannot be repaired — only cut off. Always use heat protectant (L\'Oréal 21-in-1 or Marc Anthony spray) before any heat tool. FlexStyle operates at safe temperatures when used correctly.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Wortmann, F.J. et al. (2012). DSC investigation of hair keratin. J. Cosmet. Sci.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Glycerin &amp; Humidity</h3>';
+            html += '<div class="card" id="learn-glycerin"><h3>Glycerin &amp; Humidity</h3>';
             html += '<p>Glycerin is a humectant — it pulls moisture from the environment. Below 70% humidity, it pulls moisture INTO hair (good). Above 70%, it pulls EXCESS moisture in, causing swelling and frizz. NYM Curl Talk gel contains glycerin; Got2b Ultra Glued does not. Switch on humid days.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Gavazzoni Dias, M.F. (2015). Hair Cosmetics: An Overview. Int. J. Trichology.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Dual-Lane Conflict</h3>';
+            html += '<div class="card" id="learn-dual-lane"><h3>Dual-Lane Conflict</h3>';
             html += '<p>PQ-69 (curly gel) and Polysilicone-29 (blowout spray) are incompatible. PQ-69 residue blocks Polysilicone-29 from bonding to hair. Polysilicone-29 residue blocks gel from forming a proper cast. Always clarify when switching lanes.</p>';
             html += '<span class="badge badge-best-practice">BEST PRACTICE</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Practitioner-validated through systematic testing.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>Protein Overload Myth</h3>';
+            html += '<div class="card" id="learn-protein"><h3>Protein Overload Myth</h3>';
             html += '<p>"Protein overload" from normal-use products is not supported by peer-reviewed research. Protein treatments (like Olaplex 3 or OGX Bond Protein) plateau in effectiveness — more frequent application doesn\'t help, but also doesn\'t harm. The 7-day minimum interval is best practice for cost-effectiveness, not damage prevention.</p>';
             html += '<span class="badge badge-best-practice">BEST PRACTICE</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Croda (2025). Protein deposition studies on damaged hair fibers.</p>';
@@ -6967,13 +7017,13 @@
             // === What's Happening to Your Hair ===
             html += '<h2 style="margin-top:1.5rem;">What\'s Happening to Your Hair</h2>';
 
-            html += '<div class="card"><h3>TE Recovery</h3>';
+            html += '<div class="card" id="learn-te-recovery"><h3>TE Recovery</h3>';
             html += '<p>Telogen effluvium (TE) causes synchronized shedding followed by synchronized regrowth. The regrowth hairs are shorter and lighter, creating a "halo" of frizz at the hairline and part. This is temporary — as hairs grow longer, they\'ll blend in. Use hairline gel to smooth them flat during the awkward phase.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Malkud, S. (2015). Telogen Effluvium: A Review. J. Clin. Diagn. Res.</p>';
             html += '</div>';
 
-            html += '<div class="card"><h3>"Moisture" Is Marketing</h3>';
+            html += '<div class="card" id="learn-moisture-myth"><h3>"Moisture" Is Marketing</h3>';
             html += '<p>Hair doesn\'t need "moisture" in the way skin does. What people call "dry hair" is actually damaged cuticle (rough, porous, light-scattering). The fix is smoothing the cuticle surface (silicones, oils) and filling structural gaps (ceramides, protein), not adding water. Conditioner works by coating, not hydrating.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Robbins, C. (2012). Chemical and Physical Behavior of Human Hair. 5th ed.</p>';
