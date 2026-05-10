@@ -939,8 +939,7 @@
             <!-- First-use empty state (hidden by default, shown when no wash events) -->
             <div class="empty-state" id="empty-state" aria-label="Welcome">
                 <h2>Welcome</h2>
-                <p>This app learns from your hair care routine over time. Tap a button below to start your first walkthrough — it'll guide you step by step.</p>
-                <p>After a few washes, you'll start seeing personalized insights about what works best for your hair.</p>
+                <p>This app learns from your hair care routine over time. Log what you do, and it'll help you make better decisions.</p>
             </div>
 
             <!-- Status summary (populated by JS) -->
@@ -986,21 +985,25 @@
                     <p class="product-note" id="recommendation-context" style="margin-bottom:0.75rem;"></p>
                     <button class="btn-primary" id="btn-recommended" aria-label="Start recommended walkthrough"></button>
                 </div>
-                <div id="alternative-lanes" style="text-align:center;margin:0.75rem 0;display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
-                    <button class="btn-secondary btn-alt-lane" data-lane="curly">Curly</button>
-                    <button class="btn-secondary btn-alt-lane" data-lane="blowout">Blowout</button>
-                    <button class="btn-secondary btn-alt-lane" data-lane="refresh">Refresh</button>
+                <button class="btn-secondary" id="btn-something-else" style="width:100%;margin-top:0.5rem;justify-content:center;">Something else?</button>
+                <div id="alternative-lanes" style="display:none;margin-top:0.75rem;">
+                    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+                        <button class="btn-secondary btn-alt-lane" data-lane="curly">Curly</button>
+                        <button class="btn-secondary btn-alt-lane" data-lane="blowout">Blowout</button>
+                        <button class="btn-secondary btn-alt-lane" data-lane="refresh">Refresh</button>
+                    </div>
                 </div>
             </div>
 
             <!-- First-use action buttons (shown when no history) -->
             <div id="first-use-buttons">
-                <button class="btn-primary" id="btn-curly" aria-label="Start curly day walkthrough">Curly</button>
-                <button class="btn-primary" id="btn-blowout" aria-label="Start blowout day walkthrough">Blowout</button>
-                <button class="btn-primary" id="btn-refresh" aria-label="Start refresh day walkthrough">Refresh</button>
+                <p class="product-note" style="margin-bottom:1rem;">What are you doing today?</p>
+                <button class="btn-primary" id="btn-curly" aria-label="Start curly day walkthrough">🌀 Curly day</button>
+                <button class="btn-primary" id="btn-blowout" aria-label="Start blowout day walkthrough">💨 Blowout day</button>
+                <button class="btn-primary" id="btn-refresh" aria-label="Start refresh day walkthrough">✨ Refresh (no wash)</button>
                 <!-- Default guidance for new users -->
                 <div class="tip" id="default-guidance">
-                    <strong>Getting started:</strong> Every 3-4 days is a good baseline. Your hair doesn't get oily — wash when it feels heavy from buildup or when you want to restyle.
+                    <strong>Getting started:</strong> Every 3-4 days is a good baseline. Wash when it feels heavy from buildup or when you want to restyle.
                 </div>
             </div>
 
@@ -3061,7 +3064,9 @@
                 recBtn.setAttribute('aria-label', 'Start ' + recommendation.lane + ' day walkthrough');
                 recBtn.setAttribute('data-lane', recommendation.lane);
 
-                // Hide the recommended lane from alternatives
+                // Hide the recommended lane from alternatives, reset toggle
+                var altLanes = document.getElementById('alternative-lanes');
+                altLanes.style.display = 'none';
                 var altBtns = document.querySelectorAll('.btn-alt-lane');
                 altBtns.forEach(function(btn) {
                     if (btn.getAttribute('data-lane') === recommendation.lane) {
@@ -4400,40 +4405,54 @@
         // ===== Quick Log (Past Event) =====
         function showQuickLog() {
             var walkSection = document.getElementById('walkthrough');
-            // Default date: 3 days ago
-            var threeDaysAgo = new Date();
-            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-            var defaultDate = threeDaysAgo.toISOString().slice(0, 10);
+            // Default date: today
+            var today = new Date();
+            var defaultDate = today.toISOString().slice(0, 10);
+
+            // Get inventory for product selection
+            var inventory = InventoryManager.getAll();
 
             var html = '';
             html += '<div style="margin-bottom:1rem;">';
-            html += '<button class="btn-secondary" id="quick-log-cancel" aria-label="Cancel and go back">← Cancel</button>';
+            html += '<button class="btn-secondary" id="quick-log-cancel" aria-label="Cancel and go back">\u2190 Cancel</button>';
             html += '</div>';
             html += '<div class="card">';
-            html += '<h3 style="color:var(--gold);margin-bottom:1rem;">Log a past event</h3>';
-            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.4rem;">What day?</label>';
+            html += '<h3 style="color:var(--gold);margin-bottom:1rem;">Log a wash</h3>';
+
+            // Date
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.4rem;">When?</label>';
             html += '<input type="date" id="quick-log-date" value="' + defaultDate + '" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.6rem 0.75rem;font-size:0.9rem;margin-bottom:1.25rem;min-height:48px;">';
-            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Which lane?</label>';
+
+            // Lane
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">What kind of day?</label>';
             html += '<div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;" id="quick-log-lanes">';
-            html += '<button class="btn-secondary quick-lane-btn" data-lane="curly" style="border-color:var(--green);color:var(--green);">Curly</button>';
-            html += '<button class="btn-secondary quick-lane-btn" data-lane="blowout">Blowout</button>';
-            html += '<button class="btn-secondary quick-lane-btn" data-lane="refresh">Refresh</button>';
+            html += '<button class="btn-secondary quick-lane-btn" data-lane="curly" style="border-color:var(--green);color:var(--green);">\uD83C\uDF00 Curly</button>';
+            html += '<button class="btn-secondary quick-lane-btn" data-lane="blowout">\uD83D\uDCA8 Blowout</button>';
+            html += '<button class="btn-secondary quick-lane-btn" data-lane="refresh">\u2728 Refresh</button>';
             html += '</div>';
-            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">What treatments? <span style="color:var(--muted);">(select all that apply)</span></label>';
+
+            // Products (populated dynamically based on lane)
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Which products? <span style="color:var(--muted);">(tap all that apply)</span></label>';
+            html += '<div id="quick-log-products" style="margin-bottom:1.25rem;"></div>';
+
+            // Treatments (minus clarify — auto-detected from products)
+            html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Treatments? <span style="color:var(--muted);">(optional)</span></label>';
             html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem;" id="quick-log-treatments">';
-            html += '<button class="btn-secondary quick-treatment-btn" data-treatment="clarify">Clarify</button>';
             html += '<button class="btn-secondary quick-treatment-btn" data-treatment="protein">Protein</button>';
             html += '<button class="btn-secondary quick-treatment-btn" data-treatment="deep-condition">Deep condition</button>';
             html += '<button class="btn-secondary quick-treatment-btn" data-treatment="bond-repair">Bond repair</button>';
             html += '</div>';
+
+            // Rating
             html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">How did it turn out? <span style="color:var(--muted);">(optional)</span></label>';
             html += '<div style="display:flex;gap:0.75rem;margin-bottom:1.25rem;" id="quick-log-rating">';
-            html += '<button class="btn-secondary quick-rating-btn" data-rating="1" style="font-size:1.3rem;padding:0.4rem 0.6rem;">😫</button>';
-            html += '<button class="btn-secondary quick-rating-btn" data-rating="2" style="font-size:1.3rem;padding:0.4rem 0.6rem;">😕</button>';
-            html += '<button class="btn-secondary quick-rating-btn" data-rating="3" style="font-size:1.3rem;padding:0.4rem 0.6rem;">😐</button>';
-            html += '<button class="btn-secondary quick-rating-btn" data-rating="4" style="font-size:1.3rem;padding:0.4rem 0.6rem;">😊</button>';
-            html += '<button class="btn-secondary quick-rating-btn" data-rating="5" style="font-size:1.3rem;padding:0.4rem 0.6rem;">🤩</button>';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="1" style="font-size:1.3rem;padding:0.4rem 0.6rem;">\uD83D\uDE2B</button>';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="2" style="font-size:1.3rem;padding:0.4rem 0.6rem;">\uD83D\uDE15</button>';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="3" style="font-size:1.3rem;padding:0.4rem 0.6rem;">\uD83D\uDE10</button>';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="4" style="font-size:1.3rem;padding:0.4rem 0.6rem;">\uD83D\uDE0A</button>';
+            html += '<button class="btn-secondary quick-rating-btn" data-rating="5" style="font-size:1.3rem;padding:0.4rem 0.6rem;">\uD83E\uDD29</button>';
             html += '</div>';
+
             html += '<button class="btn-primary" id="quick-log-save" style="width:100%;margin-top:0.5rem;">Save</button>';
             html += '</div>';
 
@@ -4443,8 +4462,65 @@
 
             // State for quick log form
             var quickLane = 'curly';
+            var selectedProducts = [];
             var selectedTreatments = [];
             var selectedRating = null;
+
+            // Render products for current lane
+            function renderProductsForLane(lane) {
+                var productsDiv = document.getElementById('quick-log-products');
+                selectedProducts = [];
+
+                // Determine which contexts are relevant for this lane
+                var relevantContexts = ['every-wash'];
+                if (lane === 'curly') relevantContexts.push('curly');
+                if (lane === 'blowout') relevantContexts.push('blowout');
+                relevantContexts.push('weekly');
+                relevantContexts.push('as-needed');
+
+                // Filter inventory to relevant products
+                var relevantProducts = inventory.filter(function(p) {
+                    return relevantContexts.indexOf(p.context) !== -1;
+                });
+
+                // Sort: primary first, then supporting, then use-up
+                var tierOrder = { 'primary': 0, 'supporting': 1, 'use-up': 2 };
+                relevantProducts.sort(function(a, b) {
+                    return (tierOrder[a.tier] || 2) - (tierOrder[b.tier] || 2);
+                });
+
+                var pHtml = '<div class="product-grid" style="gap:0.4rem;">';
+                for (var i = 0; i < relevantProducts.length; i++) {
+                    var prod = relevantProducts[i];
+                    var tierStyle = prod.tier === 'use-up' ? ' style="opacity:0.6;"' : '';
+                    pHtml += '<button class="btn-secondary quick-product-btn" data-product-id="' + escapeHtml(prod.id) + '"' + tierStyle + '>';
+                    pHtml += escapeHtml(prod.name);
+                    if (prod.tier === 'use-up') pHtml += ' <span style="font-size:0.65rem;color:var(--muted);">(using up)</span>';
+                    pHtml += '</button>';
+                }
+                pHtml += '</div>';
+                productsDiv.innerHTML = pHtml;
+
+                // Wire product buttons
+                productsDiv.querySelectorAll('.quick-product-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var prodId = btn.getAttribute('data-product-id');
+                        var idx = selectedProducts.indexOf(prodId);
+                        if (idx === -1) {
+                            selectedProducts.push(prodId);
+                            btn.style.borderColor = 'var(--green)';
+                            btn.style.color = 'var(--green)';
+                        } else {
+                            selectedProducts.splice(idx, 1);
+                            btn.style.borderColor = '';
+                            btn.style.color = '';
+                        }
+                    });
+                });
+            }
+
+            // Initial render
+            renderProductsForLane(quickLane);
 
             // Wire cancel
             document.getElementById('quick-log-cancel').addEventListener('click', function() {
@@ -4452,7 +4528,7 @@
                 document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
             });
 
-            // Wire lane buttons (single-select)
+            // Wire lane buttons (single-select, re-renders products)
             walkSection.querySelectorAll('.quick-lane-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     quickLane = btn.getAttribute('data-lane');
@@ -4462,6 +4538,7 @@
                     });
                     btn.style.borderColor = 'var(--green)';
                     btn.style.color = 'var(--green)';
+                    renderProductsForLane(quickLane);
                 });
             });
 
@@ -4497,11 +4574,11 @@
 
             // Wire save button
             document.getElementById('quick-log-save').addEventListener('click', function() {
-                submitQuickLog(quickLane, selectedTreatments, selectedRating);
+                submitQuickLog(quickLane, selectedProducts, selectedTreatments, selectedRating);
             });
         }
 
-        function submitQuickLog(lane, treatments, rating) {
+        function submitQuickLog(lane, products, treatments, rating) {
             var dateInput = document.getElementById('quick-log-date');
             var dateStr = dateInput ? dateInput.value : null;
             if (!dateStr) {
@@ -4512,28 +4589,19 @@
             // Build the event date (noon local time to avoid timezone issues)
             var eventDate = new Date(dateStr + 'T12:00:00');
 
-            // Build products list based on lane and treatments
-            var products = [];
-            // Base wash products (always present — every event is a wash)
-            if (treatments.includes('clarify')) {
-                products.push('everpure-clarifying');
-            } else {
-                products.push('everpure-bond-repair');
-            }
-            products.push('garnier-color-repair');
-            products.push('loreal-21-in-1');
-
-            // Add treatment-specific products
-            if (treatments.includes('protein')) {
-                if (!products.includes('garnier-pre-shampoo')) {
-                    products.push('garnier-pre-shampoo');
+            // Auto-detect clarifying from product selection
+            var finalTreatments = treatments.slice();
+            if (products.indexOf('everpure-clarifying') !== -1) {
+                if (finalTreatments.indexOf('clarify') === -1) {
+                    finalTreatments.push('clarify');
                 }
             }
-            // Lane-specific products
-            if (lane === 'curly') {
-                products.push('nym-curl-talk-gel');
-            } else if (lane === 'blowout') {
-                products.push('marc-anthony-blowout');
+
+            // Auto-detect protein from product selection
+            if (products.indexOf('garnier-pre-shampoo') !== -1 || products.indexOf('ogx-bond-protein-pre') !== -1 || products.indexOf('olaplex-3') !== -1) {
+                if (finalTreatments.indexOf('protein') === -1) {
+                    finalTreatments.push('protein');
+                }
             }
 
             // Calculate interval days from previous event
@@ -4541,7 +4609,6 @@
             var events = state.events || [];
             var intervalDays = 0;
             if (events.length > 0) {
-                // Find the most recent event before this date
                 var prevEvents = events.filter(function(e) {
                     return new Date(e.date) < eventDate;
                 });
@@ -4557,7 +4624,7 @@
                 id: generateUUID(),
                 date: eventDate.toISOString(),
                 lane: lane,
-                treatments: treatments,
+                treatments: finalTreatments,
                 products: products,
                 humidity: 'moderate',
                 dewPoint: null,
@@ -4568,12 +4635,7 @@
             };
 
             StateManager.saveWashEvent(washEvent);
-
-            // Update seal state if relevant (clarify or blowout with marc-anthony)
-            if (treatments.includes('clarify') || (lane === 'blowout' && products.includes('marc-anthony-blowout'))) {
-                updateSealState(washEvent);
-            }
-
+            updateSealState(washEvent);
             FeedbackEngine.analyze();
 
             // Navigate back to landing
@@ -4613,6 +4675,14 @@
             document.getElementById('btn-recommended').addEventListener('click', function() {
                 var lane = this.getAttribute('data-lane');
                 showHumidityPrompt(lane);
+            });
+
+            // Wire "Something else?" toggle
+            document.getElementById('btn-something-else').addEventListener('click', function() {
+                var altLanes = document.getElementById('alternative-lanes');
+                var isHidden = altLanes.style.display === 'none';
+                altLanes.style.display = isHidden ? '' : 'none';
+                this.textContent = isHidden ? 'Never mind' : 'Something else?';
             });
 
             // Wire alternative lane buttons
