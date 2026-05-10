@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 22)
+**Last updated:** May 10, 2026 (Session 23)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -16,7 +16,13 @@
 - Soft/mushy option removed from adjust overlay (texture tracking belongs in post-wash feedback, not plan adjustment)
 - Garnier Color Repair conditioner note updated to clarify rotation with use-up bottles
 
-### What Was Done This Session (22)
+### What Was Done This Session (23)
+1. **Dove product placement discussion** — Mandy asked why Dove Bond Repair and Intensive Repair conditioners are ranked low. Explained the silicone chemistry (dimethiconol = non-selective, temporary vs. amodimethicone = selective, cumulative, self-limiting). Confirmed no unique benefit for her hair type that other products don't do better.
+2. **Created research-data-adherence.md steering file** — `.kiro/steering/research-data-adherence.md` (auto-inclusion on research files). Enforces that product tier changes require: specific mechanism + peer-reviewed source + delivery-format validation + not contradicted by existing findings. Prevents drift from evidence.
+3. **Scoped Dove deep-dive research** — Defined 4 research angles: (a) dimethiconol benefits for coarse hair specifically, (b) SH-Polypeptide-121 efficacy at low concentration in rinse-off, (c) non-selective coating for frizz management, (d) full formulation analysis beyond hero ingredients. NOT YET EXECUTED — queued for next session.
+4. **Identified steering improvement** — Data adherence rules should be folded into the global `deep-dive-auto.md` protocol (not just project-specific). Next session: add "Data Adherence" section to global research protocol, keep hair-routine version as domain-specific extension.
+
+### What Was Done Session 22
 1. **Fixed nav buttons overflowing on iPhone** — removed flex-wrap, added flex:1 so all 5 buttons share width equally
 2. **Fixed geolocation prompt blocking the app** — now checks `navigator.permissions.query()` first; only calls geolocation if permission is already granted. Never shows the browser prompt.
 3. **Made adjust overlay multi-select** — Layer 1 (hair state) is now multi-select like Layers 2/3. Removed auto-close behavior. Toast shows on Done with all selections summarized.
@@ -30,7 +36,25 @@ The iPhone is now loading the current version. The previous session's caching is
 
 ### What's NOT Done (carry forward)
 
-#### USE-UP PRODUCT ROTATION (next priority)
+#### DOVE DEEP-DIVE RESEARCH (next priority — research)
+**Question:** Do Dove Bond Strength Repair and Intensive Repair conditioners offer any meaningful benefits for 2C-3A coarse/thick/dry hair that the current research undervalues?
+
+**Angles to investigate:**
+1. Dimethiconol/silsesquioxane — is a heavier non-selective film *preferable* for coarse hair (more cuticle layers, more surface area)?
+2. SH-Polypeptide-121 — actual MW, penetration data, efficacy at low concentration in rinse-off format
+3. Non-selective coating for frizz — amodimethicone targets damage sites, but frizz happens on healthy cuticle too. Does non-selective coating help?
+4. Full formulation — what else is in these products beyond the hero ingredients?
+
+**Constraint:** `research-data-adherence.md` steering file is active. Any tier change requires mechanism + source + delivery validation.
+
+**Protocol:** Use `deep-dive-auto.md` (autonomous research flow). Score with v2 rubric.
+
+#### FOLD DATA ADHERENCE INTO GLOBAL PROTOCOL
+- Add "Data Adherence" section to `~/.kiro/steering/deep-dive-auto.md`
+- Principle: no recommendation changes without mechanism + source + delivery-format validation
+- Keep hair-routine's `research-data-adherence.md` as domain-specific extension (hair-specific tier criteria)
+
+#### USE-UP PRODUCT ROTATION (next priority — code)
 **What Mandy wants:** The Daily Plan should automatically cycle use-up products into the routine, compensated by keeping other steps at high-quality products. Not manual swapping — the plan should do this for her.
 
 **Design approach (Mandy's direction):** Use the research files to build balanced product combinations. When a use-up product is assigned to one step, the other steps should use primary-tier products to maintain overall wash quality.
@@ -126,7 +150,8 @@ All previous decisions remain, plus:
 | 19 | PWA + Daily Plan + UX polish | Complete |
 | 20 | Daily Plan polish: adjust UX, frizzy upgrade, no-wash, a11y | Complete |
 | 21 | iPhone Safari debugging — narrowed to device-level proxy/relay | Complete |
-| 22 | **Nav fix, geolocation fix, multi-select adjust, use-up rotation scoped** | Complete |
+| 22 | Nav fix, geolocation fix, multi-select adjust, use-up rotation scoped | Complete |
+| 23 | **Dove placement discussion, research-data-adherence steering, deep-dive scoped** | Complete |
 
 ---
 
