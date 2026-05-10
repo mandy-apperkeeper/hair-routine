@@ -404,6 +404,13 @@
         .tracker-label { color: var(--muted); }
         .tracker-value { color: var(--text); font-weight: 500; }
 
+        .tracker-inline {
+            display: inline-flex;
+            gap: 0.3rem;
+            align-items: baseline;
+            font-size: 0.75rem;
+        }
+
         /* ===== Buttons ===== */
         .btn-primary {
             display: flex;
@@ -943,27 +950,10 @@
             </div>
 
             <!-- Status summary (populated by JS) -->
-            <div class="tracker-box" id="status-summary" aria-label="Status summary">
-                <div class="tracker-item">
-                    <span class="tracker-label">Last wash</span>
-                    <span class="tracker-value" id="status-wash">—</span>
-                </div>
-                <div class="tracker-item">
-                    <span class="tracker-label">Last clarify</span>
-                    <span class="tracker-value" id="status-clarify">—</span>
-                </div>
-                <div class="tracker-item">
-                    <span class="tracker-label">Last protein</span>
-                    <span class="tracker-value" id="status-protein">—</span>
-                </div>
-                <div class="tracker-item">
-                    <span class="tracker-label">Last deep condition</span>
-                    <span class="tracker-value" id="status-deep-condition">—</span>
-                </div>
-                <div class="tracker-item">
-                    <span class="tracker-label">Seal state</span>
-                    <span class="tracker-value" id="status-seal">Inactive</span>
-                </div>
+            <div class="tracker-box" id="status-summary" aria-label="Status summary" style="display:flex;flex-wrap:wrap;gap:0.5rem 1rem;padding:0.5rem 0.75rem;">
+                <span class="tracker-inline"><span class="tracker-label">Wash</span> <span class="tracker-value" id="status-wash">—</span></span>
+                <span class="tracker-inline"><span class="tracker-label">Clarify</span> <span class="tracker-value" id="status-clarify">—</span></span>
+                <span class="tracker-inline"><span class="tracker-label">Protein</span> <span class="tracker-value" id="status-protein">—</span></span>
             </div>
 
             <!-- Insight card (hidden until feedback engine has data) -->
@@ -3722,11 +3712,9 @@
             var proteinDays = daysSince(lastProteinDate);
             var deepConditionDays = daysSince(lastDeepConditionDate);
 
-            document.getElementById('status-wash').textContent = washDays !== null ? (washDays === 0 ? 'today' : washDays + ' day' + (washDays !== 1 ? 's' : '') + ' ago') : '—';
-            document.getElementById('status-clarify').textContent = clarifyDays !== null ? (clarifyDays === 0 ? 'today' : clarifyDays + ' day' + (clarifyDays !== 1 ? 's' : '') + ' ago') : '—';
-            document.getElementById('status-protein').textContent = proteinDays !== null ? (proteinDays === 0 ? 'today' : proteinDays + ' day' + (proteinDays !== 1 ? 's' : '') + ' ago') : '—';
-            document.getElementById('status-deep-condition').textContent = deepConditionDays !== null ? (deepConditionDays === 0 ? 'today' : deepConditionDays + ' day' + (deepConditionDays !== 1 ? 's' : '') + ' ago') : '—';
-            document.getElementById('status-seal').textContent = sealState.active ? 'Active' : 'Inactive';
+            document.getElementById('status-wash').textContent = washDays !== null ? (washDays === 0 ? 'today' : washDays + 'd') : '—';
+            document.getElementById('status-clarify').textContent = clarifyDays !== null ? (clarifyDays === 0 ? 'today' : clarifyDays + 'd') : '—';
+            document.getElementById('status-protein').textContent = proteinDays !== null ? (proteinDays === 0 ? 'today' : proteinDays + 'd') : '—';
 
             // Empty state vs status summary
             var emptyState = document.getElementById('empty-state');
