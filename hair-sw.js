@@ -2,9 +2,9 @@
  * Service Worker for Hair Routine
  * 
  * Strategy:
- * - HTML (index.html): Cache-first with background update (stale-while-revalidate)
- * - Open-Meteo API: Network-first with cache fallback (fresh weather when online, cached when offline)
- * - Everything else: Cache-first
+ * - HTML (index.html): Network-first with cache fallback (always fresh when online)
+ * - Open-Meteo API: Network-first with cache fallback
+ * - Static assets (icons, manifest): Cache-first (rarely change)
  * 
  * Update flow:
  * - New SW version → new cache name → old caches deleted on activate
@@ -12,7 +12,7 @@
  * - Posts 'SW_UPDATED' message to all clients so UI can show "Updated" indicator
  */
 
-var CACHE_VERSION = 'v6';
+var CACHE_VERSION = 'v7';
 var CACHE_NAME = 'hair-routine-cache-' + CACHE_VERSION;
 
 var PRECACHE_URLS = [
@@ -48,7 +48,6 @@ self.addEventListener('activate', function(event) {
                 })
             );
         }).then(function() {
-            // Also clean up legacy v2 cache names
             return caches.keys();
         }).then(function(cacheNames) {
             return Promise.all(
@@ -61,7 +60,6 @@ self.addEventListener('activate', function(event) {
         }).then(function() {
             return self.clients.claim();
         }).then(function() {
-            // Notify all clients that the SW has updated
             return self.clients.matchAll();
         }).then(function(clients) {
             clients.forEach(function(client) {
@@ -75,25 +73,34 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
     var url = new URL(event.request.url);
 
-    // Open-Meteo API: network-first with cache fallback
+    // Open-Meteo API: network-first
     if (url.origin === OPEN_METEO_ORIGIN) {
         event.respondWith(networkFirstWithCache(event.request));
         return;
     }
 
-    // Same-origin navigation/assets: stale-while-revalidate
+    // Same-origin HTML: network-first (always get latest when online)
     if (url.origin === self.location.origin) {
-        event.respondWith(staleWhileRevalidate(event.request));
+        var isHTML = event.request.mode === 'navigate' ||
+                    url.pathname.endsWith('.html') ||
+                    url.pathname === '/' ||
+                    url.pathname.endsWith('/');
+        if (isHTML) {
+            event.respondWith(networkFirstWithCache(event.request));
+            return;
+        }
+        // Static assets (icons, manifest): cache-first
+        event.respondWith(cacheFirstWithNetwork(event.request));
         return;
     }
 
-    // Other requests: network only (don't cache third-party resources)
+    // Other requests: network only
     event.respondWith(fetch(event.request));
 });
 
 /**
  * Network-first with cache fallback.
- * Used for API calls — prefer fresh data, fall back to cached when offline.
+ * Prefer fresh content, fall back to cached when offline.
  */
 function networkFirstWithCache(request) {
     return fetch(request).then(function(response) {
@@ -109,35 +116,31 @@ function networkFirstWithCache(request) {
             if (cachedResponse) {
                 return cachedResponse;
             }
-            // No cache, no network — return a minimal error response
-            return new Response(JSON.stringify({ error: 'offline', cached: false }), {
+            return new Response('Offline — no cached version available.', {
                 status: 503,
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'text/plain' }
             });
         });
     });
 }
 
 /**
- * Stale-while-revalidate.
- * Returns cached version immediately (fast), fetches update in background.
- * Next load gets the fresh version.
+ * Cache-first with network fallback.
+ * Used for static assets that rarely change (icons, manifest).
  */
-function staleWhileRevalidate(request) {
-    return caches.open(CACHE_NAME).then(function(cache) {
-        return cache.match(request).then(function(cachedResponse) {
-            var fetchPromise = fetch(request).then(function(networkResponse) {
-                if (networkResponse.ok) {
-                    cache.put(request, networkResponse.clone());
-                }
-                return networkResponse;
-            }).catch(function() {
-                // Network failed — that's fine, we have cache
-                return cachedResponse;
-            });
-
-            // Return cached immediately if available, otherwise wait for network
-            return cachedResponse || fetchPromise;
+function cacheFirstWithNetwork(request) {
+    return caches.match(request).then(function(cachedResponse) {
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+        return fetch(request).then(function(response) {
+            if (response.ok) {
+                var responseClone = response.clone();
+                caches.open(CACHE_NAME).then(function(cache) {
+                    cache.put(request, responseClone);
+                });
+            }
+            return response;
         });
     });
 }
