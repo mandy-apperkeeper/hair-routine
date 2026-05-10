@@ -5090,6 +5090,76 @@
             };
         })();
 
+        // ===== Timer Alert Sound =====
+        // Uses Web Audio API to play a brief pleasant tone.
+        // Designed to overlay (not interrupt) background audio (music, podcasts).
+        // iOS Safari requires AudioContext to be created/resumed from a user gesture,
+        // so we lazily create it on first timer start.
+        var _timerAudioCtx = null;
+        function getTimerAudioCtx() {
+            if (!_timerAudioCtx) {
+                var AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) _timerAudioCtx = new AC();
+            }
+            return _timerAudioCtx;
+        }
+        function resumeAudioCtx() {
+            // Call this from a user gesture (timer start) to unlock iOS audio
+            var ctx = getTimerAudioCtx();
+            if (ctx && ctx.state === 'suspended') {
+                ctx.resume();
+            }
+        }
+        function playTimerAlert() {
+            var settings = StateManager.getState().settings || {};
+            if (settings.soundEnabled === false) return;
+            var ctx = getTimerAudioCtx();
+            if (!ctx) return;
+            // Resume if suspended (shouldn't be if we called resumeAudioCtx on start)
+            if (ctx.state === 'suspended') {
+                ctx.resume().then(function() { _playTone(ctx); });
+            } else {
+                _playTone(ctx);
+            }
+        }
+        function _playTone(ctx) {
+            // Pleasant two-tone chime: C5 then E5, short and non-jarring
+            var now = ctx.currentTime;
+            // First tone: C5 (523 Hz)
+            var osc1 = ctx.createOscillator();
+            var gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = 523.25;
+            gain1.gain.setValueAtTime(0.3, now);
+            gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.3);
+            // Second tone: E5 (659 Hz)
+            var osc2 = ctx.createOscillator();
+            var gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = 659.25;
+            gain2.gain.setValueAtTime(0.3, now + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.15);
+            osc2.stop(now + 0.45);
+            // Third tone: G5 (783 Hz) — ascending chime
+            var osc3 = ctx.createOscillator();
+            var gain3 = ctx.createGain();
+            osc3.type = 'sine';
+            osc3.frequency.value = 783.99;
+            gain3.gain.setValueAtTime(0.25, now + 0.3);
+            gain3.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+            osc3.connect(gain3);
+            gain3.connect(ctx.destination);
+            osc3.start(now + 0.3);
+            osc3.stop(now + 0.6);
+        }
+
         // ===== TimerManager =====
         const TimerManager = (function() {
             // Internal state
@@ -6208,6 +6278,8 @@
                 TimerManager.reset(planTimerActive.timerId, 0);
             }
 
+            resumeAudioCtx(); // Unlock iOS audio from user gesture
+
             var timerId = TimerManager.start(duration, function() {
                 // Timer complete
                 btn.classList.remove('active');
@@ -6215,6 +6287,11 @@
                 var stickyBar = document.getElementById('sticky-timer');
                 stickyBar.classList.remove('visible');
                 planTimerActive = null;
+                playTimerAlert();
+                var settings = StateManager.getState().settings || {};
+                if (settings.vibrationEnabled !== false && navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
             });
 
             planTimerActive = { stepId: stepId, timerId: timerId };
@@ -6663,11 +6740,13 @@
                         btn.style.display = 'none';
                         pauseBtn.style.display = '';
                     } else {
+                        resumeAudioCtx(); // Unlock iOS audio from user gesture
                         currentTimerId = TimerManager.start(duration, function() {
                             display.style.color = 'var(--green)';
                             display.textContent = '0:00 ✓';
                             btn.style.display = 'none';
                             pauseBtn.style.display = 'none';
+                            playTimerAlert();
                             var settings = StateManager.getState().settings || {};
                             if (settings.vibrationEnabled !== false && navigator.vibrate) {
                                 navigator.vibrate([200, 100, 200]);
