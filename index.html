@@ -1050,7 +1050,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 4;
+        const CURRENT_VERSION = 5;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -1067,7 +1067,8 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'conditioner',
                     outcomes: { shine: 0.8, smoothness: 0.9, strength: 0.3 },
                     cumulative: true,
                     interactions: []
@@ -1080,7 +1081,8 @@
                 intelligence: {
                     mechanisms: ['cleansing'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'shampoo',
                     outcomes: { cleanliness: 0.9 },
                     cumulative: false,
                     interactions: []
@@ -1093,7 +1095,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'penetrating_oil', 'conditioning'],
                     delivery: 'leave_on',
-                    phase: 'post_wash',
+                    step: 'post_wash',
                     outcomes: { shine: 0.9, smoothness: 0.8, strength: 0.2 },
                     cumulative: true,
                     interactions: [{ with: 'nym-curl-talk-gel', type: 'enables', note: 'Apply lightly before gel — heavy application weakens cast' }]
@@ -1106,7 +1108,8 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'conditioner',
                     outcomes: { shine: 0.7, smoothness: 0.8, strength: 0.2 },
                     cumulative: true,
                     interactions: []
@@ -1120,7 +1123,7 @@
                 intelligence: {
                     mechanisms: ['humidity_barrier'],
                     delivery: 'leave_on',
-                    phase: 'style',
+                    step: 'style',
                     outcomes: { definition: 0.9, frizz_control: 0.9 },
                     cumulative: false,
                     interactions: [{ with: 'marc-anthony-shield', type: 'blocks', note: 'PQ-69 may block polysilicone-29 deposition (medium confidence)' }]
@@ -1134,7 +1137,7 @@
                 intelligence: {
                     mechanisms: ['heat_protection', 'cuticle_smoothing'],
                     delivery: 'leave_on',
-                    phase: 'style',
+                    step: 'style',
                     outcomes: { smoothness: 0.8, strength: 0.4, frizz_control: 0.7 },
                     cumulative: false,
                     interactions: [{ with: 'nym-curl-talk-gel', type: 'blocks', note: 'PQ-69 may block polysilicone-29 (medium confidence)' }]
@@ -1148,7 +1151,8 @@
                 intelligence: {
                     mechanisms: ['clarifying'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'clarify',
                     outcomes: { cleanliness: 1.0 },
                     cumulative: false,
                     interactions: []
@@ -1161,7 +1165,7 @@
                 intelligence: {
                     mechanisms: ['bond_repair'],
                     delivery: 'pre_shampoo',
-                    phase: 'pre_wash',
+                    step: 'pre_wash',
                     outcomes: { strength: 0.9, elasticity: 0.8 },
                     cumulative: true,
                     interactions: []
@@ -1175,7 +1179,8 @@
                 intelligence: {
                     mechanisms: ['conditioning'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'conditioner',
                     outcomes: { shine: 0.7, smoothness: 0.8 },
                     cumulative: false,
                     interactions: [{ with: '*', type: 'enhances', note: 'Smoother cuticle improves subsequent product distribution' }]
@@ -1189,7 +1194,7 @@
                 intelligence: {
                     mechanisms: ['bond_repair', 'protein_fill'],
                     delivery: 'pre_shampoo',
-                    phase: 'pre_wash',
+                    step: 'pre_wash',
                     outcomes: { strength: 0.6, smoothness: 0.4 },
                     cumulative: false,
                     interactions: []
@@ -1202,7 +1207,7 @@
                 intelligence: {
                     mechanisms: ['protein_fill', 'humectant'],
                     delivery: 'pre_shampoo',
-                    phase: 'pre_wash',
+                    step: 'pre_wash',
                     outcomes: { strength: 0.7, elasticity: 0.5 },
                     cumulative: false,
                     interactions: []
@@ -1215,7 +1220,7 @@
                 intelligence: {
                     mechanisms: ['bond_repair'],
                     delivery: 'pre_shampoo',
-                    phase: 'pre_wash',
+                    step: 'pre_wash',
                     outcomes: { strength: 0.4 },
                     cumulative: false,
                     interactions: []
@@ -1228,7 +1233,8 @@
                 intelligence: {
                     mechanisms: ['clarifying'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'glossing',
                     outcomes: { cleanliness: 0.8, shine: 0.5 },
                     cumulative: false,
                     interactions: []
@@ -1242,7 +1248,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing'],
                     delivery: 'leave_on',
-                    phase: 'post_wash',
+                    step: 'post_wash',
                     outcomes: { shine: 0.9, smoothness: 0.8 },
                     cumulative: true,
                     interactions: []
@@ -1255,7 +1261,7 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing'],
                     delivery: 'leave_on',
-                    phase: 'post_wash',
+                    step: 'post_wash',
                     outcomes: { shine: 0.6, smoothness: 0.6 },
                     cumulative: true,
                     interactions: []
@@ -1268,7 +1274,7 @@
                 intelligence: {
                     mechanisms: ['conditioning'],
                     delivery: 'leave_on',
-                    phase: 'post_wash',
+                    step: 'post_wash',
                     outcomes: { smoothness: 0.4 },
                     cumulative: false,
                     interactions: []
@@ -1282,7 +1288,7 @@
                 intelligence: {
                     mechanisms: ['humidity_barrier'],
                     delivery: 'leave_on',
-                    phase: 'style',
+                    step: 'style',
                     outcomes: { definition: 0.8, frizz_control: 0.95 },
                     cumulative: false,
                     interactions: []
@@ -1296,7 +1302,8 @@
                 intelligence: {
                     mechanisms: ['cleansing'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'shampoo',
                     outcomes: { cleanliness: 0.7 },
                     cumulative: false,
                     interactions: []
@@ -1309,7 +1316,8 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'conditioner',
                     outcomes: { shine: 0.4, smoothness: 0.5 },
                     cumulative: false,
                     interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
@@ -1322,7 +1330,8 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'deep_condition',
                     outcomes: { shine: 0.5, smoothness: 0.6 },
                     cumulative: false,
                     interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
@@ -1335,7 +1344,8 @@
                 intelligence: {
                     mechanisms: ['cleansing'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'shampoo',
                     outcomes: { cleanliness: 0.7 },
                     cumulative: false,
                     interactions: []
@@ -1348,7 +1358,8 @@
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
-                    phase: 'wash',
+                    step: 'wash',
+                    subStep: 'conditioner',
                     outcomes: { shine: 0.3, smoothness: 0.4 },
                     cumulative: false,
                     interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
@@ -1361,7 +1372,7 @@
                 intelligence: {
                     mechanisms: ['penetrating_oil'],
                     delivery: 'leave_on',
-                    phase: 'post_wash',
+                    step: 'post_wash',
                     outcomes: { shine: 0.3 },
                     cumulative: false,
                     interactions: []
@@ -1374,7 +1385,7 @@
                 intelligence: {
                     mechanisms: [],
                     delivery: 'leave_on',
-                    phase: 'post_wash',
+                    step: 'post_wash',
                     outcomes: { shine: 0.2 },
                     cumulative: false,
                     interactions: []
@@ -1471,7 +1482,7 @@
                                 product.intelligence = {
                                     mechanisms: [],
                                     delivery: 'unknown',
-                                    phase: 'post_wash',
+                                    step: 'post_wash',
                                     outcomes: {},
                                     cumulative: false,
                                     interactions: []
@@ -1481,6 +1492,34 @@
                     });
                 }
                 state.version = 4;
+            }
+
+            // v4 → v5: Rename intelligence.phase to intelligence.step, add subStep for conditioning products
+            if (state.version < 5) {
+                if (Array.isArray(state.inventory)) {
+                    // Build lookup from DEFAULT_INVENTORY for subStep values
+                    var subStepLookup = {};
+                    DEFAULT_INVENTORY.forEach(function(p) {
+                        if (p.intelligence && p.intelligence.subStep) {
+                            subStepLookup[p.id] = p.intelligence.subStep;
+                        }
+                    });
+
+                    state.inventory.forEach(function(product) {
+                        if (product.intelligence) {
+                            // Rename phase → step
+                            if (product.intelligence.phase && !product.intelligence.step) {
+                                product.intelligence.step = product.intelligence.phase;
+                                delete product.intelligence.phase;
+                            }
+                            // Add subStep from lookup if available
+                            if (!product.intelligence.subStep && subStepLookup[product.id]) {
+                                product.intelligence.subStep = subStepLookup[product.id];
+                            }
+                        }
+                    });
+                }
+                state.version = 5;
             }
         }
 
@@ -2633,7 +2672,7 @@
                         intelligence: product.intelligence || {
                             mechanisms: [],
                             delivery: 'unknown',
-                            phase: 'post_wash',
+                            step: 'post_wash',
                             outcomes: {},
                             cumulative: false,
                             interactions: []
@@ -3482,7 +3521,7 @@
                                     intelligence: {
                                         mechanisms: ['humidity_barrier'],
                                         delivery: 'leave_on',
-                                        phase: 'style',
+                                        step: 'style',
                                         outcomes: { definition: 0.9, frizz_control: 0.9 },
                                         cumulative: false,
                                         interactions: [{ with: 'marc-anthony-shield', type: 'blocks', note: 'PQ-69 may block polysilicone-29 deposition (medium confidence)' }]
@@ -4767,7 +4806,7 @@
         function getProductsByPhase(inventory) {
             var phases = { pre_wash: [], wash: [], post_wash: [], style: [] };
             inventory.forEach(function(p) {
-                var phase = (p.intelligence && p.intelligence.phase) || 'post_wash';
+                var phase = (p.intelligence && p.intelligence.step) || 'post_wash';
                 if (phases[phase]) {
                     phases[phase].push(p);
                 } else {
@@ -4833,7 +4872,7 @@
 
             function renderProductsForPhase(phaseKey, container) {
                 var phaseProducts = inventory.filter(function(p) {
-                    return p.intelligence && p.intelligence.phase === phaseKey;
+                    return p.intelligence && p.intelligence.step === phaseKey;
                 });
 
                 if (phaseProducts.length === 0) {
@@ -4914,7 +4953,7 @@
                 // Derive lane from selected style products
                 var lane = 'none';
                 var styleProducts = inventory.filter(function(p) {
-                    return p.intelligence && p.intelligence.phase === 'style' && selectedProducts.indexOf(p.id) !== -1;
+                    return p.intelligence && p.intelligence.step === 'style' && selectedProducts.indexOf(p.id) !== -1;
                 });
                 if (styleProducts.length > 0) {
                     // Check if any selected style product is a curly-context product
@@ -4929,7 +4968,7 @@
                 var activities = [];
                 var hasWashProduct = selectedProducts.some(function(id) {
                     var p = inventory.find(function(pr) { return pr.id === id; });
-                    return p && p.intelligence && p.intelligence.phase === 'wash' && p.intelligence.mechanisms.indexOf('cleansing') !== -1;
+                    return p && p.intelligence && p.intelligence.step === 'wash' && p.intelligence.mechanisms.indexOf('cleansing') !== -1;
                 });
                 if (hasWashProduct) activities.push('wash');
 

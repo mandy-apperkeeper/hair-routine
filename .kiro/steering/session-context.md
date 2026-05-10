@@ -86,11 +86,11 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 
 ## Current Status (update after each session)
 
-- **Spec:** Feature-complete (all 16 task groups done, optional tests skipped)
-- **v1 (live):** Working — quick-log (phase-based, correct), walkthrough, history, status bar, dew point detection, recommendations, compensation logic, product inventory with intelligence metadata, post-wash attribution card
+- **Spec:** Original spec complete. Product Intelligence spec active at `.kiro/specs/product-intelligence/`.
+- **v1 (live):** Working — quick-log (phase-based, correct), walkthrough, history, status bar, dew point detection, recommendations, compensation logic, product inventory with intelligence metadata (step + subStep), post-wash attribution card.
+- **Schema:** Version 5. Intelligence uses `step` + optional `subStep`.
 - **Known broken:** Nothing currently broken.
-- **Remaining improvements:** 2 of 15 (Items 3 + 6 need usage data)
-- **What's next:** Pre-wash recommendation on landing (Tier 1 active intelligence). Then Bayesian updating engine (Tier 2, needs 3+ events). Then natural variation analysis. Product discovery form and PWA deferred.
+- **What's next:** IngredientKB + BeliefTracker → pre-wash recommendations → marginal contribution analysis → product discovery form → service worker/PWA.
 
 ## Design Principles (testing here first, generalize if effective)
 
