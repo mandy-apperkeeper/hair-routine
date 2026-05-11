@@ -83,7 +83,7 @@
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
-| 12 | loreal-21in1 | 21-in-1 Leave-In Spray | L'Oréal EverPure | primary | 📋 PLANNED | Best leave-in — high priority |
+| 12 | loreal-21in1 | 21-in-1 Leave-In Spray | L'Oréal EverPure | primary | ✅ DONE | `research/products/loreal-21in1.md` — tier confirmed |
 | 13 | loreal-wonder-water | 8 Second Wonder Water | L'Oréal Elvive | supporting | 📋 PLANNED | |
 | 14 | elvive-total-repair-5-balm | Total Repair 5 Damage Erasing Balm | L'Oréal Elvive | supporting | 📋 PLANNED | |
 
@@ -140,15 +140,15 @@
 ## Progress
 
 - **Total products:** 30
-- **Completed:** 6 (Dove deep dive conditioners/mask + shampoos + 10-in-1 serum)
-- **Remaining:** 24
-- **Estimated sessions:** ~9-12 (2-3 products per session)
+- **Completed:** 9 (Dove deep dive conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + EverPure conditioner + 21-in-1 leave-in)
+- **Remaining:** 21
+- **Estimated sessions:** ~7-10 (2-3 products per session)
 
 ## Next Session Starts With
 
-1. `everpure-bond-shampoo` — Bond Repair Shampoo (L'Oréal EverPure, primary tier — daily driver)
-2. `everpure-bond-conditioner` — Bond Repair Conditioner (L'Oréal EverPure, primary tier — daily driver)
-3. `loreal-21in1` — 21-in-1 Leave-In Spray (L'Oréal EverPure, primary tier — best leave-in, highest educational value)
+1. `everpure-clarifying` — Clarifying Shampoo (L'Oréal EverPure, primary tier — periodic clarifying)
+2. `everpure-bond-pre` — Bond Repair Pre-Shampoo Treatment (L'Oréal EverPure, supporting tier)
+3. `garnier-color-repair-cond` — Color Repair Conditioner (Garnier Fructis, primary tier — best conditioner, highest comparison value)
 
-**Rationale:** Dove batch complete. Moving to primary-tier daily drivers per priority order. The L'Oréal 21-in-1 is especially important because the Dove serum deep dive references it as the comparison product — analyzing it next validates or challenges that comparison.
+**Rationale:** EverPure daily drivers complete. Finishing the EverPure line (clarifying + pre-shampoo) before moving to Garnier. The Garnier conditioner is especially important because the EverPure conditioner deep dive references it as the key comparison product.
 
