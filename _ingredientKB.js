@@ -292,3 +292,209 @@
                 interactionFlags: [],
                 outcomeWeights: { hold: 0.8, definition: 0.5 }
             },
+
+            // ===== Conditioning (Cationic Surfactants) =====
+            'cetrimonium chloride': {
+                inci: 'Cetrimonium Chloride',
+                commonName: 'Cetrimonium Chloride',
+                roles: ['conditioning'],
+                mechanism: 'Cationic surfactant. Attracted to negatively-charged hair surface, forms monolayer that smooths cuticle, reduces friction, neutralizes static.',
+                mwClass: 'low',
+                flags: ['cationic', 'detangling'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.6, shine: 0.3 }
+            },
+            'behentrimonium chloride': {
+                inci: 'Behentrimonium Chloride',
+                commonName: 'Behentrimonium Chloride',
+                roles: ['conditioning'],
+                mechanism: 'Long-chain (C22) cationic surfactant. More substantive than cetrimonium due to longer alkyl chain. Excellent detangling and conditioning.',
+                mwClass: 'low',
+                flags: ['cationic', 'detangling', 'substantive'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.7, shine: 0.4 }
+            },
+            'stearamidopropyl dimethylamine': {
+                inci: 'Stearamidopropyl Dimethylamine',
+                commonName: 'Stearamidopropyl Dimethylamine',
+                roles: ['conditioning'],
+                mechanism: 'Fatty acid amidoamine. Becomes cationic at low pH — conditions hair similarly to quats but milder. Common in "natural" conditioners.',
+                mwClass: 'low',
+                flags: ['cationic_at_low_ph', 'mild'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.5, shine: 0.3 }
+            },
+            'cetearyl alcohol': {
+                inci: 'Cetearyl Alcohol',
+                commonName: 'Cetearyl Alcohol (fatty alcohol)',
+                roles: ['conditioning', 'emollient'],
+                mechanism: 'Fatty alcohol blend (cetyl + stearyl). Provides slip, softness, and body. NOT a drying alcohol — this is an emollient. Forms the base of most conditioner formulas.',
+                mwClass: 'mid',
+                flags: ['emollient', 'thickener', 'non_drying'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.4, softness: 0.5 }
+            },
+            'cetyl alcohol': {
+                inci: 'Cetyl Alcohol',
+                commonName: 'Cetyl Alcohol (fatty alcohol)',
+                roles: ['conditioning', 'emollient'],
+                mechanism: 'C16 fatty alcohol. Emollient and thickener. Provides slip and softness.',
+                mwClass: 'mid',
+                flags: ['emollient', 'thickener', 'non_drying'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.3, softness: 0.4 }
+            },
+            'stearyl alcohol': {
+                inci: 'Stearyl Alcohol',
+                commonName: 'Stearyl Alcohol (fatty alcohol)',
+                roles: ['conditioning', 'emollient'],
+                mechanism: 'C18 fatty alcohol. Heavier than cetyl — more conditioning, more body.',
+                mwClass: 'mid',
+                flags: ['emollient', 'thickener', 'non_drying'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.4, softness: 0.5 }
+            },
+
+            // ===== Penetrating Oils =====
+            'cocos nucifera oil': {
+                inci: 'Cocos Nucifera (Coconut) Oil',
+                commonName: 'Coconut Oil',
+                roles: ['penetrating_oil'],
+                mechanism: 'Lauric acid has small molecular structure and high affinity for hair proteins, allowing cortex penetration. Reduces hygral fatigue and protein loss during washing. Unique among oils.',
+                mwClass: 'mid',
+                flags: ['penetrating', 'cortex_access', 'hygral_fatigue_protection'],
+                interactionFlags: ['best_on_clean_surface'],
+                outcomeWeights: { strength: 0.6, damage_prevention: 0.8 }
+            },
+            'argania spinosa kernel oil': {
+                inci: 'Argania Spinosa Kernel Oil',
+                commonName: 'Argan Oil',
+                roles: ['emollient'],
+                mechanism: 'Surface emollient only — does NOT penetrate hair cortex. Stays in outer 5µm. Provides shine and softness on the surface.',
+                mwClass: 'mid',
+                flags: ['surface_only', 'emollient'],
+                interactionFlags: [],
+                outcomeWeights: { shine: 0.4, smoothness: 0.3 }
+            },
+            'simmondsia chinensis seed oil': {
+                inci: 'Simmondsia Chinensis (Jojoba) Seed Oil',
+                commonName: 'Jojoba Oil',
+                roles: ['emollient'],
+                mechanism: 'Liquid wax ester (not a true oil). Mimics sebum composition. Surface emollient — does not penetrate cortex.',
+                mwClass: 'mid',
+                flags: ['surface_only', 'emollient', 'sebum_mimic'],
+                interactionFlags: [],
+                outcomeWeights: { shine: 0.3, smoothness: 0.3 }
+            },
+            'helianthus annuus seed oil': {
+                inci: 'Helianthus Annuus (Sunflower) Seed Oil',
+                commonName: 'Sunflower Oil',
+                roles: ['emollient'],
+                mechanism: 'Surface emollient. High in linoleic acid. Does not penetrate cortex (per Rele & Mohile 2003).',
+                mwClass: 'mid',
+                flags: ['surface_only', 'emollient'],
+                interactionFlags: [],
+                outcomeWeights: { shine: 0.3, smoothness: 0.2 }
+            },
+            'persea gratissima oil': {
+                inci: 'Persea Gratissima (Avocado) Oil',
+                commonName: 'Avocado Oil',
+                roles: ['emollient', 'penetrating_oil'],
+                mechanism: 'Monounsaturated fatty acids with some cortex penetration ability (less than coconut oil). Provides both surface emolliency and mild internal lubrication.',
+                mwClass: 'mid',
+                flags: ['partial_penetration', 'emollient'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.4, strength: 0.2 }
+            },
+            'ricinus communis seed oil': {
+                inci: 'Ricinus Communis (Castor) Seed Oil',
+                commonName: 'Castor Oil',
+                roles: ['emollient', 'humectant'],
+                mechanism: 'Ricinoleic acid (90%) is hygroscopic — attracts moisture. Very thick/viscous. Surface emollient with humectant properties.',
+                mwClass: 'mid',
+                flags: ['surface_only', 'humectant', 'viscous'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.3, shine: 0.4 }
+            },
+            'butyrospermum parkii butter': {
+                inci: 'Butyrospermum Parkii (Shea) Butter',
+                commonName: 'Shea Butter',
+                roles: ['emollient', 'conditioning'],
+                mechanism: 'Rich emollient with stearic and oleic acids. Seals moisture, provides softness and weight. Surface-level — does not penetrate cortex.',
+                mwClass: 'high',
+                flags: ['surface_only', 'emollient', 'heavy'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.5, softness: 0.6, frizz_control: 0.3 }
+            },
+
+            // ===== Humectants =====
+            'panthenol': {
+                inci: 'Panthenol',
+                commonName: 'Pro-Vitamin B5',
+                roles: ['humectant', 'protein_fill'],
+                mechanism: 'Penetrates hair shaft due to small molecular size. Converts to pantothenic acid inside hair. Attracts and retains water, increasing strand diameter by up to 10%. Effective at 1-5% concentration.',
+                mwClass: 'low',
+                flags: ['penetrating', 'hygroscopic', 'diameter_increasing'],
+                interactionFlags: [],
+                outcomeWeights: { strength: 0.4, elasticity: 0.5, smoothness: 0.3 }
+            },
+            'glycerin': {
+                inci: 'Glycerin',
+                commonName: 'Glycerin',
+                roles: ['humectant'],
+                mechanism: 'Polyol humectant. Attracts water from environment. In high humidity (>65°F dew point), can attract excess moisture causing frizz. In low humidity, can draw moisture FROM hair.',
+                mwClass: 'low',
+                flags: ['hygroscopic', 'humidity_sensitive', 'dew_point_dependent'],
+                interactionFlags: ['counterproductive_in_high_humidity'],
+                outcomeWeights: { smoothness: 0.3, frizz_control: -0.3 }
+            },
+            'propylene glycol': {
+                inci: 'Propylene Glycol',
+                commonName: 'Propylene Glycol',
+                roles: ['humectant'],
+                mechanism: 'Small-molecule humectant and solvent. Penetrates hair shaft. Less humidity-sensitive than glycerin.',
+                mwClass: 'low',
+                flags: ['penetrating', 'solvent', 'humectant'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.2 }
+            },
+            'butylene glycol': {
+                inci: 'Butylene Glycol',
+                commonName: 'Butylene Glycol',
+                roles: ['humectant'],
+                mechanism: 'Lightweight humectant and solvent. Less hygroscopic than glycerin — less humidity sensitivity.',
+                mwClass: 'low',
+                flags: ['humectant', 'solvent', 'lightweight'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.2 }
+            },
+            'sodium hyaluronate': {
+                inci: 'Sodium Hyaluronate',
+                commonName: 'Hyaluronic Acid (salt)',
+                roles: ['humectant'],
+                mechanism: 'High MW polysaccharide. Holds up to 1000x its weight in water. Too large to penetrate hair — forms a moisture-retaining film on surface.',
+                mwClass: 'high',
+                flags: ['surface_only', 'moisture_film', 'non_penetrating'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.3, softness: 0.3 }
+            },
+            'aloe barbadensis leaf juice': {
+                inci: 'Aloe Barbadensis Leaf Juice',
+                commonName: 'Aloe Vera',
+                roles: ['humectant', 'conditioning'],
+                mechanism: 'Polysaccharide-rich gel. Provides moisture retention and mild conditioning. Primarily surface-level.',
+                mwClass: 'high',
+                flags: ['surface_only', 'mild'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.3, softness: 0.2 }
+            },
+            'honey': {
+                inci: 'Mel (Honey)',
+                commonName: 'Honey',
+                roles: ['humectant', 'emollient'],
+                mechanism: 'Natural humectant rich in sugars. Attracts and retains moisture. Can be heavy on fine hair.',
+                mwClass: 'mid',
+                flags: ['humectant', 'emollient', 'heavy_on_fine_hair'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.3, softness: 0.4 }
+            },
