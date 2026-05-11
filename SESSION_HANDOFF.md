@@ -1,76 +1,76 @@
 # Session Handoff — Hair Routine
 
 **Date:** May 11, 2026
-**Session focus:** Diagnostic Adjustment Engine deployment + dev notes system
+**Session focus:** Fix conditioner ranking, product-aware timers, dual conditioning text
 
 ---
 
 ## What Was Done This Session
 
-### 1. Diagnostic Adjustment Engine — verified and deployed
-- JS syntax validation: 565K chars, parses clean
-- Functional tests (isolated via vm module): all 5 symptom trees rank correctly, interventions apply, Beta-Binomial tracking works, Normal-Normal outcome tracking works
-- Deployed to GitHub Pages (commit `112c06f`)
+### 1. Fixed mechanism name mismatch in rankProducts (commit d6cbc8f)
+- The +30 amodimethicone bonus checked for `'amodimethicone_conditioning'` and `'ceramide_repair'` — mechanism names that NO product uses. The bonus was completely dead code.
+- Fixed: now checks actual `ingredients` array for `'amodimethicone'` (+30) and `'ceramide np'` (+15 separate bonus).
+- Result: Garnier Color Repair (95) > Elvive (85) > OGX (70) > Dove (25). Elvive correctly ranks above OGX due to ceramide.
 
-### 2. Dead code cleanup (~532 lines / 26K chars removed)
-- Standalone BetaBinomialTracker, OutcomeTracker, DiagnosticScorer, outer CAUSE_TREES, old rankCauses
-- All superseded by the consolidated DiagnosticEngine IIFE
+### 2. Product-aware mask timers (commit d6cbc8f)
+- Added `recommendedTime` and `extendedTime` to deep_condition product intelligence:
+  - Elvive: 300s / 600s (5 min recommended, 10 min extended with heat cap)
+  - OGX: 60s / 180s (1-minute mask, 3 min extended)
+  - Dove: 300s / 600s
+- `buildPlan` and `upgradeConditioner` now use `getProductTime()` helper instead of hardcoded 600s.
+- `recordSwap` updates the timer when user picks a different mask from alternatives.
 
-### 3. Daily Plan spec tasks.md — marked all tasks complete
-- Tasks 1-11 were implemented in prior sessions but checkboxes weren't updated
+### 3. Fixed dual conditioning text (commit 27cbf58)
+- Conditioner step no longer described as "brief sealant" — it's a full 5-min conditioning step.
+- Updated instruction: "Full 5 min — amodimethicone selectively fills damaged cuticle gaps."
+- Updated tip: explains why it's not redundant with the mask (different mechanism).
+- Fixed misleading code comments.
 
-### 4. Dev Notes system — built and deployed
-- Floating 📝 FAB button accessible from any view
-- Notes saved to localStorage with timestamps
-- "Send all to dev machine" button POSTs to Local Drop via Tailscale
-- Endpoint: `http://computus-prime:8080/api/drop` (configurable on first failure)
-- Notes tagged as `dev-notes`, filename `hair-routine-dev-notes.json`
-- Notes marked "✓ sent" after successful delivery
-- Kiro hook (`check-dev-notes`) auto-checks for received notes on promptSubmit
-
-### 5. Corrected stale documentation
-- Service worker was already registered (session-context said it wasn't)
-- Updated session-context and handoff accordingly
-
-### 6. Hair science answer
-- Confirmed: stacking two conditioners is redundant (same binding sites)
-- Correct escalation: upgrade conditioner → extend time with heat cap → add Wonder Water → add pre-wash oil
+### 4. Fixed stiff symptom double-application (commit 1c6233c)
+- When `stiff` selected in Layer 3 (detailed), it was added to diagnosticSymptoms but also left in `contextOnly.detailed`. Could be processed by both DiagnosticEngine and AdjustmentEngine.
+- Now removed from contextOnly when routed to diagnostics.
 
 ---
 
 ## What's Live vs Pending
 
-- **Live:** Everything deployed at https://mandy-apperkeeper.github.io/hair-routine/
-- **Schema:** Version 14
-- **Dev notes:** Deployed but untested end-to-end (needs Tailscale + Local Drop running)
+- **Dev server (primary):** Served locally via Cauldron at `https://192.168.68.36:8443/hair-routine/` — commits are immediately live
+- **GitHub Pages:** DO NOT push to origin. Stale/archive only.
+- **Schema:** Version 14 (unchanged)
+- **SW Cache:** v20
 
 ---
 
 ## Known Issues
 
-1. **Dev notes delivery untested** — needs Tailscale active on iPad + Local Drop server running on ben-o-matic
-2. **No real-device testing of DiagnosticEngine** — structural + functional tests pass but needs iPad testing of cause cards
-3. **`stiff` in both Layer 1 and Layer 3 of adjust UI** — minor UX duplication
+1. **Brand name display scope unclear** — currently added to all product displays. User questioned "all? why" — may need to scope down to specific places only.
+2. **`stiff` in symptomMap is dead code** — Layer 1 has no stiff button, so the symptomMap entry for 'stiff' never fires from quick observations. Harmless but unnecessary. The detailed layer check handles it correctly.
+3. **Product-aware interventions untested on device** — from prior session
+4. **Auto-scroll untested on device** — from prior session
+
+---
+
+## Decisions Made
+
+- Conditioner ranking now uses actual ingredient lists (amodimethicone, ceramide np) rather than mechanism names. This is more reliable since mechanism names are inconsistent across products.
+- Ceramide gets its own separate +15 bonus (not bundled with amodimethicone). This correctly differentiates Elvive (has both) from OGX (amodimethicone only).
+- Mask timers are product-aware via `intelligence.recommendedTime`. Default fallback is 300s if not set.
+- Dual conditioning: conditioner step is a full 5-min step, not a brief sealant. Both products do their own work.
 
 ---
 
 ## Next Session Priorities
 
-### Immediate:
-1. **Diagnostic interventions: product-aware recommendations** — intervention helpers should query PlanGenerator.rankProducts for the best product given current conditions, not hardcode product IDs. Touches ~6 helper functions. Evidence text should name the specific product and why.
-2. **Test dev notes end-to-end** — verify Local Drop receives notes from iPad
-3. **iPad testing** — verify adjust flow, cause cards, interventions on real device
+### Needs user input:
+1. **Brand name scope** — should brand names show everywhere (plan steps, alternatives, swap lists, quick-log buttons) or only in specific places? Current: everywhere.
+2. **Dual conditioning order** — is mask always first, or does order depend on products?
 
-### Dev Notes system — thrive-level improvements (future):
-4. Auto-send on connectivity detection (navigator.onLine + visibilitychange)
-5. Extract into shared Apper Keeper feedback SDK
-6. Bidirectional status sync (addressed notes reflected back to user)
-7. Auto-capture app context with notes (current view, plan state, dew point)
-
-### Independent:
-8. Product deep dives (everpure-glossing-mask, loreal-wonder-water, nym-curl-talk-gel)
-9. Re-score everpure-bond-shampoo.md
-10. A6 adversarial pass
+### Still pending from prior sessions:
+3. **iPad testing** — ranking changes, product-aware timers, dual conditioning display, dew point, no geolocation prompt
+4. **Product deep dives** — everpure-glossing-mask, loreal-wonder-water, nym-curl-talk-gel in queue
+5. **Re-score everpure-bond-shampoo.md**
+6. **A6 adversarial pass**
+7. **Verify-mode: research drift audit**
 
 ---
 
@@ -80,14 +80,15 @@
 |------|--------|
 | adaptive-hair-routine | Complete (original, partially superseded) |
 | daily-plan | Complete (all tasks done) |
-| product-intelligence | Partially implemented (IngredientKB, BeliefTracker, AttributionEngine live) |
-| diagnostic-adjustment-engine | Complete (all tasks done, deployed) |
+| product-intelligence | Partially implemented |
+| diagnostic-adjustment-engine | Complete (all tasks done, deployed locally) |
 
 ---
 
 ## Architecture Notes
 
-- **DiagnosticEngine** (~line 8000): Beta-Binomial + Normal-Normal + mixed score + 15 causes + 15 interventions + discrepancy detection
-- **AdjustmentEngine** (slimmed): context adjustments only (holding_well, short_on_time, heat_styling, exercised)
-- **Dev Notes**: IIFE near end of file, uses localStorage key `hair-routine-dev-notes`, sends to Local Drop with tag `dev-notes`
-- **Local Drop endpoint**: `POST http://computus-prime:8080/api/drop` with headers `X-Filename`, `X-Tag: dev-notes`, `X-Device: ipad`
+- **Geolocation:** Removed. Weather comes from `/api/location` (Cauldron) → Open-Meteo API. No browser permissions.
+- **Conditioner ranking:** Uses `ingredients` array to check for amodimethicone (+30) and ceramide np (+15). Deep conditioners get -10 base penalty (upgrades, not default) but +20 in dry air (dewPoint < 35).
+- **Product timers:** `intelligence.recommendedTime` (seconds) on deep_condition products. `getProductTime(productId, inventory)` helper returns it with 300s fallback.
+- **Dual conditioning:** Mask step (deep_condition) inserted before conditioner step. Both get full timers. `recordSwap` updates timer when user picks different mask from alternatives.
+- **Deployment:** Local only via Cauldron `static_apps`. Commits are live immediately. Do NOT push to origin.
