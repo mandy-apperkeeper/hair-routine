@@ -91,7 +91,7 @@
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
-| 15 | garnier-color-repair-cond | Color Repair Conditioner | Garnier Fructis | primary | 📋 PLANNED | **ELEVATED PRIORITY** — adversarial finding (A4) confirms near-identical formula to EverPure with amodimethicone at higher position + pseudoceramide. May be co-primary or replacement. |
+| 15 | garnier-color-repair-cond | Color Repair Conditioner | Garnier Fructis | primary | ✅ DONE | `research/products/garnier-color-repair-cond.md` — co-primary with EverPure; pseudoceramide + better value; 87.5% score |
 | 16 | garnier-pre-shampoo | Hair Filler Inner Fiber Repair Pre-Shampoo | Garnier Fructis | supporting | 📋 PLANNED | |
 | 17 | garnier-filler-serum | Hair Filler Strength Repair Serum | Garnier Fructis | supporting | 📋 PLANNED | |
 
@@ -141,17 +141,17 @@
 ## Progress
 
 - **Total products:** 31
-- **Completed:** 11 (Dove conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + conditioner + 21-in-1 + clarifying + pre-shampoo)
-- **Remaining:** 20
+- **Completed:** 12 (Dove conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + conditioner + 21-in-1 + clarifying + pre-shampoo + Garnier Color Repair)
+- **Remaining:** 19
 - **Estimated sessions:** ~7-8 (2-3 products per session)
 
 ## Next Session Starts With
 
-1. `garnier-color-repair-cond` — Color Repair Conditioner (Garnier Fructis, primary tier — **HIGHEST PRIORITY**: adversarial finding A4 shows near-identical formula to EverPure with potentially superior amodimethicone concentration + pseudoceramide. Full deep dive needed to confirm.)
-2. `everpure-glossing-mask` — Glossing 5-Min Lamination Mask (L'Oréal EverPure, supporting tier)
-3. `loreal-wonder-water` — 8 Second Wonder Water (L'Oréal Elvive, supporting tier)
+1. `everpure-glossing-mask` — Glossing 5-Min Lamination Mask (L'Oréal EverPure, supporting tier)
+2. `loreal-wonder-water` — 8 Second Wonder Water (L'Oréal Elvive, supporting tier)
+3. `nym-curl-talk-gel` — Curl Talk Flash Freeze Gel (Not Your Mother's, primary tier)
 
-**Rationale:** Garnier conditioner remains #1 because the adversarial pass (A4) revealed it's a near-identical formula to EverPure Bond Repair Conditioner — same amodimethicone-only system, same behentrimonium chloride, same citric acid + arginine, but with amodimethicone at position 3 (vs EverPure's position 4) and a pseudoceramide that EverPure lacks. Full deep dive will determine if it should be co-primary or replace EverPure as the primary conditioner. EverPure clarifying and pre-shampoo are now complete — glossing mask finishes the EverPure line.
+**Rationale:** Garnier Color Repair deep dive complete (confirmed co-primary with EverPure, 87.5% score). EverPure clarifying and pre-shampoo are done — glossing mask finishes the EverPure line. Then styling products.
 
 ---
 

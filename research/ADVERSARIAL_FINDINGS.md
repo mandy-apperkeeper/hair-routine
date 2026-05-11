@@ -325,3 +325,68 @@ The Dove serum's aminopropyl dimethicone is functionally equivalent to amodimeth
 | 1 | `Garnier Fructis Color Repair Conditioner full ingredients INCI 2024 2025` | Full INCI from Ulta — 19 ingredients, amodimethicone at position 3 | Yes — seeking competitor |
 | 2 | `"aminopropyl dimethicone" vs amodimethicone hair performance comparison` | NaturallyCurly, BeautyCon, HairAide — all confirm same mechanism | Yes — seeking superiority evidence |
 | 3 | BeautyCon article on bis-aminopropyl dimethicone fetched | Confirms same mechanism, notes "more substantive" for bis- variant | Verification |
+
+---
+
+## A7: Garnier Color Repair Conditioner — Chlorhexidine Allergy Risk
+
+**Date:** May 10, 2026
+**Target report:** `research/products/garnier-color-repair-cond.md`
+**Claim challenged:** "Safe preservative at this concentration in a rinse-off product. No practical concern for Mandy's use case."
+
+### Search Queries
+
+1. `chlorhexidine hair conditioner scalp irritation allergic reaction reports` — found PMC case reports, Anaphylaxis UK, Health Canada advisory
+
+### Key Finding: Chlorhexidine Allergy Is Real But Context-Dependent
+
+**Sources:**
+- PMC7069565 (2020): "Chlorhexidine Allergy: Current Challenges and Future Prospects" — documents Type I (immediate) and Type IV (delayed) reactions
+- Health Canada (2017): Safety review of topical chlorhexidine — notes "serious allergic reactions including anaphylaxis" but in medical/antiseptic context
+- Anaphylaxis.org.uk: Lists chlorhexidine as a known allergen
+
+**Critical context:** ALL documented serious reactions are from:
+- Surgical prep (high concentration, large surface area, broken skin)
+- Wound care (direct tissue contact)
+- Mouthwash (0.12-0.2%, mucosal absorption)
+- Medical devices (coated catheters)
+
+**No documented cases found** of anaphylaxis or serious allergic reaction from a rinse-off hair conditioner containing chlorhexidine at cosmetic concentrations (position 13 of 19 = estimated <0.1%).
+
+### Impact on Report
+
+**None.** The report already notes: "If she ever develops scalp sensitivity, this would be one ingredient to investigate." The risk is properly contextualized. The preservative is safe at this concentration in this format for non-sensitized individuals.
+
+**Confidence:** High that the risk is negligible for this use case. The literature is clear that concentration and exposure route matter enormously.
+
+---
+
+## A8: Garnier Fructis Hair Filler — General Product Complaints
+
+**Date:** May 10, 2026
+**Target report:** `research/products/garnier-color-repair-cond.md`
+**Claim challenged:** "Garnier is marginally superior on formulation" — are there user reports of problems specific to this product?
+
+### Search Queries
+
+1. `Garnier Fructis Hair Filler conditioner silicone buildup problems complaints 2024 2025` — found general Garnier complaints (not specific to Color Repair), review sites
+
+### Key Finding: No Specific Complaints About Color Repair Conditioner
+
+- Shopvideri mentions "scalp irritation, dandruff, and dryness" from Garnier Fructis generally — but this refers to the broader line including sulfate-containing products
+- ProductReview.com.au complaint is about a reformulated coconut water product — different product entirely
+- Lemon8 review (2024) is positive: "it delivered! My hair often feels a bit dry and prone to breakage... I was really looking for something that could offer genuine strength repair"
+- No reports found of the Color Repair conditioner specifically causing buildup, silicone problems, or adverse reactions
+
+### Impact on Report
+
+**None.** No evidence contradicting the formulation assessment. The product appears well-received in user reviews, with no systematic complaints about the specific Color Repair conditioner.
+
+---
+
+## Search Query Log (A7-A8)
+
+| # | Query | Results | Adversarial? |
+|---|-------|---------|:---:|
+| 1 | `chlorhexidine hair conditioner scalp irritation allergic reaction reports` | PMC case reports (medical context), Health Canada advisory, Anaphylaxis UK | Yes — seeking safety concerns |
+| 2 | `Garnier Fructis Hair Filler conditioner silicone buildup problems complaints 2024 2025` | General Garnier complaints (not Color Repair specific), positive Lemon8 review | Yes — seeking user-reported problems |

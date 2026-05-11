@@ -55,3 +55,4 @@
 Full analysis: `research/V2_RESCORE_COMPARISON.md`
 
 | 2026-05-10 | Product Recommendations for Hair Profile | 45/50 | 45/50 | 0% | 90% | Excellent | Gap analysis + 4 targeted recommendations; all INCI verified |
+| 2026-05-10 | Garnier Color Repair Conditioner | 47.5/50 | 45/50 | -5% | 87.5% | Excellent | Co-primary with EverPure; pseudoceramide differentiator; N4 penalty (C&T 403) |
