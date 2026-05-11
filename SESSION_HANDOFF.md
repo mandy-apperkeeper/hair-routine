@@ -55,8 +55,12 @@
 **Priority order:**
 1. `garnier-color-repair-cond` — Full deep dive (HIGHEST PRIORITY — adversarial A4 shows it may be co-primary or better than EverPure conditioner)
 2. Re-score `everpure-bond-shampoo.md` (file was overwritten, scorecard lost)
-3. `everpure-clarifying` — Clarifying Shampoo deep dive
-4. `everpure-bond-pre` — Pre-Shampoo Treatment deep dive
+3. `everpure-glossing-mask` — Glossing 5-Min Lamination Mask deep dive
+4. `loreal-wonder-water` — 8 Second Wonder Water deep dive
+
+**Recently completed (this session):**
+- `everpure-bond-pre` — ✅ DONE (Supporting Cast confirmed; same base as Garnier Hair Filler; citric acid mechanism peer-reviewed)
+- `everpure-clarifying` — ✅ DONE (Primary Rotation confirmed; AOS sulfonate + salicylic acid)
 
 **Queue file:** `research/PRODUCT_DEEP_DIVE_QUEUE.md` has full tracking (10/31 complete).
 
