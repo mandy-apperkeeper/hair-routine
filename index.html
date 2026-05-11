@@ -6533,6 +6533,11 @@
                     if (step === stepType || additionalSteps.indexOf(stepType) !== -1) {
                         candidates.push(product);
                     }
+                    // Include deep_condition products as alternatives for conditioner step
+                    // (tiered conditioning — richer options always available)
+                    else if (stepType === 'conditioner' && (step === 'deep_condition' || additionalSteps.indexOf('deep_condition') !== -1)) {
+                        candidates.push(product);
+                    }
                 }
 
                 if (candidates.length === 0) return [];
@@ -6548,6 +6553,18 @@
                         if (mechs.indexOf('amodimethicone_conditioning') !== -1 || mechs.indexOf('ceramide_repair') !== -1) {
                             score += 30;
                             reasons.push('Amodimethicone — selective repair');
+                        }
+                        // Deep conditioners get a base penalty (they're upgrades, not default)
+                        // but context can boost them above regular conditioner
+                        var productStep = (product.intelligence && product.intelligence.step) || '';
+                        if (productStep === 'deep_condition') {
+                            score -= 10;
+                            reasons.push('Deep conditioner — upgrade option');
+                            // Boost deep conditioners in dry conditions
+                            if (dewPoint !== null && dewPoint < 35) {
+                                score += 20;
+                                reasons.push('Dry air — richer conditioning helps');
+                            }
                         }
                     }
 
@@ -6708,15 +6725,8 @@
                     });
                 }
 
-                // Deep condition: skip if < 14 days
-                if (deepConditionDays !== null && deepConditionDays < 14) {
-                    skips.push({
-                        stepType: 'deep_condition',
-                        productName: 'Deep condition',
-                        reason: 'Not due (last: ' + deepConditionDays + 'd ago)',
-                        lastUsed: deepConditionDays
-                    });
-                }
+                // Deep condition: no longer skipped — richer conditioning is standard every wash
+                // (Tiered intensity is handled in buildPlan via conditioning tier logic)
 
                 // Olaplex: skip if < 7 days
                 if (olaplexDays !== null && olaplexDays < 7) {
@@ -6828,6 +6838,44 @@
                     if (hasConditionerStep && rotation.lastAssignedDate !== today) {
                         UseUpRotation.recordRotation(state, useUpSwap.productId);
                         StateManager.saveState(state);
+                    }
+                }
+
+                // === Tiered Conditioning Logic ===
+                // Every wash includes richer conditioning. Suggest intensity based on context.
+                var conditioningTier = 'standard'; // default: conditioner + heat cap option
+                var conditioningTip = null;
+
+                // Check if last wash was a clarify — suggest mask day
+                var lastTreats = [];
+                var evts = state.events || [];
+                for (var ei = evts.length - 1; ei >= 0; ei--) {
+                    lastTreats = evts[ei].treatments || [];
+                    break;
+                }
+                if (lastTreats.indexOf('clarify') !== -1) {
+                    conditioningTier = 'mask';
+                    conditioningTip = '🧖 Mask day — post-clarify hair is stripped. Use Elvive balm or mask with heat cap for deeper repair.';
+                } else if (dewPoint !== null && dewPoint < 35) {
+                    conditioningTier = 'boost';
+                    conditioningTip = '💧 Dry air — consider heat cap or upgrading to a richer conditioner/mask today.';
+                } else {
+                    conditioningTip = '✨ Condition generously — heat cap optional for extra penetration. Mask/balm always available as alternatives.';
+                }
+
+                // Apply tier tip to the conditioner step
+                for (var ct = 0; ct < planSteps.length; ct++) {
+                    if (planSteps[ct].stepType === 'conditioner') {
+                        // Only set tip if not already overridden by use-up note or adjustment
+                        if (!planSteps[ct].tip) {
+                            planSteps[ct].tip = conditioningTip;
+                        }
+                        // For mask tier, suggest longer timer
+                        if (conditioningTier === 'mask' && planSteps[ct].timer) {
+                            planSteps[ct].timer.duration = 600; // 10 min for mask day
+                            planSteps[ct].timer.label = 'Deep condition (mask day)';
+                        }
+                        break;
                     }
                 }
 
