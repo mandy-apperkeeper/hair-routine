@@ -2214,6 +2214,8 @@
                     mechanisms: ['cuticle_smoothing', 'protein_fill', 'conditioning'],
                     delivery: 'rinse_off',
                     step: 'deep_condition',
+                    recommendedTime: 60,
+                    extendedTime: 180,
                     outcomes: { smoothness: 0.7, strength: 0.5, shine: 0.5 },
                     cumulative: true,
                     interactions: [],
@@ -2330,6 +2332,8 @@
                     mechanisms: ['cuticle_smoothing', 'protein_fill', 'conditioning'],
                     delivery: 'rinse_off',
                     step: 'deep_condition',
+                    recommendedTime: 300,
+                    extendedTime: 600,
                     outcomes: { shine: 0.8, smoothness: 0.8, strength: 0.5 },
                     cumulative: true,
                     interactions: [],
@@ -2373,6 +2377,8 @@
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
                     step: 'deep_condition',
+                    recommendedTime: 300,
+                    extendedTime: 600,
                     outcomes: { shine: 0.5, smoothness: 0.6 },
                     cumulative: false,
                     interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }],
@@ -2727,6 +2733,8 @@
                                 mechanisms: ['cuticle_smoothing', 'protein_fill', 'conditioning'],
                                 delivery: 'rinse_off',
                                 step: 'deep_condition',
+                                recommendedTime: 300,
+                                extendedTime: 600,
                                 outcomes: { shine: 0.8, smoothness: 0.8, strength: 0.5 },
                                 cumulative: true,
                                 interactions: []
@@ -7409,9 +7417,17 @@
                     // Domain rule: Amodimethicone conditioner always #1
                     if (stepType === 'conditioner') {
                         var mechs = (product.intelligence && product.intelligence.mechanisms) || [];
-                        if (mechs.indexOf('amodimethicone_conditioning') !== -1 || mechs.indexOf('ceramide_repair') !== -1) {
+                        var ings = (product.intelligence && product.intelligence.ingredients) || [];
+                        // Check actual ingredients for amodimethicone (the mechanism name in inventory is 'cuticle_smoothing')
+                        var hasAmodimethicone = ings.indexOf('amodimethicone') !== -1;
+                        var hasCeramide = ings.indexOf('ceramide np') !== -1;
+                        if (hasAmodimethicone) {
                             score += 30;
-                            reasons.push('Amodimethicone — selective repair');
+                            reasons.push('Amodimethicone — selective cuticle repair');
+                        }
+                        if (hasCeramide) {
+                            score += 15;
+                            reasons.push('Ceramide — 18-MEA replacement, structural');
                         }
                         // Deep conditioners get a base penalty (they're upgrades, not default)
                         // but context can boost them above regular conditioner
@@ -7516,6 +7532,19 @@
                         reason: item.reasons.length > 0 ? item.reasons[0] : ''
                     };
                 });
+            }
+
+            /**
+             * Get the recommended timer duration for a product.
+             * Falls back to 300s (5 min) if no recommendedTime is set.
+             */
+            function getProductTime(productId, inventory) {
+                for (var i = 0; i < inventory.length; i++) {
+                    if (inventory[i].id === productId && inventory[i].intelligence) {
+                        return inventory[i].intelligence.recommendedTime || 300;
+                    }
+                }
+                return 300;
             }
 
             /**
@@ -7759,7 +7788,7 @@
                     condPlan.product = 'elvive-total-repair-5-balm';
                     condPlan.productName = "L'Or\u00e9al Elvive Total Repair 5 Damage Erasing Balm";
                     condPlan.method = 'Section into 4+ parts. Apply generously mid-lengths to ends. Heat cap on.';
-                    condPlan.timer = 600;
+                    condPlan.timer = getProductTime('elvive-total-repair-5-balm', inventory);
                     condPlan.timerLabel = 'Deep condition — mask 🧢';
                     condPlan.heatCap = true;
                     condPlan.tip = '🧖 Mask day — post-clarify hair is stripped. Elvive balm has protein + ceramide for deep repair.';
@@ -7770,7 +7799,7 @@
                     condPlan.product = 'elvive-total-repair-5-balm';
                     condPlan.productName = "L'Or\u00e9al Elvive Total Repair 5 Damage Erasing Balm";
                     condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — your hair needs extra repair today.';
-                    condPlan.timer = 600;
+                    condPlan.timer = getProductTime('elvive-total-repair-5-balm', inventory);
                     condPlan.timerLabel = 'Deep condition — repair 🧢';
                     condPlan.heatCap = true;
                     condPlan.tip = '📊 ' + autoUpgradeReason;
@@ -7783,7 +7812,7 @@
                         condPlan.product = 'elvive-total-repair-5-balm';
                         condPlan.productName = "L'Or\u00e9al Elvive Total Repair 5 Damage Erasing Balm";
                         condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — dry air + recent results warrant deep repair.';
-                        condPlan.timer = 600;
+                        condPlan.timer = getProductTime('elvive-total-repair-5-balm', inventory);
                         condPlan.timerLabel = 'Deep condition — dry air repair 🧢';
                         condPlan.heatCap = true;
                         condPlan.tip = '💧 Dry air + recent results below expectations — mask + conditioner today.';
@@ -8112,10 +8141,17 @@
                     to: toProductId
                 });
                 // Update the step in the plan
+                var state = StateManager.getState();
+                var inventory = state.inventory || [];
                 for (var i = 0; i < plan.steps.length; i++) {
                     if (plan.steps[i].id === stepId) {
                         plan.steps[i].productId = toProductId;
                         plan.steps[i].productName = toProductName;
+                        // Update timer if the new product has a recommendedTime (deep_condition products)
+                        if (plan.steps[i].stepType === 'deep_condition' && plan.steps[i].timer) {
+                            var newTime = getProductTime(toProductId, inventory);
+                            plan.steps[i].timer.duration = newTime;
+                        }
                         break;
                     }
                 }
@@ -9142,6 +9178,11 @@
                 if (isDeepUpgrade && !hasMask) {
                     // === DUAL CONDITIONING (diagnostic-triggered) ===
                     // Insert mask step BEFORE the conditioner, keep conditioner as sealing step
+                    var maskProd = null;
+                    for (var mp = 0; mp < inventory.length; mp++) {
+                        if (inventory[mp].id === bestUpgrade.productId) { maskProd = inventory[mp]; break; }
+                    }
+                    var maskTime = (maskProd && maskProd.intelligence && maskProd.intelligence.recommendedTime) || 300;
                     var maskStep = {
                         id: 'step-mask-diag',
                         number: condStep.number,
@@ -9152,7 +9193,7 @@
                         inventoryName: bestUpgrade.productName,
                         instruction: 'Section into 4+ parts. Apply generously. Heat cap on. ' + (bestUpgrade.reason || 'Upgraded for current conditions.'),
                         scienceBadge: null,
-                        timer: { duration: 600, label: 'Deep condition 🧢' },
+                        timer: { duration: maskTime, label: 'Deep condition 🧢' },
                         tip: '🧖 Mask step added — ' + (bestUpgrade.reason || 'deep conditioning upgrade for current hair state.'),
                         phase: condStep.phase,
                         alternatives: [],
