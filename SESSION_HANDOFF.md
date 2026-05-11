@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 25)
+**Last updated:** May 10, 2026 (Session 26)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -9,33 +9,29 @@
 ## Current State
 
 ### What's Live & Working
-- Everything from Session 24 remains working
-- **Timer alert sound now actually fires** — ascending chime (C5→E5→G5) via Web Audio API on both walkthrough and daily plan timer completion
+- Everything from Session 25 remains working
+- **Seal state indicator** in status bar — shows "🔒 X washes left" when seal is active, hidden when inactive
+- **Export reminder card** — appears when 5+ events logged and 30+ days since last export (or never exported). Dismissable per month. "Export now" triggers JSON download.
 
-### What Was Done This Session (25)
+### What Was Done This Session (26)
 
-1. **Fixed timer alerts not firing** — The `soundEnabled` setting and UI checkbox existed, but no audio code was ever wired up. Added Web Audio API chime that plays on timer completion for both walkthrough timers and daily plan timers.
-2. **Added vibration to daily plan timer** — Previously only the walkthrough timer vibrated on completion. Now both do.
-3. **iOS audio unlock handled** — `resumeAudioCtx()` called on timer Start button tap (user gesture) so the AudioContext is unlocked before the timer finishes.
-4. **Background audio compatibility confirmed** — Web Audio API oscillator tones mix/overlay on top of existing audio (Audible, Spotify, podcasts). They don't interrupt or claim exclusive audio session.
+1. **Committed seal state indicator + export reminder** — These were uncommitted changes from Session 25. Auto-committed and pushed.
+2. **Orientation / next-build assessment** — Reviewed all specs, handoffs, and project state to determine next code build.
 
-### Technical Details
+### What Was NOT Built (session was orientation-only)
 
-- Timer alert is a 3-note ascending sine wave chime (~0.6s total): C5 (523Hz) → E5 (659Hz) → G5 (784Hz)
-- Respects `settings.soundEnabled` — won't play if user disabled sound in Settings
-- Respects `settings.vibrationEnabled` — vibration independent of sound
-- iOS silent mode (physical switch) will mute Web Audio — vibration still works
-- AudioContext created lazily on first timer start, resumed from user gesture to satisfy iOS Safari autoplay policy
+No new code was written this session. The session was spent assessing what's next.
 
 ### Decisions Made This Session
 
-- **Web Audio API over `<audio>` element** — oscillator tones overlay background audio rather than interrupting it. No audio file to cache/load.
-- **Ascending chime over single beep** — more pleasant, less jarring in a bathroom context
+- **Next code build is Product Intelligence** — specifically Task 1.1 (IngredientKB module, ~40-60KB of ingredient data). Everything else in the intelligence spec depends on it.
+- **Product Deep Dive Pipeline remains the research priority** — but that's research writing, not code.
+- **Hair photo upload needs its own spec** — it's in CHANGE_LOG as high priority but is a major new capability (AI integration, new UI, new data flow).
 
 ### Known Issues (carry to next session)
 
-- **iOS silent mode mutes Web Audio** — this is expected platform behavior, not a bug. Vibration still works as fallback.
-- If the app is fully backgrounded (not just screen-off) when timer expires, the chime plays when you return to the app (via visibilitychange handler). No way to play audio from a backgrounded web app without a native wrapper.
+- **iOS silent mode mutes Web Audio** — expected platform behavior. Vibration still works as fallback.
+- If the app is fully backgrounded when timer expires, the chime plays when you return to the app. No way to play audio from a backgrounded web app without a native wrapper.
 
 ### What's NOT Done (carry forward)
 
@@ -139,11 +135,22 @@ All previous decisions remain, plus:
 | 23 | Dove placement discussion, research-data-adherence steering, deep-dive scoped | Complete |
 | 24 | Product deep dive pipeline: queue, template, execution plan | Complete |
 | 25 | **Timer alert sound fix — Web Audio chime + Audible compatibility** | Complete |
+| 26 | **Orientation — seal indicator + export reminder committed, next-build assessed** | Complete |
 
 ---
 
 ## Repo State
 
 - **Branch:** main
-- **Latest commit:** Timer alert sound fix (Web Audio API chime)
-- **Pushed:** Needs push
+- **Latest commit:** chore: auto-commit uncommitted changes (seal indicator + export reminder)
+- **Pushed:** Yes
+
+---
+
+## Next Session: Start Here
+
+**Code build:** Product Intelligence Task 1.1 — IngredientKB module. This is the foundation for the entire intelligence system. ~100 ingredients as a JS object literal embedded in `index.html`. Sources: `HAIR_CONSULTATION_HANDOFF.md`, `research/PHASE1_INGREDIENT_FUNCTION_MAP.md`, INCIDecoder.
+
+**Research (if preferred over code):** Product Deep Dive Pipeline — 3 Dove products next (INCI already pulled). Protocol in `deep-dive-auto.md` + `research-data-adherence.md`.
+
+**Quick alternative:** Hair photo upload spec (high priority in CHANGE_LOG, needs its own spec before building).
