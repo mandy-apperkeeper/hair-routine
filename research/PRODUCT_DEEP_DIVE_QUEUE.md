@@ -153,3 +153,21 @@
 
 **Rationale:** EverPure daily drivers complete. Finishing the EverPure line (clarifying + pre-shampoo) before moving to Garnier. The Garnier conditioner is especially important because the EverPure conditioner deep dive references it as the key comparison product.
 
+---
+
+## Adversarial Research Queue
+
+These are adversarial angles identified during v2 scoring (May 10, 2026) that challenge assumptions in existing deep dives. Each should be run as a targeted adversarial search and appended to the relevant product report.
+
+| # | Question | Challenges | Target Report | Priority |
+|---|----------|-----------|---------------|----------|
+| A1 | Do sulfate-free shampoos have downsides for thick/coarse hair? (insufficient cleansing, product buildup, scalp issues) | EverPure Shampoo's "sulfate-free is always better for coarse hair" framing | `everpure-bond-shampoo.md` | Medium |
+| A2 | Does dimethicone in leave-in sprays actually build up meaningfully at spray concentrations? Or is the amount per application too small to matter? | 21-in-1's dimethicone/dimethiconol concern — may be overstated OR understated | `loreal-21in1.md` | Medium |
+| A3 | Are there competing leave-in products (mass-market, $5-15) with amodimethicone + coconut oil + UV filter that would challenge the 21-in-1's "best in category" claim? | 21-in-1's "no other leave-in matches it" conclusion | `loreal-21in1.md` | High |
+
+**Protocol:** Each adversarial search should:
+1. Log the actual search queries used (per Anti-Inflation Rule 3)
+2. Report findings honestly — if the adversarial angle has merit, update the report's conclusion
+3. Append findings as a new section ("Adversarial Appendix — [date]") to the target report
+4. Re-score the report if findings change the assessment
+
