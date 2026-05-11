@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 28)
+**Last updated:** May 10, 2026 (Session 29)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -9,59 +9,34 @@
 ## Current State
 
 ### What's Live & Working
-- Everything from Session 27 remains working
-- Garnier Diamond Sleek added to inventory (primary tier, blowout context)
-- Marc Anthony ingredient list corrected (was wrong — now verified from INCI)
-- Seal state logic updated to trigger on either Marc Anthony OR Diamond Sleek
-- Scoring logic updated for Diamond Sleek
-- NYM gel interaction list updated to include Diamond Sleek blocking note
+- Everything from Session 28 remains working
+- **IngredientKB module** — 84 hair care ingredients, 17 functional roles, lookup functions (getByRole, getByName, fuzzyMatch, analyzeIngredientList), ~57KB
+- **BeliefTracker module** — Bayesian Normal-Normal conjugate belief system, wired into all wash event save paths + deferred rating
+- **Schema v13** — adds state.beliefs (initialized from product outcomes), state.discoveredInteractions, and ingredients arrays to inventory products
+- **Ingredients arrays** on all 31 inventory products (97 INCI references, all validated against KB)
 
-### What Was Done This Session (28)
+### What Was Done This Session (29)
 
-1. **Product Recommendations Research** (`research/PRODUCT_RECOMMENDATIONS_FOR_HAIR_PROFILE.md`)
-   - Full gap analysis of Mandy's product collection vs. stated concerns
-   - 4 gaps identified, 4 products recommended
-   - After discussion: 3 of 4 gaps already covered by existing inventory (silk pillowcase, Marc Anthony, Diamond Sleek)
-   - Only remaining gap: Garnier Frizz Tamer Wand for TE regrowth flyaways (~$9)
-   - Scored 90% (Excellent)
-
-2. **Marc Anthony vs Diamond Sleek Comparison**
-   - Both contain Polysilicone-29 (same heat-activated humidity barrier)
-   - Marc Anthony: + Silicone Quaternium-8 (stronger film), spray, 6.7oz
-   - Diamond Sleek: + hydrolyzed proteins + argan oil (lighter, more shine), spray, 4.6oz
-   - Interchangeable — use whichever is open, finish one before starting the other
-   - OR: alternate for A/B comparison (Mandy's preference)
-
-3. **Inventory Update** (code changes to `index.html`)
-   - Added `garnier-diamond-sleek` product entry
-   - Fixed `marc-anthony-shield` ingredients (removed incorrect dimethicone/cyclopentasiloxane, added verified INCI)
-   - Updated seal state activation: `products.includes('marc-anthony-shield') || products.includes('garnier-diamond-sleek')`
-   - Updated scoring logic for both products
-   - Added Diamond Sleek to step mapping and PRODUCTS constants
-   - Added Diamond Sleek to NYM gel interaction array
-
-4. **Research Scores Updated**
-   - `research/RESEARCH_SCORES.md` — new row for Product Recommendations (90%)
-   - `RESEARCH_SCORES.md` (global) — same
-
-5. **Product Deep Dive Queue Updated**
-   - Diamond Sleek added as #31 in Batch 5
-   - Total products: 31
+1. **Product Intelligence Task 1.1** — IngredientKB module (84 ingredients, 17 roles, fuzzy matching, ingredient list analysis)
+2. **Product Intelligence Task 1.2** — Added ingredients arrays to all 31 DEFAULT_INVENTORY products
+3. **Product Intelligence Task 1.3** — Schema v12→v13 migration (beliefs, discoveredInteractions, ingredients)
+4. **Product Intelligence Task 2.1** — BeliefTracker module (initBeliefs, updateBeliefs, getBelief, getProductBeliefs, getConfidence, getCredibleInterval, checkDivergence)
+5. **Product Intelligence Task 2.2** — Wired BeliefTracker into all 3 wash event save paths + deferred rating
+6. **Task 3 Checkpoint** — Verified data layer complete and working
+7. **V2 Rescore Comparison** — Completed and updated RESEARCH_SCORES.md with v2 composite scores
 
 ### Decisions Made This Session
 
-- **Marc Anthony and Diamond Sleek are interchangeable** — same active (Polysilicone-29), same role. Don't use both on same wash day.
-- **Mandy wants to alternate them for A/B comparison** — not rotation for its own sake, but to gather per-product rating data and determine which performs better. This needs a small code change to the blowout walkthrough (next session).
-- **Silk pillowcase is sufficient** — no bonnet needed.
-- **Only remaining product gap is Garnier Frizz Tamer Wand** (~$9) for TE regrowth flyaway management at hairline.
-- **Virtue Frizz Block ($44) is not worth it** — INCI shows no identifiable humidity-barrier mechanism despite marketing claims.
-- **Garnier Sleek & Stay is NOT owned** — was discussed but Mandy doesn't have it. Not needed since Marc Anthony + Diamond Sleek cover the same gap.
+- **Silicone Quaternium-8 added to KB** — present in Marc Anthony shield
+- **Rating normalization: 1-5 → 0-1** for belief updates (1→0, 5→1.0)
+- **BeliefTracker placed after InventoryManager** in module order
+- **Prior variance 2.0, observation variance 1.0** — wide priors that converge after ~10 observations
 
 ### Known Issues (carry to next session)
 
 - **iOS silent mode mutes Web Audio** — expected platform behavior. Vibration still works as fallback.
 - **Blowout walkthrough hardcodes Marc Anthony** — needs update to alternate between Marc Anthony and Diamond Sleek for A/B comparison.
-- Session 25 commit still needs push (timer alert fix).
+- **File size: 486KB** — still fine for single-file architecture but worth monitoring.
 
 ### What's NOT Done (carry forward)
 
@@ -81,8 +56,11 @@
 #### USE-UP PRODUCT ROTATION (code — after research pipeline progresses)
 Design approach scoped in Session 22.
 
-#### PRODUCT INTELLIGENCE (next code build)
-- Task 1.1: IngredientKB module (~40-60KB ingredient data)
+#### PRODUCT INTELLIGENCE (next code build — Tasks 1-3 DONE)
+- Tasks 1.1-1.3, 2.1-2.2 complete (IngredientKB + BeliefTracker + schema v13)
+- **Next:** Task 6 — AttributionEngine (mechanism-based attribution from day 1)
+- Then: Task 8 — RecommendationEngine (domain rules + Bayesian recommendations)
+- Then: Task 10 — DiscoveryParser (ingredient list parsing for new products)
 
 #### Other carry-forward items
 - Daily Plan polish
@@ -106,7 +84,7 @@ Design approach scoped in Session 22.
 
 ## Schema
 
-**Version:** 11 (Got2b ID unification)
+**Version:** 13 (beliefs + discoveredInteractions + ingredients)
 
 ---
 
@@ -161,6 +139,7 @@ All previous decisions remain, plus:
 | 26 | Orientation, seal state commit, next-build assessment | Complete |
 | 27 | Product deep dives: EverPure shampoo + conditioner + 21-in-1 leave-in | Complete |
 | 28 | **Product recs research + Diamond Sleek added to inventory + A/B comparison scoped** | Complete |
+| 29 | **Product Intelligence data layer: IngredientKB + BeliefTracker + schema v13** | Complete |
 
 ---
 
@@ -174,8 +153,8 @@ All previous decisions remain, plus:
 
 ## Next Session: Start Here
 
-**Quick code fix (15 min):** Update blowout walkthrough to alternate between Marc Anthony and Diamond Sleek. Track which was used last in state, suggest the other next blowout day. Per-product ratings will accumulate data for comparison.
+**Quick code fix (15 min):** Update blowout walkthrough to alternate between Marc Anthony and Diamond Sleek for A/B comparison.
+
+**Product Intelligence (next major build):** Task 6 — AttributionEngine. Mechanism-based attribution (explains which products contributed to which outcomes after a wash). Uses IngredientKB data. Available from day 1 (no user data needed). Post-wash card already exists — just needs the engine behind it.
 
 **Research (if preferred):** Product Deep Dive Pipeline — EverPure Pre-Shampoo + Garnier Color Repair Conditioner next.
-
-**Or:** IngredientKB module (Product Intelligence Task 1.1) — the foundation for the intelligence system.
