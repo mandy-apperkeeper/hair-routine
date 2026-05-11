@@ -5319,6 +5319,553 @@
             };
         })();
 
+        // ===== AttributionEngine (Passive Intelligence) =====
+        // Provides mechanism-based attribution (day 1), marginal contribution detection (3+ events),
+        // contextual pattern detection (15+ events), and interaction detection (30+ events).
+        const AttributionEngine = (function() {
+
+            /**
+             * Mechanism-based attribution: given a wash event's products, return outcome attributions.
+             * Available from day 1 — no user data needed, uses product intelligence metadata.
+             * @param {object} washEvent - { products: [...], ... }
+             * @returns {object} { outcomes: { shine: [{ productId, productName, score, mechanism }], ... }, interactions: [...] }
+             */
+            function explain(washEvent) {
+                var state = StateManager.getState();
+                var inventory = state.inventory || [];
+                var products = washEvent.products || [];
+
+                var outcomeMap = {}; // { shine: [{ productId, productName, score, mechanism }] }
+                var interactions = [];
+
+                products.forEach(function(prodId) {
+                    var product = inventory.find(function(p) { return p.id === prodId; });
+                    if (!product || !product.intelligence) return;
+
+                    // Collect outcome contributions
+                    var outcomes = product.intelligence.outcomes || {};
+                    Object.keys(outcomes).forEach(function(outcomeKey) {
+                        if (outcomes[outcomeKey] >= 0.3) { // Include moderate+ contributions
+                            if (!outcomeMap[outcomeKey]) outcomeMap[outcomeKey] = [];
+                            outcomeMap[outcomeKey].push({
+                                productId: product.id,
+                                productName: product.brand + ' ' + product.name,
+                                score: outcomes[outcomeKey],
+                                mechanism: getMechanismDescription(product.intelligence.mechanisms, outcomeKey)
+                            });
+                        }
+                    });
+
+                    // Collect interaction notes
+                    var prodInteractions = product.intelligence.interactions || [];
+                    prodInteractions.forEach(function(interaction) {
+                        if (interaction.with === '*' || products.indexOf(interaction.with) !== -1) {
+                            interactions.push({
+                                type: interaction.type,
+                                note: interaction.note,
+                                fromProduct: product.brand + ' ' + product.name,
+                                fromProductId: product.id,
+                                withProductId: interaction.with
+                            });
+                        }
+                    });
+                });
+
+                // Sort each outcome's contributors by score (highest first)
+                Object.keys(outcomeMap).forEach(function(key) {
+                    outcomeMap[key].sort(function(a, b) { return b.score - a.score; });
+                });
+
+                return { outcomes: outcomeMap, interactions: interactions };
+            }
+
+            /**
+             * Generate a human-readable mechanism description for a product's contribution to an outcome.
+             * @param {Array} mechanisms - product's intelligence.mechanisms array
+             * @param {string} outcome - the outcome dimension
+             * @returns {string} description
+             */
+            function getMechanismDescription(mechanisms, outcome) {
+                var MECHANISM_OUTCOME_MAP = {
+                    cuticle_smoothing: { shine: 'smooths cuticle for light reflection', smoothness: 'seals cuticle layers flat', frizz_control: 'prevents moisture ingress at cuticle' },
+                    bond_repair: { strength: 'repairs disulfide bonds', elasticity: 'restores internal bond structure' },
+                    protein_fill: { strength: 'fills gaps in damaged cortex', elasticity: 'reinforces weakened fiber' },
+                    humidity_barrier: { frizz_control: 'blocks humidity penetration', definition: 'maintains style against moisture' },
+                    conditioning: { smoothness: 'lubricates hair fiber', shine: 'reduces surface friction' },
+                    penetrating_oil: { strength: 'penetrates cortex (lauric acid affinity)', elasticity: 'prevents hygral fatigue' },
+                    hold: { definition: 'forms flexible film for curl pattern', frizz_control: 'physical barrier against humidity' },
+                    clarifying: { cleanliness: 'removes product buildup and mineral deposits' },
+                    heat_protection: { strength: 'thermal shield prevents protein denaturation', frizz_control: 'seals cuticle during heat exposure' },
+                    humectant: { smoothness: 'draws moisture to fiber surface' }
+                };
+
+                for (var i = 0; i < mechanisms.length; i++) {
+                    var mech = mechanisms[i];
+                    if (MECHANISM_OUTCOME_MAP[mech] && MECHANISM_OUTCOME_MAP[mech][outcome]) {
+                        return MECHANISM_OUTCOME_MAP[mech][outcome];
+                    }
+                }
+                return 'contributes to ' + outcome.replace(/_/g, ' ');
+            }
+
+            /**
+             * Marginal contribution detection: compare ratings with/without a specific product.
+             * Requires minimum 3 events in each group (with and without).
+             * @param {string} productId - the product to analyze
+             * @returns {object|null} { productId, productName, meanWith, meanWithout, difference, nWith, nWithout, wilsonLower, confounders }
+             */
+            function getMarginalInsights(productId) {
+                var state = StateManager.getState();
+                var events = state.events || [];
+                var inventory = state.inventory || [];
+
+                var product = inventory.find(function(p) { return p.id === productId; });
+                if (!product) return null;
+
+                // Split events into with/without groups (only rated events)
+                var withProduct = [];
+                var withoutProduct = [];
+
+                events.forEach(function(event) {
+                    if (!event.rating) return; // skip unrated
+                    if ((event.products || []).indexOf(productId) !== -1) {
+                        withProduct.push(event);
+                    } else {
+                        withoutProduct.push(event);
+                    }
+                });
+
+                // Need minimum 3 in each group
+                if (withProduct.length < 3 || withoutProduct.length < 3) return null;
+
+                var meanWith = average(withProduct.map(function(e) { return e.rating; }));
+                var meanWithout = average(withoutProduct.map(function(e) { return e.rating; }));
+                var difference = meanWith - meanWithout;
+
+                // Wilson score lower bound for reliability of the difference
+                var wilsonLower = wilsonScoreLower(withProduct.length, withoutProduct.length, difference);
+
+                // Check for confounders: do conditions differ between groups?
+                var confounders = detectConfounders(withProduct, withoutProduct);
+
+                return {
+                    productId: productId,
+                    productName: product.brand + ' ' + product.name,
+                    meanWith: Math.round(meanWith * 100) / 100,
+                    meanWithout: Math.round(meanWithout * 100) / 100,
+                    difference: Math.round(difference * 100) / 100,
+                    nWith: withProduct.length,
+                    nWithout: withoutProduct.length,
+                    wilsonLower: Math.round(wilsonLower * 100) / 100,
+                    confounders: confounders
+                };
+            }
+
+            /**
+             * Get marginal insights for all products that have sufficient data.
+             * Returns only products where |difference| > 0.3 (meaningful signal).
+             * @returns {Array} sorted by absolute difference (strongest signal first)
+             */
+            function getAllMarginalInsights() {
+                var state = StateManager.getState();
+                var inventory = state.inventory || [];
+                var results = [];
+
+                inventory.forEach(function(product) {
+                    var insight = getMarginalInsights(product.id);
+                    if (insight && Math.abs(insight.difference) > 0.3) {
+                        results.push(insight);
+                    }
+                });
+
+                results.sort(function(a, b) { return Math.abs(b.difference) - Math.abs(a.difference); });
+                return results;
+            }
+
+            /**
+             * Contextual pattern detection: find product × condition interactions.
+             * Stratifies by dew point category and interval bucket.
+             * Requires 15+ total rated events with sufficient variation.
+             * @returns {Array} patterns like { type, description, evidence }
+             */
+            function getContextualPatterns() {
+                var state = StateManager.getState();
+                var events = state.events || [];
+                var inventory = state.inventory || [];
+
+                var ratedEvents = events.filter(function(e) { return e.rating; });
+                if (ratedEvents.length < 15) return [];
+
+                var patterns = [];
+
+                // --- Dew point stratification ---
+                var dewPointCategories = categorizeDewPoints(ratedEvents);
+
+                // For each product, check if it performs differently across dew point categories
+                inventory.forEach(function(product) {
+                    var prodId = product.id;
+                    var byCategory = {};
+
+                    Object.keys(dewPointCategories).forEach(function(cat) {
+                        var catEvents = dewPointCategories[cat];
+                        var withProd = catEvents.filter(function(e) { return (e.products || []).indexOf(prodId) !== -1; });
+                        if (withProd.length >= 3) {
+                            byCategory[cat] = {
+                                mean: average(withProd.map(function(e) { return e.rating; })),
+                                n: withProd.length
+                            };
+                        }
+                    });
+
+                    // Check for meaningful differences between categories
+                    var cats = Object.keys(byCategory);
+                    for (var i = 0; i < cats.length; i++) {
+                        for (var j = i + 1; j < cats.length; j++) {
+                            var diff = byCategory[cats[i]].mean - byCategory[cats[j]].mean;
+                            if (Math.abs(diff) > 0.5) {
+                                var better = diff > 0 ? cats[i] : cats[j];
+                                var worse = diff > 0 ? cats[j] : cats[i];
+                                var betterData = diff > 0 ? byCategory[cats[i]] : byCategory[cats[j]];
+                                var worseData = diff > 0 ? byCategory[cats[j]] : byCategory[cats[i]];
+                                patterns.push({
+                                    type: 'dew_point_interaction',
+                                    productId: prodId,
+                                    productName: product.brand + ' ' + product.name,
+                                    description: 'In ' + better + ' conditions, ' + product.name + ' outperforms ' + worse + ' by ' + Math.abs(Math.round(diff * 10) / 10) + ' points',
+                                    evidence: {
+                                        betterCategory: better,
+                                        betterMean: Math.round(betterData.mean * 100) / 100,
+                                        betterN: betterData.n,
+                                        worseCategory: worse,
+                                        worseMean: Math.round(worseData.mean * 100) / 100,
+                                        worseN: worseData.n
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+
+                // --- Interval stratification ---
+                var intervalBuckets = categorizeIntervals(ratedEvents);
+
+                inventory.forEach(function(product) {
+                    var prodId = product.id;
+                    var byBucket = {};
+
+                    Object.keys(intervalBuckets).forEach(function(bucket) {
+                        var bucketEvents = intervalBuckets[bucket];
+                        var withProd = bucketEvents.filter(function(e) { return (e.products || []).indexOf(prodId) !== -1; });
+                        if (withProd.length >= 3) {
+                            byBucket[bucket] = {
+                                mean: average(withProd.map(function(e) { return e.rating; })),
+                                n: withProd.length
+                            };
+                        }
+                    });
+
+                    var buckets = Object.keys(byBucket);
+                    for (var i = 0; i < buckets.length; i++) {
+                        for (var j = i + 1; j < buckets.length; j++) {
+                            var diff = byBucket[buckets[i]].mean - byBucket[buckets[j]].mean;
+                            if (Math.abs(diff) > 0.5) {
+                                var better = diff > 0 ? buckets[i] : buckets[j];
+                                var worse = diff > 0 ? buckets[j] : buckets[i];
+                                var betterData = diff > 0 ? byBucket[buckets[i]] : byBucket[buckets[j]];
+                                var worseData = diff > 0 ? byBucket[buckets[j]] : byBucket[buckets[i]];
+                                patterns.push({
+                                    type: 'interval_interaction',
+                                    productId: prodId,
+                                    productName: product.brand + ' ' + product.name,
+                                    description: product.name + ' works better at ' + better + ' intervals vs ' + worse + ' (' + Math.abs(Math.round(diff * 10) / 10) + ' point difference)',
+                                    evidence: {
+                                        betterBucket: better,
+                                        betterMean: Math.round(betterData.mean * 100) / 100,
+                                        betterN: betterData.n,
+                                        worseBucket: worse,
+                                        worseMean: Math.round(worseData.mean * 100) / 100,
+                                        worseN: worseData.n
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+
+                // Deduplicate: keep strongest pattern per product
+                var seen = {};
+                var deduped = [];
+                patterns.sort(function(a, b) {
+                    var aDiff = Math.abs(a.evidence.betterMean - a.evidence.worseMean);
+                    var bDiff = Math.abs(b.evidence.betterMean - b.evidence.worseMean);
+                    return bDiff - aDiff;
+                });
+                patterns.forEach(function(p) {
+                    var key = p.productId + ':' + p.type;
+                    if (!seen[key]) {
+                        seen[key] = true;
+                        deduped.push(p);
+                    }
+                });
+
+                return deduped;
+            }
+
+            /**
+             * Interaction detection: find synergies and interferences between product pairs.
+             * Requires 30+ total rated events. For product pairs that vary independently,
+             * compares A-alone, B-alone, A+B, neither.
+             * Synergy: observed(A+B) > expected(A) + expected(B) - baseline by >0.5 points.
+             * @returns {Array} interactions like { type, productA, productB, description, evidence }
+             */
+            function getInteractions() {
+                var state = StateManager.getState();
+                var events = state.events || [];
+                var inventory = state.inventory || [];
+
+                var ratedEvents = events.filter(function(e) { return e.rating; });
+                if (ratedEvents.length < 30) return [];
+
+                var interactions = [];
+
+                // Get products that appear in at least 5 events
+                var productCounts = {};
+                ratedEvents.forEach(function(e) {
+                    (e.products || []).forEach(function(pid) {
+                        productCounts[pid] = (productCounts[pid] || 0) + 1;
+                    });
+                });
+
+                var frequentProducts = Object.keys(productCounts).filter(function(pid) {
+                    return productCounts[pid] >= 5;
+                });
+
+                // For each pair of frequent products, check for synergy/interference
+                for (var i = 0; i < frequentProducts.length; i++) {
+                    for (var j = i + 1; j < frequentProducts.length; j++) {
+                        var pidA = frequentProducts[i];
+                        var pidB = frequentProducts[j];
+
+                        // Split events into 4 cells
+                        var both = [];
+                        var onlyA = [];
+                        var onlyB = [];
+                        var neither = [];
+
+                        ratedEvents.forEach(function(e) {
+                            var hasA = (e.products || []).indexOf(pidA) !== -1;
+                            var hasB = (e.products || []).indexOf(pidB) !== -1;
+                            if (hasA && hasB) both.push(e.rating);
+                            else if (hasA) onlyA.push(e.rating);
+                            else if (hasB) onlyB.push(e.rating);
+                            else neither.push(e.rating);
+                        });
+
+                        // Need 5+ observations in each cell for reliable comparison
+                        if (both.length < 5 || onlyA.length < 5 || onlyB.length < 5 || neither.length < 5) continue;
+
+                        var meanBoth = average(both);
+                        var meanA = average(onlyA);
+                        var meanB = average(onlyB);
+                        var meanNeither = average(neither);
+
+                        // Expected combined = meanA + meanB - meanNeither (additive model)
+                        var expected = meanA + meanB - meanNeither;
+                        var observed = meanBoth;
+                        var delta = observed - expected;
+
+                        var productA = inventory.find(function(p) { return p.id === pidA; });
+                        var productB = inventory.find(function(p) { return p.id === pidB; });
+                        if (!productA || !productB) continue;
+
+                        if (delta > 0.5) {
+                            interactions.push({
+                                type: 'synergy',
+                                productAId: pidA,
+                                productBId: pidB,
+                                productAName: productA.brand + ' ' + productA.name,
+                                productBName: productB.brand + ' ' + productB.name,
+                                description: productA.name + ' + ' + productB.name + ' work better together than expected (synergy: +' + Math.round(delta * 10) / 10 + ')',
+                                evidence: {
+                                    meanBoth: Math.round(meanBoth * 100) / 100,
+                                    meanOnlyA: Math.round(meanA * 100) / 100,
+                                    meanOnlyB: Math.round(meanB * 100) / 100,
+                                    meanNeither: Math.round(meanNeither * 100) / 100,
+                                    expected: Math.round(expected * 100) / 100,
+                                    delta: Math.round(delta * 100) / 100,
+                                    nBoth: both.length,
+                                    nOnlyA: onlyA.length,
+                                    nOnlyB: onlyB.length,
+                                    nNeither: neither.length
+                                }
+                            });
+                        } else if (delta < -0.5) {
+                            interactions.push({
+                                type: 'interference',
+                                productAId: pidA,
+                                productBId: pidB,
+                                productAName: productA.brand + ' ' + productA.name,
+                                productBName: productB.brand + ' ' + productB.name,
+                                description: productA.name + ' + ' + productB.name + ' may interfere with each other (interference: ' + Math.round(delta * 10) / 10 + ')',
+                                evidence: {
+                                    meanBoth: Math.round(meanBoth * 100) / 100,
+                                    meanOnlyA: Math.round(meanA * 100) / 100,
+                                    meanOnlyB: Math.round(meanB * 100) / 100,
+                                    meanNeither: Math.round(meanNeither * 100) / 100,
+                                    expected: Math.round(expected * 100) / 100,
+                                    delta: Math.round(delta * 100) / 100,
+                                    nBoth: both.length,
+                                    nOnlyA: onlyA.length,
+                                    nOnlyB: onlyB.length,
+                                    nNeither: neither.length
+                                }
+                            });
+                        }
+                    }
+                }
+
+                // Sort by absolute delta (strongest signal first)
+                interactions.sort(function(a, b) {
+                    return Math.abs(b.evidence.delta) - Math.abs(a.evidence.delta);
+                });
+
+                return interactions;
+            }
+
+            // --- Helper functions ---
+
+            function average(arr) {
+                if (arr.length === 0) return 0;
+                var sum = 0;
+                for (var i = 0; i < arr.length; i++) sum += arr[i];
+                return sum / arr.length;
+            }
+
+            /**
+             * Wilson score lower bound — approximation for reliability of a difference.
+             * Uses the standard error of the difference between two means.
+             * Returns the lower bound of a 90% confidence interval on the difference.
+             */
+            function wilsonScoreLower(n1, n2, diff) {
+                // Standard error of difference between two means (assuming variance ~1 on 1-5 scale)
+                var se = Math.sqrt(1.0 / n1 + 1.0 / n2);
+                // 90% CI lower bound (z=1.645)
+                return diff - 1.645 * se;
+            }
+
+            /**
+             * Detect confounders between two event groups.
+             * Checks if dew point or interval distributions differ meaningfully.
+             */
+            function detectConfounders(groupA, groupB) {
+                var confounders = [];
+
+                // Check dew point distribution
+                var dewA = groupA.filter(function(e) { return e.dewPoint !== null && e.dewPoint !== undefined; }).map(function(e) { return e.dewPoint; });
+                var dewB = groupB.filter(function(e) { return e.dewPoint !== null && e.dewPoint !== undefined; }).map(function(e) { return e.dewPoint; });
+
+                if (dewA.length >= 3 && dewB.length >= 3) {
+                    var meanDewA = average(dewA);
+                    var meanDewB = average(dewB);
+                    if (Math.abs(meanDewA - meanDewB) > 10) { // >10°F difference is meaningful
+                        confounders.push({
+                            type: 'dew_point',
+                            note: 'Dew point differs between groups (avg ' + Math.round(meanDewA) + '°F vs ' + Math.round(meanDewB) + '°F)',
+                            severity: 'moderate'
+                        });
+                    }
+                }
+
+                // Check interval distribution
+                var intA = groupA.filter(function(e) { return e.intervalDays > 0; }).map(function(e) { return e.intervalDays; });
+                var intB = groupB.filter(function(e) { return e.intervalDays > 0; }).map(function(e) { return e.intervalDays; });
+
+                if (intA.length >= 3 && intB.length >= 3) {
+                    var meanIntA = average(intA);
+                    var meanIntB = average(intB);
+                    if (Math.abs(meanIntA - meanIntB) > 1) { // >1 day difference
+                        confounders.push({
+                            type: 'interval',
+                            note: 'Wash interval differs between groups (avg ' + Math.round(meanIntA * 10) / 10 + ' vs ' + Math.round(meanIntB * 10) / 10 + ' days)',
+                            severity: 'moderate'
+                        });
+                    }
+                }
+
+                // Check lane distribution
+                var laneCountsA = {};
+                var laneCountsB = {};
+                groupA.forEach(function(e) { laneCountsA[e.lane] = (laneCountsA[e.lane] || 0) + 1; });
+                groupB.forEach(function(e) { laneCountsB[e.lane] = (laneCountsB[e.lane] || 0) + 1; });
+
+                var lanesA = Object.keys(laneCountsA);
+                var lanesB = Object.keys(laneCountsB);
+                var dominantA = lanesA.length > 0 ? lanesA.sort(function(a, b) { return laneCountsB[b] - laneCountsA[a]; })[0] : null;
+                var dominantB = lanesB.length > 0 ? lanesB.sort(function(a, b) { return laneCountsB[b] - laneCountsB[a]; })[0] : null;
+
+                if (dominantA && dominantB && dominantA !== dominantB) {
+                    var ratioA = laneCountsA[dominantA] / groupA.length;
+                    var ratioB = laneCountsB[dominantB] / groupB.length;
+                    if (ratioA > 0.7 || ratioB > 0.7) {
+                        confounders.push({
+                            type: 'lane',
+                            note: 'Lane distribution differs (mostly ' + dominantA + ' vs mostly ' + dominantB + ')',
+                            severity: 'high'
+                        });
+                    }
+                }
+
+                return confounders;
+            }
+
+            /**
+             * Categorize events by dew point into dry/moderate/humid.
+             * Dry: <40°F, Moderate: 40-60°F, Humid: >60°F
+             */
+            function categorizeDewPoints(events) {
+                var categories = { dry: [], moderate: [], humid: [] };
+                events.forEach(function(e) {
+                    if (e.dewPoint === null || e.dewPoint === undefined) {
+                        categories.moderate.push(e); // default to moderate when unknown
+                    } else if (e.dewPoint < 40) {
+                        categories.dry.push(e);
+                    } else if (e.dewPoint <= 60) {
+                        categories.moderate.push(e);
+                    } else {
+                        categories.humid.push(e);
+                    }
+                });
+                return categories;
+            }
+
+            /**
+             * Categorize events by wash interval into buckets.
+             * Short: 1-2 days, Normal: 3-4 days, Long: 5+ days
+             */
+            function categorizeIntervals(events) {
+                var buckets = { 'short (1-2 days)': [], 'normal (3-4 days)': [], 'long (5+ days)': [] };
+                events.forEach(function(e) {
+                    var interval = e.intervalDays || 0;
+                    if (interval <= 2) {
+                        buckets['short (1-2 days)'].push(e);
+                    } else if (interval <= 4) {
+                        buckets['normal (3-4 days)'].push(e);
+                    } else {
+                        buckets['long (5+ days)'].push(e);
+                    }
+                });
+                return buckets;
+            }
+
+            return {
+                explain: explain,
+                getMarginalInsights: getMarginalInsights,
+                getAllMarginalInsights: getAllMarginalInsights,
+                getContextualPatterns: getContextualPatterns,
+                getInteractions: getInteractions
+            };
+        })();
+
         // ===== UseUpRotation =====
         // Automatically cycles use-up conditioners into the plan with compensation.
         // Rule: every 3rd wash, assign a use-up conditioner. The leave-in (L'Oréal 21-in-1)
