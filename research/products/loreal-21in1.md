@@ -280,6 +280,8 @@ Red flags to avoid:
 - If a leave-in with amodimethicone + coconut oil + UV filter BUT without dimethicone/dimethiconol became available → would be strictly superior
 - If Mandy rarely heat-styles → the dimethicone's heat protection benefit becomes less relevant, making the buildup risk less justified
 
+**Adversarial finding (May 10, 2026):** Matrix Miracle Creator Multi-Benefit Leave-In Spray (also L'Oréal-owned) uses the same core formula (Water, Coconut Oil, Amodimethicone, PQ-37, Behentrimonium Chloride) but replaces dimethicone/dimethiconol with water-soluble Dimethicone PEG-7 Phosphate — no buildup risk. It lacks the UV filter (ethylhexyl salicylate) and costs ~$5-7 more. This is the direct upgrade path if buildup becomes an issue. The 21-in-1 retains its tier due to UV protection + lower price, but the "no alternative exists" framing is no longer accurate. See `research/ADVERSARIAL_FINDINGS.md` for full analysis.
+
 ---
 
 ## 11. Scorecard (v2 Rubric)

@@ -5006,6 +5006,204 @@
             };
         })();
 
+        // ===== BeliefTracker =====
+        // Bayesian belief system for product effectiveness.
+        // Normal-Normal conjugate model: prior variance 2.0, observation variance 1.0.
+        // Beliefs are stored in state.beliefs and persist to localStorage.
+        const BeliefTracker = (function() {
+            var PRIOR_VARIANCE = 2.0;
+            var OBSERVATION_VARIANCE = 1.0;
+
+            /**
+             * Initialize beliefs for all products in inventory from their intelligence.outcomes.
+             * Only creates beliefs for products that don't already have them.
+             * @param {Array} inventory - Array of product objects
+             * @returns {object} beliefs object keyed by productId
+             */
+            function initBeliefs(inventory) {
+                var state = StateManager.getState();
+                var beliefs = state.beliefs || {};
+                var changed = false;
+
+                inventory.forEach(function(product) {
+                    if (!beliefs[product.id] && product.intelligence && product.intelligence.outcomes) {
+                        var productBeliefs = {};
+                        var outcomes = product.intelligence.outcomes;
+                        Object.keys(outcomes).forEach(function(outcome) {
+                            productBeliefs[outcome] = {
+                                mu: outcomes[outcome],
+                                variance: PRIOR_VARIANCE,
+                                n: 0
+                            };
+                        });
+                        beliefs[product.id] = productBeliefs;
+                        changed = true;
+                    }
+                });
+
+                if (changed) {
+                    state.beliefs = beliefs;
+                    StateManager.saveState(state);
+                }
+                return beliefs;
+            }
+
+            /**
+             * Update beliefs for all products used in a wash event based on the rating.
+             * Uses Normal-Normal conjugate update.
+             * @param {object} washEvent - { products: [...], rating: 1-5 }
+             */
+            function updateBeliefs(washEvent) {
+                if (!washEvent || !washEvent.rating) return; // skip if no rating
+                var products = washEvent.products || [];
+                if (products.length === 0) return;
+
+                var state = StateManager.getState();
+                var beliefs = state.beliefs || {};
+                var rating = washEvent.rating; // 1-5 scale
+
+                // Normalize rating to 0-1 scale for belief update
+                var normalizedRating = (rating - 1) / 4; // 1→0, 2→0.25, 3→0.5, 4→0.75, 5→1.0
+
+                products.forEach(function(productId) {
+                    if (!beliefs[productId]) return;
+                    var productBeliefs = beliefs[productId];
+
+                    Object.keys(productBeliefs).forEach(function(outcome) {
+                        var belief = productBeliefs[outcome];
+                        // Normal-Normal conjugate update
+                        var priorPrecision = 1 / belief.variance;
+                        var likePrecision = 1 / OBSERVATION_VARIANCE;
+                        var postPrecision = priorPrecision + likePrecision;
+
+                        belief.mu = (belief.mu * priorPrecision + normalizedRating * likePrecision) / postPrecision;
+                        belief.variance = 1 / postPrecision;
+                        belief.n = (belief.n || 0) + 1;
+                    });
+                });
+
+                state.beliefs = beliefs;
+                StateManager.saveState(state);
+            }
+
+            /**
+             * Get belief for a specific product and outcome.
+             * @param {string} productId
+             * @param {string} outcome - e.g. 'shine', 'smoothness', 'frizz_control'
+             * @returns {object|null} { mu, variance, n, confidence }
+             */
+            function getBelief(productId, outcome) {
+                var state = StateManager.getState();
+                var beliefs = state.beliefs || {};
+                if (!beliefs[productId] || !beliefs[productId][outcome]) return null;
+
+                var belief = beliefs[productId][outcome];
+                return {
+                    mu: belief.mu,
+                    variance: belief.variance,
+                    n: belief.n || 0,
+                    confidence: getConfidence(belief)
+                };
+            }
+
+            /**
+             * Get all beliefs for a product.
+             * @param {string} productId
+             * @returns {object|null} keyed by outcome, each with { mu, variance, n, confidence }
+             */
+            function getProductBeliefs(productId) {
+                var state = StateManager.getState();
+                var beliefs = state.beliefs || {};
+                if (!beliefs[productId]) return null;
+
+                var result = {};
+                Object.keys(beliefs[productId]).forEach(function(outcome) {
+                    result[outcome] = getBelief(productId, outcome);
+                });
+                return result;
+            }
+
+            /**
+             * Calculate confidence from belief variance.
+             * Based on 80% credible interval width relative to the 0-1 outcome scale.
+             * @param {object} belief - { mu, variance, n }
+             * @returns {number} 0-1 confidence score
+             */
+            function getConfidence(belief) {
+                // 80% CI width = 2 * 1.28 * sqrt(variance)
+                var ciWidth = 2 * 1.28 * Math.sqrt(belief.variance);
+                // Normalize: CI width of 4 (full scale) = 0 confidence, width of 0 = 1 confidence
+                return Math.max(0, Math.min(1, 1 - ciWidth / 4));
+            }
+
+            /**
+             * Get credible interval for a belief at a given level.
+             * @param {object} belief - { mu, variance, n }
+             * @param {number} level - confidence level (default 0.8 for 80% CI)
+             * @returns {Array} [lower, upper]
+             */
+            function getCredibleInterval(belief, level) {
+                if (!level) level = 0.8;
+                // z-scores for common levels: 0.8→1.28, 0.9→1.645, 0.95→1.96
+                var zScores = { 0.8: 1.28, 0.9: 1.645, 0.95: 1.96 };
+                var z = zScores[level] || 1.28;
+                var sd = Math.sqrt(belief.variance);
+                return [
+                    Math.max(0, belief.mu - z * sd),
+                    Math.min(1, belief.mu + z * sd)
+                ];
+            }
+
+            /**
+             * Check if a product's belief has diverged significantly from its domain prior.
+             * Used for "contradicts domain" surfacing.
+             * @param {string} productId
+             * @param {string} outcome
+             * @returns {object|null} { divergence, direction, n } or null if not enough data
+             */
+            function checkDivergence(productId, outcome) {
+                var state = StateManager.getState();
+                var beliefs = state.beliefs || {};
+                if (!beliefs[productId] || !beliefs[productId][outcome]) return null;
+
+                var belief = beliefs[productId][outcome];
+                if (belief.n < 5) return null; // need minimum observations
+
+                // Find the original prior from inventory
+                var inventory = state.inventory || [];
+                var product = inventory.find(function(p) { return p.id === productId; });
+                if (!product || !product.intelligence || !product.intelligence.outcomes) return null;
+
+                var prior = product.intelligence.outcomes[outcome];
+                if (prior === undefined) return null;
+
+                // Check if posterior has moved >1.5 SD from prior
+                var sd = Math.sqrt(belief.variance);
+                var divergence = Math.abs(belief.mu - prior) / (sd || 0.01);
+
+                if (divergence > 1.5) {
+                    return {
+                        divergence: divergence,
+                        direction: belief.mu > prior ? 'better_than_expected' : 'worse_than_expected',
+                        prior: prior,
+                        posterior: belief.mu,
+                        n: belief.n
+                    };
+                }
+                return null;
+            }
+
+            return {
+                initBeliefs: initBeliefs,
+                updateBeliefs: updateBeliefs,
+                getBelief: getBelief,
+                getProductBeliefs: getProductBeliefs,
+                getConfidence: getConfidence,
+                getCredibleInterval: getCredibleInterval,
+                checkDivergence: checkDivergence
+            };
+        })();
+
         // ===== UseUpRotation =====
         // Automatically cycles use-up conditioners into the plan with compensation.
         // Rule: every 3rd wash, assign a use-up conditioner. The leave-in (L'Oréal 21-in-1)
@@ -9528,6 +9726,23 @@
             StateManager.saveWashEvent(washEvent);
             updateSealState(washEvent);
             FeedbackEngine.analyze();
+
+            // Track which heat protectant was used for A/B alternation
+            if (finalLane === 'blowout') {
+                var heatProd3 = null;
+                for (var hp3 = 0; hp3 < products.length; hp3++) {
+                    if (products[hp3] === 'marc-anthony-shield' || products[hp3] === 'garnier-diamond-sleek') {
+                        heatProd3 = products[hp3];
+                        break;
+                    }
+                }
+                if (heatProd3) {
+                    var st3 = StateManager.getState();
+                    st3.settings = st3.settings || {};
+                    st3.settings.lastHeatProtectant = heatProd3;
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st3)); } catch(e) {}
+                }
+            }
 
             // Show post-wash attribution card before returning to landing
             showPostWashAttribution(washEvent, inventory);
