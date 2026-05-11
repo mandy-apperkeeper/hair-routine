@@ -36,7 +36,7 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
 - [ ] 2. BeliefTracker Module
-  - [ ] 2.1 Implement BeliefTracker with Bayesian updating
+  - [x] 2.1 Implement BeliefTracker with Bayesian updating
     - `initBeliefs(inventory)` — create prior beliefs for all products from their intelligence.outcomes
     - `updateBeliefs(washEvent)` — after a wash is logged, update beliefs for all products used based on the rating
     - `getBelief(productId, outcome)` — returns { mu, variance, n, confidence }
@@ -46,7 +46,7 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
     - Store beliefs in state.beliefs (persisted to localStorage)
     - _Requirements: 4.3, 7.4, 9.2_
 
-  - [ ] 2.2 Wire BeliefTracker into wash event logging
+  - [x] 2.2 Wire BeliefTracker into wash event logging
     - After `StateManager.saveWashEvent()`, call `BeliefTracker.updateBeliefs(event)`
     - Only update beliefs for products that were used in the wash
     - Only update when a rating is provided (skip if rating is null)
