@@ -86,29 +86,29 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
   - Test quick-add flow
   - Verify logged events still contain correct product arrays
 
-- [ ] 6. Attribution Engine (Passive Intelligence)
-  - [ ] 6.1 Implement mechanism-based attribution
+- [x] 6. Attribution Engine (Passive Intelligence)
+  - [x] 6.1 Implement mechanism-based attribution
     - `AttributionEngine.explain(washEvent)` — given a wash event's products, return outcome attributions
     - For each outcome dimension, identify which products contribute (from their intelligence.outcomes)
     - Group contributors by outcome, generate human-readable explanations using IngredientKB mechanism descriptions
     - Available from day 1 (no user data needed)
     - _Requirements: 4.1, 4.2_
 
-  - [ ] 6.2 Implement marginal contribution detection
+  - [x] 6.2 Implement marginal contribution detection
     - `AttributionEngine.getMarginalInsights(productId)` — compare ratings with/without this product
     - Requires minimum 3 events in each group (with and without)
     - Calculate mean difference + Wilson score lower bound for reliability
     - Flag confounders: note if conditions (dew point, interval) differ between groups
     - _Requirements: 4.4_
 
-  - [ ] 6.3 Implement contextual pattern detection
+  - [x] 6.3 Implement contextual pattern detection
     - `AttributionEngine.getContextualPatterns()` — find product × condition interactions
     - Stratify by dew point category (dry/moderate/humid) and interval bucket
     - Requires 15+ total events with sufficient variation
     - Output: "In humid conditions, Got2b outperforms NYM by X points (n₁ vs n₂ observations)"
     - _Requirements: 4.5_
 
-  - [ ] 6.4 Implement interaction detection (future-ready, activates at 30+ events)
+  - [x] 6.4 Implement interaction detection (future-ready, activates at 30+ events)
     - `AttributionEngine.getInteractions()` — find synergies/interferences
     - For product pairs that vary independently: compare A-alone, B-alone, A+B, neither
     - Synergy: observed(A+B) > expected(A) + expected(B) - baseline by >0.5 points

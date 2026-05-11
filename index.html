@@ -10422,8 +10422,6 @@
         function showPostWashAttribution(washEvent, inventory) {
             var walkSection = document.getElementById('walkthrough');
 
-            // Build outcome attribution from product mechanisms
-            var outcomeMap = {}; // { shine: [{ product, score }], definition: [...] }
             var OUTCOME_LABELS = {
                 shine: { label: 'Shine', icon: '\u2728', description: 'cuticle smoothing + light reflection' },
                 smoothness: { label: 'Smoothness', icon: '\uD83E\uDDF4', description: 'cuticle sealing + slip' },
@@ -10434,20 +10432,9 @@
                 cleanliness: { label: 'Clean Slate', icon: '\uD83D\uDCA7', description: 'buildup removal' }
             };
 
-            washEvent.products.forEach(function(prodId) {
-                var product = inventory.find(function(p) { return p.id === prodId; });
-                if (!product || !product.intelligence || !product.intelligence.outcomes) return;
-                var outcomes = product.intelligence.outcomes;
-                for (var key in outcomes) {
-                    if (outcomes[key] >= 0.5) { // Only show meaningful contributions
-                        if (!outcomeMap[key]) outcomeMap[key] = [];
-                        outcomeMap[key].push({
-                            name: product.brand + ' ' + product.name,
-                            score: outcomes[key]
-                        });
-                    }
-                }
-            });
+            // Use AttributionEngine for mechanism-based attribution
+            var attribution = AttributionEngine.explain(washEvent);
+            var outcomeMap = attribution.outcomes;
 
             // Sort outcomes by total contribution (strongest first)
             var sortedOutcomes = Object.keys(outcomeMap).sort(function(a, b) {
@@ -10482,9 +10469,14 @@
                 html += '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + info.icon + ' ' + info.label + '</div>';
                 html += '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem;">' + escapeHtml(info.description) + '</div>';
                 html += '<div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.3rem;">';
-                var productNames = contributors.map(function(c) { return c.name; });
-                html += 'From: ' + escapeHtml(productNames.join(', '));
+                html += 'From: ' + escapeHtml(contributors.map(function(c) { return c.productName; }).join(', '));
                 html += '</div>';
+                // Show mechanism explanation for top contributor
+                if (contributors[0] && contributors[0].mechanism) {
+                    html += '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.15rem;font-style:italic;">';
+                    html += escapeHtml(contributors[0].mechanism);
+                    html += '</div>';
+                }
                 html += '</div>';
             }
 
@@ -10492,28 +10484,40 @@
                 html += '<div style="font-size:0.78rem;color:var(--muted);">+ ' + (sortedOutcomes.length - 4) + ' more outcome' + (sortedOutcomes.length - 4 > 1 ? 's' : '') + '</div>';
             }
 
-            // Show interaction notes if any
-            var interactionNotes = [];
-            washEvent.products.forEach(function(prodId) {
-                var product = inventory.find(function(p) { return p.id === prodId; });
-                if (!product || !product.intelligence || !product.intelligence.interactions) return;
-                product.intelligence.interactions.forEach(function(interaction) {
-                    if (interaction.with === '*' || washEvent.products.indexOf(interaction.with) !== -1) {
-                        interactionNotes.push({
-                            type: interaction.type,
-                            note: interaction.note,
-                            from: product.brand + ' ' + product.name
-                        });
-                    }
-                });
-            });
-
-            if (interactionNotes.length > 0) {
+            // Show interaction notes from AttributionEngine
+            if (attribution.interactions.length > 0) {
                 html += '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">';
                 html += '<div style="font-size:0.8rem;color:var(--gold);font-weight:600;margin-bottom:0.3rem;">\u26A1 Interactions</div>';
-                interactionNotes.forEach(function(note) {
-                    var typeIcon = note.type === 'blocks' ? '\u26A0\uFE0F' : note.type === 'enhances' ? '\u2705' : note.type === 'reduces' ? '\u2B07\uFE0F' : '\u2139\uFE0F';
-                    html += '<div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.25rem;">' + typeIcon + ' ' + escapeHtml(note.note) + '</div>';
+                attribution.interactions.forEach(function(interaction) {
+                    var typeIcon = interaction.type === 'blocks' ? '\u26A0\uFE0F' : interaction.type === 'enhances' ? '\u2705' : interaction.type === 'reduces' ? '\u2B07\uFE0F' : '\u2139\uFE0F';
+                    html += '<div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.25rem;">' + typeIcon + ' ' + escapeHtml(interaction.note) + '</div>';
+                });
+                html += '</div>';
+            }
+
+            // Show marginal insights for products used today (if data exists)
+            var marginalNotes = [];
+            (washEvent.products || []).forEach(function(prodId) {
+                var insight = AttributionEngine.getMarginalInsights(prodId);
+                if (insight && Math.abs(insight.difference) > 0.5) {
+                    marginalNotes.push(insight);
+                }
+            });
+
+            if (marginalNotes.length > 0) {
+                html += '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">';
+                html += '<div style="font-size:0.8rem;color:var(--text-secondary);font-weight:600;margin-bottom:0.3rem;">\uD83D\uDCCA From your data</div>';
+                marginalNotes.forEach(function(note) {
+                    var direction = note.difference > 0 ? '\u2191' : '\u2193';
+                    var color = note.difference > 0 ? 'var(--green)' : 'var(--warning, #e8a838)';
+                    html += '<div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.25rem;">';
+                    html += '<span style="color:' + color + ';">' + direction + '</span> ';
+                    html += escapeHtml(note.productName) + ': avg ' + note.meanWith.toFixed(1) + ' with vs ' + note.meanWithout.toFixed(1) + ' without';
+                    html += ' <span style="font-size:0.68rem;color:var(--muted);">(n=' + note.nWith + '/' + note.nWithout + ')</span>';
+                    if (note.confounders.length > 0) {
+                        html += ' <span style="font-size:0.65rem;color:var(--muted);" title="' + escapeHtml(note.confounders[0].note) + '">\u26A0\uFE0F confounded</span>';
+                    }
+                    html += '</div>';
                 });
                 html += '</div>';
             }
@@ -10528,12 +10532,12 @@
                 returnToLanding();
             });
 
-            // Auto-dismiss after 10 seconds
+            // Auto-dismiss after 15 seconds (extended from 10 to allow reading marginal insights)
             setTimeout(function() {
                 if (walkSection.querySelector('#attribution-done')) {
                     returnToLanding();
                 }
-            }, 10000);
+            }, 15000);
         }
 
         function returnToLanding() {
