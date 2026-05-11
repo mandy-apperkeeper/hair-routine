@@ -7497,7 +7497,7 @@
 
                     return {
                         productId: product.id,
-                        productName: product.name,
+                        productName: (product.brand ? product.brand + ' ' : '') + product.name,
                         score: score,
                         reasons: reasons
                     };
@@ -7660,7 +7660,7 @@
                     if (effectiveProductId) {
                         for (var p = 0; p < inventory.length; p++) {
                             if (inventory[p].id === effectiveProductId) {
-                                inventoryName = inventory[p].name;
+                                inventoryName = (inventory[p].brand ? inventory[p].brand + ' ' : '') + inventory[p].name;
                                 break;
                             }
                         }
@@ -7757,7 +7757,7 @@
                     // Mask day — hair is stripped, needs deep repair
                     // Dual conditioning: mask first (structural), then regular conditioner (sealing)
                     condPlan.product = 'elvive-total-repair-5-balm';
-                    condPlan.productName = 'Total Repair 5 Damage Erasing Balm';
+                    condPlan.productName = "L'Or\u00e9al Elvive Total Repair 5 Damage Erasing Balm";
                     condPlan.method = 'Section into 4+ parts. Apply generously mid-lengths to ends. Heat cap on.';
                     condPlan.timer = 600;
                     condPlan.timerLabel = 'Deep condition — mask 🧢';
@@ -7768,7 +7768,7 @@
                     // Auto-upgrade — recent poor results warrant deeper conditioning
                     // Dual conditioning: mask first, then regular conditioner
                     condPlan.product = 'elvive-total-repair-5-balm';
-                    condPlan.productName = 'Total Repair 5 Damage Erasing Balm';
+                    condPlan.productName = "L'Or\u00e9al Elvive Total Repair 5 Damage Erasing Balm";
                     condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — your hair needs extra repair today.';
                     condPlan.timer = 600;
                     condPlan.timerLabel = 'Deep condition — repair 🧢';
@@ -7781,7 +7781,7 @@
                     var dryAirDual = (evts.length >= 1 && evts[evts.length - 1].rating && evts[evts.length - 1].rating <= 3);
                     if (dryAirDual) {
                         condPlan.product = 'elvive-total-repair-5-balm';
-                        condPlan.productName = 'Total Repair 5 Damage Erasing Balm';
+                        condPlan.productName = "L'Or\u00e9al Elvive Total Repair 5 Damage Erasing Balm";
                         condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — dry air + recent results warrant deep repair.';
                         condPlan.timer = 600;
                         condPlan.timerLabel = 'Deep condition — dry air repair 🧢';
@@ -7790,7 +7790,7 @@
                         condPlan.needsDual = true;
                     } else {
                         condPlan.product = 'garnier-color-repair-cond';
-                        condPlan.productName = 'Color Repair Conditioner';
+                        condPlan.productName = 'Garnier Color Repair Conditioner';
                         condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — dry air means cuticle needs extra help sealing.';
                         condPlan.timer = 420;
                         condPlan.timerLabel = 'Conditioner + heat cap (dry air)';
@@ -7809,7 +7809,7 @@
                 } else {
                     // Normal wash — good conditioner, heat cap optional
                     condPlan.product = 'garnier-color-repair-cond';
-                    condPlan.productName = 'Color Repair Conditioner';
+                    condPlan.productName = 'Garnier Color Repair Conditioner';
                     condPlan.method = 'Section into 4+ parts. Apply generously mid-lengths to ends. Detangle with wide-tooth comb.';
                     condPlan.timer = 300;
                     condPlan.timerLabel = 'Conditioner';
@@ -7850,15 +7850,15 @@
                             regStep.number = regStep.number + 1;
                             // Keep regular conditioner as Garnier Color Repair (surface sealing)
                             regStep.productId = 'garnier-color-repair-cond';
-                            regStep.productName = 'Color Repair Conditioner';
-                            regStep.inventoryName = 'Color Repair Conditioner';
-                            regStep.instruction = 'Quick rinse-through after mask. Smooths cuticle and seals in the deep treatment.';
-                            regStep.stepLabel = 'Conditioner (Seal)';
+                            regStep.productName = 'Garnier Color Repair Conditioner';
+                            regStep.inventoryName = 'Garnier Color Repair Conditioner';
+                            regStep.instruction = 'Section into 4+ parts. Apply mid-lengths to ends. Amodimethicone selectively binds damaged cuticle — different mechanism than the mask.';
+                            regStep.stepLabel = 'Conditioner';
                             if (regStep.timer) {
-                                regStep.timer.duration = 180;
-                                regStep.timer.label = 'Conditioner rinse';
+                                regStep.timer.duration = 300;
+                                regStep.timer.label = 'Conditioner';
                             }
-                            regStep.tip = '🔒 Brief conditioner after mask — seals cuticle and locks in the deep repair.';
+                            regStep.tip = '✨ Amodimethicone targets damaged cuticle areas the mask doesn\u2019t reach — different repair mechanism, not redundant.';
                             regStep.useUpNote = null;
 
                             // Re-number subsequent steps
@@ -9127,7 +9127,7 @@
 
                 // Final fallback
                 if (!bestUpgrade) {
-                    bestUpgrade = { productId: 'elvive-total-repair-5-balm', productName: 'Total Repair 5 Damage Erasing Balm', reason: 'Deep conditioning upgrade' };
+                    bestUpgrade = { productId: 'elvive-total-repair-5-balm', productName: "L'Or\u00e9al Elvive Total Repair 5 Damage Erasing Balm", reason: 'Deep conditioning upgrade' };
                 }
 
                 // Check if the best upgrade is a deep conditioner — if so, use dual conditioning
@@ -9164,13 +9164,13 @@
 
                     // Update the regular conditioner step (now at condIdx+1)
                     var regStep = plan.steps[condIdx + 1];
-                    regStep.instruction = 'Quick rinse-through after mask. Smooths cuticle and seals in the deep treatment.';
-                    regStep.stepLabel = 'Conditioner (Seal)';
+                    regStep.instruction = 'Section into 4+ parts. Apply mid-lengths to ends. Amodimethicone selectively binds damaged cuticle — different mechanism than the mask.';
+                    regStep.stepLabel = 'Conditioner';
                     if (regStep.timer) {
-                        regStep.timer.duration = 180;
-                        regStep.timer.label = 'Conditioner rinse';
+                        regStep.timer.duration = 300;
+                        regStep.timer.label = 'Conditioner';
                     }
-                    regStep.tip = '🔒 Brief conditioner after mask — seals cuticle and locks in the deep repair.';
+                    regStep.tip = '✨ Amodimethicone targets damaged cuticle areas the mask doesn\u2019t reach — different repair mechanism, not redundant.';
 
                     // Re-number subsequent steps
                     for (var rn = condIdx + 1; rn < plan.steps.length; rn++) {
