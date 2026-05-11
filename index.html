@@ -8961,36 +8961,55 @@
                 var inventory = context && context.inventory ? context.inventory : [];
                 var conditions = { dewPoint: context ? context.dewPoint : null, sealActive: context ? context.sealActive : false };
 
-                // Rank deep_condition products (richer options for upgrade)
-                var ranked = PlanGenerator.rankProducts('deep_condition', conditions, inventory);
-                // If no deep_condition products, try conditioner step
-                if (ranked.length === 0) {
-                    ranked = PlanGenerator.rankProducts('conditioner', conditions, inventory);
-                }
-
-                // Use top-ranked that isn't the current conditioner
-                var bestUpgrade = null;
+                // Find the current conditioner step
+                var condStep = null;
                 for (var i = 0; i < plan.steps.length; i++) {
                     if (plan.steps[i].stepType === 'conditioner') {
-                        var currentId = plan.steps[i].productId;
-                        for (var r = 0; r < ranked.length; r++) {
-                            if (ranked[r].productId !== currentId) {
-                                bestUpgrade = ranked[r];
-                                break;
-                            }
-                        }
-                        if (!bestUpgrade) {
-                            bestUpgrade = { productId: 'elvive-total-repair-5-balm', productName: 'Total Repair 5 Damage Erasing Balm', reason: 'Deep conditioning upgrade' };
-                        }
-
-                        plan.steps[i].productId = bestUpgrade.productId;
-                        plan.steps[i].productName = bestUpgrade.productName;
-                        plan.steps[i].instruction = 'Section into 4+ parts. Apply generously. ' + (bestUpgrade.reason || 'Deep moisture treatment.');
-                        if (!plan.productSwaps) plan.productSwaps = [];
-                        plan.productSwaps.push({ step: plan.steps[i].id, from: currentId, to: bestUpgrade.productId });
+                        condStep = plan.steps[i];
                         break;
                     }
                 }
+                if (!condStep) return;
+
+                var currentId = condStep.productId;
+
+                // Strategy: first try to find a BETTER regular conditioner for current conditions.
+                // Only escalate to deep_condition (mask) if the current conditioner is already
+                // the top-ranked regular conditioner — meaning there's nothing better in the
+                // same category, so we need to step up to a richer product.
+                var rankedConditioners = PlanGenerator.rankProducts('conditioner', conditions, inventory);
+                var bestUpgrade = null;
+
+                // Find the best regular conditioner that isn't the current one
+                for (var r = 0; r < rankedConditioners.length; r++) {
+                    if (rankedConditioners[r].productId !== currentId) {
+                        bestUpgrade = rankedConditioners[r];
+                        break;
+                    }
+                }
+
+                // If no better regular conditioner exists (current is already top-ranked),
+                // escalate to deep conditioning products (masks/balms)
+                if (!bestUpgrade) {
+                    var rankedDeep = PlanGenerator.rankProducts('deep_condition', conditions, inventory);
+                    for (var d = 0; d < rankedDeep.length; d++) {
+                        if (rankedDeep[d].productId !== currentId) {
+                            bestUpgrade = rankedDeep[d];
+                            break;
+                        }
+                    }
+                }
+
+                // Final fallback
+                if (!bestUpgrade) {
+                    bestUpgrade = { productId: 'elvive-total-repair-5-balm', productName: 'Total Repair 5 Damage Erasing Balm', reason: 'Deep conditioning upgrade' };
+                }
+
+                condStep.productId = bestUpgrade.productId;
+                condStep.productName = bestUpgrade.productName;
+                condStep.instruction = 'Section into 4+ parts. Apply generously. ' + (bestUpgrade.reason || 'Upgraded for current conditions.');
+                if (!plan.productSwaps) plan.productSwaps = [];
+                plan.productSwaps.push({ step: condStep.id, from: currentId, to: bestUpgrade.productId });
             }
 
             function upgradeConditionerTime(plan, seconds) {
