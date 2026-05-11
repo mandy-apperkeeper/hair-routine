@@ -7249,6 +7249,22 @@
             StateManager.saveWashEvent(event);
             updateSealState(event);
 
+            // Track which heat protectant was used for A/B alternation
+            if (currentPlan.lane === 'blowout') {
+                var heatProd = null;
+                for (var hp = 0; hp < products.length; hp++) {
+                    if (products[hp] === 'marc-anthony-shield' || products[hp] === 'garnier-diamond-sleek') {
+                        heatProd = products[hp];
+                        break;
+                    }
+                }
+                if (heatProd) {
+                    var st = StateManager.getState();
+                    st.settings = st.settings || {};
+                    st.settings.lastHeatProtectant = heatProd;
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch(e) {}
+                }
+            }
             // If rating was skipped, store deferred prompt
             if (rating === null) {
                 try {
