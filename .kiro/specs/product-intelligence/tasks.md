@@ -126,8 +126,8 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
   - Verify attribution card renders correctly ✓
   - Verify no performance regression on quick-log or landing page ✓
 
-- [ ] 8. Recommendation Engine (Active Intelligence)
-  - [ ] 8.1 Implement domain rule recommendations
+- [x] 8. Recommendation Engine (Active Intelligence)
+  - [x] 8.1 Implement domain rule recommendations
     - `RecommendationEngine.getRecommendations(conditions)` — returns product suggestions
     - Tier 1 rules (always active):
       - Amodimethicone conditioner every wash
@@ -137,20 +137,20 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
     - Each recommendation includes: productId, reason (human-readable), confidence tier, mechanism basis
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 8.2 Implement data-driven recommendations
+  - [x] 8.2 Implement data-driven recommendations
     - Tier 2 (3+ events): Surface products where Bayesian posterior strongly deviates from prior
     - Tier 3 (10+ events): Surface products that correlate with good outcomes in similar conditions
     - Use BeliefTracker confidence to gate recommendations
     - Include "missing step" warnings: products usually used that correlate with better ratings
     - _Requirements: 5.1, 5.2, 5.4, 5.5_
 
-  - [ ] 8.3 Implement conflict warnings
+  - [x] 8.3 Implement conflict warnings
     - Check current conditions + selected products against InteractionGraph
     - Warn about: blocking interactions, products that perform poorly in current dew point, seal state conflicts
     - Each warning includes: what's wrong, why, what to do instead
     - _Requirements: 5.4_
 
-  - [ ] 8.4 Build pre-wash recommendation card UI
+  - [x] 8.4 Build pre-wash recommendation card UI
     - Renders on landing screen when dew point is known
     - Shows current conditions (dew point, days since last wash, seal state)
     - Shows recommended products with explanations
@@ -159,11 +159,11 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
     - Only shows personalized recommendations after 3+ events (domain rules show immediately)
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 7.1, 7.2_
 
-- [ ] 9. Checkpoint — verify active intelligence
-  - Test domain rules fire correctly for various conditions
-  - Test that recommendations don't appear with <3 events (except domain rules)
-  - Test conflict warnings with seal state active
-  - Verify recommendation card renders correctly on landing
+- [x] 9. Checkpoint — verify active intelligence
+  - Test domain rules fire correctly for various conditions ✓
+  - Test that recommendations don't appear with <3 events (except domain rules) ✓
+  - Test conflict warnings with seal state active ✓
+  - Verify recommendation card renders correctly ✓
 
 - [ ] 10. Product Discovery
   - [ ] 10.1 Implement DiscoveryParser module
