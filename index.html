@@ -9298,7 +9298,11 @@
                     } else if (action === 'to-supporting') {
                         InventoryManager.changeTier(productId, 'supporting');
                     } else if (action === 'remove') {
-                        InventoryManager.removeProduct(productId);
+                        var prodToRemove = InventoryManager.getAll().find(function(p) { return p.id === productId; });
+                        var removeName = prodToRemove ? prodToRemove.name : productId;
+                        if (confirm('Remove "' + removeName + '" from inventory?')) {
+                            InventoryManager.removeProduct(productId);
+                        }
                     }
                     renderInventory();
                     return;
