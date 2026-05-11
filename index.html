@@ -948,10 +948,16 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.6);
+            background: none;
             z-index: 500;
             align-items: flex-end;
             justify-content: center;
+        }
+
+        .adjust-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
         }
 
         .adjust-overlay.visible {
@@ -966,6 +972,8 @@
             max-width: 480px;
             max-height: 80vh;
             overflow-y: auto;
+            position: relative;
+            z-index: 1;
         }
 
         .adjust-sheet h3 {
@@ -1810,6 +1818,7 @@
 
     <!-- Adjustment overlay (bottom sheet) -->
     <div class="adjust-overlay" id="adjust-overlay" role="dialog" aria-label="Adjust your plan" aria-modal="true">
+        <div class="adjust-backdrop" id="adjust-backdrop"></div>
         <div class="adjust-sheet">
             <h3>Tell me about your hair</h3>
 
@@ -8328,15 +8337,13 @@
                 }
             };
 
-            // Close on backdrop tap (only if tap is directly on the overlay backdrop, not on sheet or children)
-            overlay.onclick = function(e) {
-                if (e.target === overlay) {
-                    overlay.classList.remove('visible');
-                    applyAdjustments();
-                }
+            // Close on backdrop tap (dedicated backdrop element — no event bubbling issues)
+            document.getElementById('adjust-backdrop').onclick = function() {
+                overlay.classList.remove('visible');
+                applyAdjustments();
             };
 
-            // Prevent any tap inside the sheet from bubbling to the overlay backdrop handler
+            // Prevent any tap inside the sheet from doing anything unexpected
             var sheet = overlay.querySelector('.adjust-sheet');
             if (sheet) {
                 sheet.onclick = function(e) { e.stopPropagation(); };
