@@ -10787,6 +10787,9 @@
                 if (settings.vibrationEnabled !== false && navigator.vibrate) {
                     navigator.vibrate([200, 100, 200]);
                 }
+
+                // Auto-scroll to next timer step
+                scrollToNextTimer(stepId);
             });
 
             planTimerActive = { stepId: stepId, timerId: timerId };
@@ -10823,6 +10826,52 @@
                     }
                 }
             }, 1000);
+        }
+
+        function scrollToNextTimer(completedStepId) {
+            if (!currentPlan || !currentPlan.steps) return;
+
+            // Find the index of the completed step
+            var completedIdx = -1;
+            for (var i = 0; i < currentPlan.steps.length; i++) {
+                if (currentPlan.steps[i].id === completedStepId) {
+                    completedIdx = i;
+                    break;
+                }
+            }
+            if (completedIdx === -1) return;
+
+            // Find the next step with a timer after the completed one
+            var nextTimerStep = null;
+            for (var j = completedIdx + 1; j < currentPlan.steps.length; j++) {
+                if (currentPlan.steps[j].timer) {
+                    nextTimerStep = currentPlan.steps[j];
+                    break;
+                }
+            }
+            if (!nextTimerStep) return;
+
+            // Scroll so the next timer step's button is visible near the bottom,
+            // keeping the completed step and intermediate steps visible above
+            var nextEl = document.getElementById(nextTimerStep.id);
+            if (!nextEl) return;
+
+            // Find the timer button within the next step
+            var nextTimerBtn = nextEl.querySelector('.plan-badge-timer');
+            if (!nextTimerBtn) return;
+
+            // Use a short delay to let the UI update (✓ Done text, etc.)
+            setTimeout(function() {
+                // Scroll so the next timer button is in the lower third of the viewport
+                // This keeps previous steps visible above for reference
+                var btnRect = nextTimerBtn.getBoundingClientRect();
+                var targetY = window.pageYOffset + btnRect.top - (window.innerHeight * 0.6);
+
+                window.scrollTo({
+                    top: Math.max(0, targetY),
+                    behavior: 'smooth'
+                });
+            }, 400);
         }
 
         function showLaneOverride() {
