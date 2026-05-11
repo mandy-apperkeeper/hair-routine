@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 29)
+**Last updated:** May 10, 2026 (Session 30)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -9,71 +9,68 @@
 ## Current State
 
 ### What's Live & Working
-- Everything from Session 28 remains working
-- Blowout walkthrough now alternates between Marc Anthony and Diamond Sleek for A/B comparison
-- Inventory remove button now shows confirmation dialog with product name
+- Everything from Session 29 remains working
+- A/B heat protectant alternation (blowout only)
+- Use-up product rotation (every 3rd wash)
+- Per-product experience & results ratings (inventory view)
 
-### What Was Done This Session (29)
+### What Was Done This Session (30)
 
-1. **Blowout Walkthrough A/B Alternation** (code changes to `index.html`)
-   - Added `lastHeatProtectant: null` to `DEFAULT_STATE.settings`
-   - Added `getNextHeatProtectant()` helper function — reads state, returns the alternate product
-   - Updated blowout steps array (step 7) to use `getNextHeatProtectant()` instead of hardcoded Marc Anthony
-   - Updated dynamic heat protection step (lane override to blowout) — same change
-   - Added tracking in all 3 save paths (`savePlanWashEvent`, `saveWashEventAndReturn`, `submitQuickLog`) — records which heat protectant was actually used after each blowout event
-   - Logic: first blowout defaults to Marc Anthony (null state). After logging, state records the product used. Next blowout suggests the other. Respects manual swaps during walkthrough.
+1. **NEXT_STEPS.md cleanup** — Marked per-product ratings as complete (was stale, already built in Session 18). Kept pending integration items (Daily Plan ranking + Intelligence insights).
 
-2. **Inventory Remove Confirmation** — added `confirm()` dialog with product name before removing a product from inventory.
+2. **Quick-log pre-selection: attempted and reverted**
+   - Built Task 4.2 (pre-select products from last wash) — full implementation with count badges and hint text
+   - **Mandy rejected it:** pre-selecting based on recency biases toward repeating the same routine and harms the use-up rotation system
+   - Reverted all code changes
+   - Updated spec: Task 4.2 deferred to Recommendation Engine (8.1-8.2) — pre-selection should be driven by BeliefTracker posteriors + product ratings + conditions, not recency
 
-3. **Discussion: Heat Protection on Curly Days**
-   - Confirmed diffusing IS listed as an option on curly days (step 9)
-   - Decided NOT to add heat protection to curly lane because:
-     - Gel cast (PQ-69) serves as the humidity barrier on curly days
-     - Marc Anthony/Diamond Sleek may interfere with gel cast formation (interaction data already in app)
-     - Mandy hasn't done enough curly days to have experience data yet
-   - Revisit if diffusing becomes regular and frizz issues emerge that gel alone doesn't handle
-
-4. **Use-Up Rotation — confirmed already implemented**
-   - Full module exists and is wired into plan generation
-   - Every 3rd wash swaps conditioner to a Dove use-up bottle with compensation note
-   - Removed from "carry forward" list — it's done
-
-5. **V2 Research Scoring + Adversarial Pass** (earlier in session)
-   - All product deep dives scored with v2 rubric
-   - Anti-inflation rules added to scoring rubric
-   - Adversarial findings documented in `research/ADVERSARIAL_FINDINGS.md`
-   - Garnier Color Repair Conditioner elevated to #1 priority for next deep dive
+3. **Confirmed already-done items:**
+   - Use-up rotation: fully implemented (UseUpRotation module, schema v12, wired into plan generator)
+   - Per-product ratings: fully implemented (Session 18)
+   - Data adherence in global protocol: already done (deep-dive-auto.md has the section)
 
 ### Decisions Made This Session
 
-- **A/B alternation is blowout-only** — gel cast handles curly days, heat protectant and gel may conflict.
-- **First blowout defaults to Marc Anthony** when no history exists.
-- **Walkthrough swaps are respected** in alternation tracking.
-- **Use-up rotation is complete** — no further code work needed. Just remove products from inventory when bottles are finished.
+- **No recency-based pre-selection in quick-log** — it harms rotation and biases toward repetition. Pre-selection belongs in the Recommendation Engine where it can be intelligence-driven.
+- **Task 4.2 deferred** to Tasks 8.1-8.2 (Recommendation Engine) — the right time to add smart pre-selection is when BeliefTracker data can drive it.
 
 ### Known Issues (carry to next session)
 
 - **iOS silent mode mutes Web Audio** — expected platform behavior. Vibration still works as fallback.
-- **everpure-bond-shampoo.md** has a different version on disk than what was scored. V2 scorecard needs re-applying.
-- Session 25 commit still needs push (timer alert fix).
+- **everpure-bond-shampoo.md** has a different version on disk than what was scored. The v2 scorecard needs to be re-applied to the current file content.
 
-### What's NOT Done (carry forward)
+---
+
+## What Changed in Code
+
+- `index.html` — no net changes (pre-selection was added then reverted)
+- `.kiro/specs/product-intelligence/tasks.md` — Task 4.2 updated to deferred status with rationale
+- `NEXT_STEPS.md` — Per-product ratings section marked complete
+
+---
+
+## What's NOT Done (carry forward)
 
 #### PRODUCT DEEP DIVE PIPELINE (research)
-**Next priority:** Garnier Color Repair Conditioner (adversarial A4 — may be co-primary or better than EverPure)
-**Then:** Re-score everpure-bond-shampoo.md, EverPure Clarifying, EverPure Pre-Shampoo
-**Queue file:** `research/PRODUCT_DEEP_DIVE_QUEUE.md` has full tracking.
+**Priority order:**
+1. `garnier-color-repair-cond` — Full deep dive (HIGHEST PRIORITY — adversarial A4 shows it may be co-primary or better than EverPure conditioner)
+2. Re-score `everpure-bond-shampoo.md` (file was overwritten, scorecard lost)
+3. `everpure-clarifying` — Clarifying Shampoo deep dive
+4. `everpure-bond-pre` — Pre-Shampoo Treatment deep dive
 
-#### FOLD DATA ADHERENCE INTO GLOBAL PROTOCOL
-- Add "Data Adherence" section to `~/.kiro/steering/deep-dive-auto.md`
+**Queue file:** `research/PRODUCT_DEEP_DIVE_QUEUE.md` has full tracking (10/31 complete).
+
+#### FOLD DATA ADHERENCE INTO GLOBAL PROTOCOL ✅ (already done)
 
 #### PRODUCT INTELLIGENCE (next code build)
-- Task 1.1: IngredientKB module (~40-60KB ingredient data)
+- Task 4.3: Quick-add for unlisted products in quick-log
+- Tasks 8.1-8.4: Recommendation Engine (includes smart pre-selection)
+- Tasks 10.1-10.3: Product Discovery (DiscoveryParser + UI + Open Beauty Facts)
+- Tasks 12.1-12.4: Integration & Polish
 
 #### Other carry-forward items
 - Daily Plan polish
 - Data persistence beyond localStorage (cloud sync/backup)
-- Hair photo upload (needs its own spec)
 
 ---
 
@@ -81,10 +78,10 @@
 - **Daily Plan view** — auto-generated plan, scrollable steps, multi-select adjust overlay, frizzy=Got2b swap, "no wash needed" screen, offline indicator, condensed checklist, end-of-plan rating, lane override
 - **PWA support** — service worker v8 (network-first HTML, stale-while-revalidate API), manifest, install capability, update banner, one-time SW migration
 - **7-group step-based quick-log** with sub-menus + heat cap badges + multi-group products
-- **Product inventory** (31 products) with full intelligence metadata + per-product ratings + remove confirmation
+- **Product inventory** (31 products) with full intelligence metadata + per-product ratings (experience + results)
 - **Post-wash attribution card**
 - **Walkthrough engine**, history, status bar, dew point auto-detection (permission-gated), recommendations, compensation logic, gel gap, **A/B heat protectant alternation**
-- **Use-up rotation** — every 3rd wash cycles Dove conditioners with compensation notes
+- **Use-up rotation** — every 3rd wash assigns a use-up conditioner with compensation note
 - **Learn section** with science cards, frizz diagnostic
 - **Accessibility** — ARIA, focus management, keyboard nav, touch targets
 - **Geolocation** — only used if permission already granted, never prompts
@@ -93,17 +90,14 @@
 
 ## Schema
 
-**Version:** 12 (unchanged — `lastHeatProtectant` added to settings, no migration needed since it defaults to null)
+**Version:** 12 (unchanged this session)
 
 ---
 
 ## Cumulative Decisions (Do Not Revisit)
 
 All previous decisions remain, plus:
-- **A/B alternation is blowout-only** — gel cast handles curly days, heat protectant and gel may conflict.
-- **First blowout defaults to Marc Anthony** when no history exists.
-- **Walkthrough swaps are respected** in alternation tracking.
-- **Use-up rotation is complete** — operational only (remove when bottle finished).
+- **No recency-based pre-selection** — pre-selection in quick-log must be intelligence-driven (BeliefTracker + conditions), not recency-driven. Recency harms rotation.
 
 ---
 
@@ -117,7 +111,6 @@ All previous decisions remain, plus:
 | `icon-192.svg`, `icon-512.svg` | App icons |
 | `research/` | 5-phase product relationship research |
 | `research/PRODUCT_DEEP_DIVE_QUEUE.md` | Pipeline tracking for all 31 product deep dives |
-| `research/ADVERSARIAL_FINDINGS.md` | Adversarial research findings (A1-A5) |
 | `research/PRODUCT_RECOMMENDATIONS_FOR_HAIR_PROFILE.md` | Gap analysis + product recs for hair profile |
 | `HAIR_CONSULTATION_HANDOFF.md` | Hair science + product reference |
 | `HAIR_SCIENCE_VERIFICATION_REPORT.md` | Verified science claims |
@@ -147,20 +140,23 @@ All previous decisions remain, plus:
 | 26 | Orientation, seal state commit, next-build assessment | Complete |
 | 27 | Product deep dives: EverPure shampoo + conditioner + 21-in-1 leave-in | Complete |
 | 28 | Product recs research + Diamond Sleek added to inventory + A/B comparison scoped | Complete |
-| 29 | **A/B alternation + remove confirmation + v2 scoring + adversarial pass** | Complete |
+| 29 | Blowout A/B alternation implemented + curly-day heat protection discussed | Complete |
+| 30 | **Doc cleanup, pre-selection attempted/reverted (harms rotation), task 4.2 deferred** | Complete |
 
 ---
 
 ## Repo State
 
 - **Branch:** main
-- **Latest commit:** chore: auto-commit (remove confirmation)
-- **Pushed:** Needs push
+- **Latest commit:** Needs commit (task spec update + NEXT_STEPS cleanup)
+- **Pushed:** Needs push after commit
 
 ---
 
 ## Next Session: Start Here
 
-**Research:** Garnier Color Repair Conditioner deep dive (highest priority — adversarial finding A4 suggests it may match or beat EverPure).
+**Research (if preferred):** Garnier Color Repair Conditioner deep dive — highest priority, adversarial finding suggests it may match or beat EverPure conditioner.
 
-**Or code:** IngredientKB module (Product Intelligence Task 1.1) — the foundation for the intelligence system.
+**Code:** Recommendation Engine (Tasks 8.1-8.4) — domain rules + data-driven product suggestions + conflict warnings + pre-wash card UI. This is the next major intelligence feature and will eventually power smart pre-selection.
+
+**Smaller code:** Task 4.3 — quick-add for unlisted products in quick-log (self-contained, no dependencies).

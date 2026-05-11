@@ -141,9 +141,9 @@
 ## Progress
 
 - **Total products:** 31
-- **Completed:** 10 (Dove conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + conditioner + 21-in-1 + clarifying)
-- **Remaining:** 21
-- **Estimated sessions:** ~7-9 (2-3 products per session)
+- **Completed:** 11 (Dove conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + conditioner + 21-in-1 + clarifying + pre-shampoo)
+- **Remaining:** 20
+- **Estimated sessions:** ~7-8 (2-3 products per session)
 
 ## Next Session Starts With
 
