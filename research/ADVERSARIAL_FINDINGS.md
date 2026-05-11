@@ -190,3 +190,138 @@ The EverPure shampoo deep dive correctly identifies it as mild. But it doesn't a
 | 5 | `sulfate-free shampoo not cleaning thick coarse hair buildup problems` | Highland Style, Advanced Science News | Yes — seeking downsides |
 | 6 | `dimethicone leave-in spray buildup amount per application minimal negligible` | Medical/pharmaceutical results, not hair-specific | Yes — seeking evidence |
 | 7 | `"silicone buildup" "leave-in" spray amount deposition hair study` | LaTorre & Bhushan 2005, PMC review (inaccessible) | Yes — seeking quantification |
+
+---
+
+## A4: EverPure Conditioner "Best in Inventory" — Does Garnier Color Repair Challenge It? (RETROACTIVE)
+
+**Date:** May 10, 2026
+**Target report:** `research/products/everpure-bond-conditioner.md`
+**Claim challenged:** "No other conditioner in the inventory matches it on the selective-conditioning + no-buildup axis" (with Garnier explicitly flagged as a gap)
+
+### Search Queries
+
+1. `Garnier Fructis Color Repair Conditioner full ingredients INCI 2024 2025` — **FOUND FULL INCI** via Ulta product page
+
+### Key Finding: Garnier Fructis Hair Filler Color Repair Conditioner INCI
+
+**Source:** [Ulta — Garnier Fructis Hair Filler Color Repair Conditioner](https://www.ulta.com/p/fructis-hair-filler-color-repair-conditioner-pimprod2043442) (fetched May 10, 2026)
+**Fil code:** 1260574 FS3
+
+**Full INCI:** Water, **Cetearyl Alcohol**, **Amodimethicone**, **Behentrimonium Chloride**, Cetyl Esters, Fragrance, Isopropyl Alcohol, **Trideceth-6**, Phenoxyethanol, **Arginine**, **Citric Acid**, **Cetrimonium Chloride**, Chlorhexidine Dihydrochloride, Linalool, Limonene, Argania Spinosa Kernel Oil, **2-Oleamido-1,3-Octadecanediol**, Benzyl Alcohol, Citronellol
+
+**Total ingredients:** 19
+
+### Head-to-Head Comparison
+
+| Feature | EverPure Bond Repair Conditioner (May 2026) | Garnier Color Repair Conditioner |
+|---------|---------------------------------------------|----------------------------------|
+| Cetearyl Alcohol | Position 2 | Position 2 |
+| Amodimethicone | Position 4 | **Position 3** (higher concentration) |
+| Behentrimonium Chloride | Position 3 | Position 4 |
+| Citric Acid | Position 13 | Position 11 |
+| Arginine | Position 12 | Position 10 |
+| Pseudoceramide (2-Oleamido-1,3-Octadecanediol) | **NOT in current formula** | **YES** (position 17) |
+| Argan Oil | No | YES (position 16) |
+| Dimethicone/Dimethiconol | **NO** (amodimethicone only) | **NO** (amodimethicone only) |
+| Non-selective silicones | None | None |
+| Preservative system | Phenoxyethanol + Benzoic Acid | Phenoxyethanol + Chlorhexidine Dihydrochloride |
+| Total ingredients | 21 | 19 (cleaner) |
+| Emulsifier system | Trideceth-6 + Cetrimonium Chloride | Trideceth-6 + Cetrimonium Chloride (identical) |
+| Price | ~$7-9 (10.1 oz) | ~$7-9 (10.1 oz) |
+
+### Analysis
+
+**These are nearly identical formulations.** Both are:
+- Cetearyl alcohol + behentrimonium chloride base
+- Amodimethicone as the ONLY silicone (selective, self-limiting)
+- Same emulsifier system (Trideceth-6 + Cetrimonium Chloride)
+- Citric acid + Arginine for bond support
+- No dimethicone, no dimethiconol, no concerning preservatives
+- Same price range
+
+**Where Garnier is arguably BETTER:**
+1. **Amodimethicone at position 3** (vs position 4 in EverPure) — slightly higher concentration
+2. **Pseudoceramide included** (2-Oleamido-1,3-Octadecanediol) — fills gaps in cuticle lipid layer. EverPure's current formula does NOT have this (the older INCIDecoder version did).
+3. **Argan oil** — emollient, antioxidant
+4. **Fewer total ingredients** (19 vs 21) — simpler, less potential for irritation
+5. **No MI/MCI** — EverPure's current formula also doesn't have these, but the older version did
+
+**Where EverPure is arguably BETTER:**
+1. **Betaine** (position 11) — humectant/osmolyte for moisture retention
+2. **Potassium Hydroxide** — more precise pH control
+3. **Established in the routine** — already proven to work for Mandy's hair
+
+**Where they're equivalent:**
+- Same conditioning mechanism (amodimethicone selective deposition)
+- Same detangling agent (behentrimonium chloride C22)
+- Same bond support (citric acid + arginine)
+- Same buildup risk (none — amodimethicone only)
+- Same price
+
+### Impact on EverPure Conditioner Tier Placement
+
+**The "no other conditioner matches it" claim is now demonstrably false.** The Garnier Color Repair Conditioner matches it on every axis and arguably exceeds it on two (amodimethicone concentration, pseudoceramide inclusion).
+
+**However, this doesn't change the tier — it changes the comparison.** Both are primary-tier conditioners. The EverPure conditioner deep dive should be updated to:
+1. Remove the "no other conditioner matches it" language
+2. Add Garnier as an equivalent/slightly-superior alternative
+3. Note that the Garnier deep dive (when completed) will determine if it should be the PRIMARY conditioner vs. EverPure being the primary
+
+**Practical implication for Mandy:** If she's happy with EverPure, there's no reason to switch. If she ever needs to repurchase and EverPure is unavailable, Garnier Color Repair is a direct equivalent (possibly slightly better due to pseudoceramide). They're interchangeable.
+
+**Tier recommendation:** Both should be Primary Rotation. The Garnier deep dive (already queued) will do the full analysis, but based on INCI alone, it's at minimum equivalent.
+
+---
+
+## A5: Dove 10-in-1 Serum — Does Aminopropyl Dimethicone Outperform Amodimethicone? (RETROACTIVE)
+
+**Date:** May 10, 2026
+**Target report:** `research/products/dove-10in1-serum.md`
+**Claim challenged:** "Aminopropyl dimethicone is mechanistically identical to amodimethicone in selective deposition" — is there any scenario where it's actually better?
+
+### Search Queries
+
+1. `"aminopropyl dimethicone" vs amodimethicone hair performance comparison` — found NaturallyCurly CurlChemist, BeautyCon, HairAide
+2. Fetched BeautyCon article on bis-aminopropyl dimethicone
+
+### Key Finding: Same Mechanism, Minor Differences in Substantivity
+
+**From BeautyCon (NaturallyCurly):** "Bis-aminopropyl dimethicone is very similar to amodimethicone. These modified silicones have specific properties, which allow them to be excellent conditioning agents and create a protective barrier on the hair strands. They are considered the best high-performing conditioning polymers."
+
+**From HairAide:** Bis-aminopropyl dimethicone "bonds electrostatically to damaged, negatively charged sites on the hair shaft, providing targeted conditioning where it is most needed. More substantive than standard dimethicone, meaning it stays on hair through multiple washes."
+
+**Key distinction (from BeautyCon):** "This silicone is a pain to remove from our hair despite it not being considered a build-up silicone. Bis-aminopropyl dimethicone is a semi-water soluble silicone that may build up hair over time."
+
+### Analysis
+
+The Dove 10-in-1 serum uses **aminopropyl dimethicone** (mono-amine, not bis-amine). The distinction:
+- **Amodimethicone** = amine-functionalized, selective, self-limiting
+- **Aminopropyl dimethicone** = same amine-functionalization, same selectivity, same self-limiting behavior
+- **Bis-aminopropyl dimethicone** = TWO amine groups per molecule = MORE substantive (sticks harder), potentially harder to remove
+
+The Dove serum's aminopropyl dimethicone is functionally equivalent to amodimethicone — same mechanism, same selectivity. The "bis" version (two amine groups) is slightly more substantive but also slightly harder to remove.
+
+**Does aminopropyl dimethicone outperform amodimethicone in any scenario?** No evidence found. They're mechanistically identical. The only difference is molecular weight/chain length variations between specific commercial grades, which aren't disclosed in INCI lists.
+
+**Impact on Dove 10-in-1 Serum tier:** None. The original report's conclusion holds — aminopropyl dimethicone ≈ amodimethicone for practical purposes. Supporting tier confirmed.
+
+---
+
+## Retroactive Adversarial Queue (remaining)
+
+| # | Question | Target Report | Status |
+|---|----------|---------------|--------|
+| A4 | Does Garnier Color Repair challenge EverPure Conditioner? | `everpure-bond-conditioner.md` | ✅ DONE — YES, Garnier is equivalent/slightly better |
+| A5 | Does aminopropyl dimethicone outperform amodimethicone? | `dove-10in1-serum.md` | ✅ DONE — No, mechanistically identical |
+| A6 | Does dimethiconol/silsesquioxane provide measurably better frizz in high humidity for coarse hair? | `DOVE_DEEP_DIVE.md` | ⏳ Queued for next session |
+
+---
+
+## Search Query Log (this session, adversarial passes A4-A5)
+
+| # | Query | Results | Adversarial? |
+|---|-------|---------|:---:|
+| 1 | `Garnier Fructis Color Repair Conditioner full ingredients INCI 2024 2025` | Full INCI from Ulta — 19 ingredients, amodimethicone at position 3 | Yes — seeking competitor |
+| 2 | `"aminopropyl dimethicone" vs amodimethicone hair performance comparison` | NaturallyCurly, BeautyCon, HairAide — all confirm same mechanism | Yes — seeking superiority evidence |
+| 3 | BeautyCon article on bis-aminopropyl dimethicone fetched | Confirms same mechanism, notes "more substantive" for bis- variant | Verification |
