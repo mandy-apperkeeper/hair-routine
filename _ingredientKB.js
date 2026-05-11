@@ -498,3 +498,599 @@
                 interactionFlags: [],
                 outcomeWeights: { smoothness: 0.3, softness: 0.4 }
             },
+
+            // ===== Clarifying / Surfactants =====
+            'sodium laureth sulfate': {
+                inci: 'Sodium Laureth Sulfate',
+                commonName: 'SLES',
+                roles: ['surfactant', 'clarifying'],
+                mechanism: 'Anionic surfactant. Strong cleansing — removes oils, silicones, and buildup. Can strip natural oils if used daily. Milder than SLS due to ethoxylation.',
+                mwClass: 'low',
+                flags: ['anionic', 'strong_cleanser'],
+                interactionFlags: ['removes_silicone_buildup', 'removes_conditioning_layer'],
+                outcomeWeights: { cleanliness: 0.8 }
+            },
+            'sodium lauryl sulfate': {
+                inci: 'Sodium Lauryl Sulfate',
+                commonName: 'SLS',
+                roles: ['surfactant', 'clarifying'],
+                mechanism: 'Strong anionic surfactant. Most aggressive common cleanser — strips everything. Harsh on damaged/colored hair.',
+                mwClass: 'low',
+                flags: ['anionic', 'strong_cleanser', 'harsh'],
+                interactionFlags: ['removes_silicone_buildup', 'removes_conditioning_layer'],
+                outcomeWeights: { cleanliness: 0.9 }
+            },
+            'sodium c14-16 olefin sulfonate': {
+                inci: 'Sodium C14-16 Olefin Sulfonate',
+                commonName: 'Olefin Sulfonate',
+                roles: ['surfactant', 'clarifying'],
+                mechanism: 'Anionic surfactant. Strong cleanser similar to sulfates but technically sulfate-free. Used in "sulfate-free" clarifying shampoos.',
+                mwClass: 'low',
+                flags: ['anionic', 'strong_cleanser', 'sulfate_free_alternative'],
+                interactionFlags: ['removes_silicone_buildup'],
+                outcomeWeights: { cleanliness: 0.8 }
+            },
+            'cocamidopropyl betaine': {
+                inci: 'Cocamidopropyl Betaine',
+                commonName: 'Cocamidopropyl Betaine',
+                roles: ['surfactant'],
+                mechanism: 'Amphoteric surfactant. Mild cleanser — often paired with stronger surfactants to reduce irritation. Provides foam.',
+                mwClass: 'low',
+                flags: ['amphoteric', 'mild', 'foam_booster'],
+                interactionFlags: [],
+                outcomeWeights: { cleanliness: 0.4 }
+            },
+            'decyl glucoside': {
+                inci: 'Decyl Glucoside',
+                commonName: 'Decyl Glucoside',
+                roles: ['surfactant'],
+                mechanism: 'Non-ionic sugar-based surfactant. Very mild cleanser. Common in gentle/baby shampoos.',
+                mwClass: 'low',
+                flags: ['non_ionic', 'very_mild', 'sugar_based'],
+                interactionFlags: [],
+                outcomeWeights: { cleanliness: 0.3 }
+            },
+            'sodium cocoyl isethionate': {
+                inci: 'Sodium Cocoyl Isethionate',
+                commonName: 'SCI',
+                roles: ['surfactant'],
+                mechanism: 'Mild anionic surfactant derived from coconut. Gentle cleansing with good foam. Popular in sulfate-free shampoos.',
+                mwClass: 'low',
+                flags: ['anionic', 'mild', 'sulfate_free_alternative'],
+                interactionFlags: [],
+                outcomeWeights: { cleanliness: 0.5 }
+            },
+            'glycolic acid': {
+                inci: 'Glycolic Acid',
+                commonName: 'Glycolic Acid (AHA)',
+                roles: ['clarifying'],
+                mechanism: 'Alpha-hydroxy acid. Chemical exfoliation of scalp and cuticle surface. Dissolves mineral deposits and product residue without mechanical stripping.',
+                mwClass: 'low',
+                flags: ['chemical_exfoliant', 'aha', 'scalp_treatment'],
+                interactionFlags: ['enhances_subsequent_penetration'],
+                outcomeWeights: { cleanliness: 0.7, shine: 0.3 }
+            },
+            'salicylic acid': {
+                inci: 'Salicylic Acid',
+                commonName: 'Salicylic Acid (BHA)',
+                roles: ['clarifying'],
+                mechanism: 'Beta-hydroxy acid. Oil-soluble — penetrates sebum to exfoliate scalp. Dissolves buildup in pores and on hair surface.',
+                mwClass: 'low',
+                flags: ['chemical_exfoliant', 'bha', 'oil_soluble', 'scalp_treatment'],
+                interactionFlags: ['enhances_subsequent_penetration'],
+                outcomeWeights: { cleanliness: 0.6 }
+            },
+
+            // ===== Heat Protection =====
+            'peg/ppg-25/25 dimethicone/amodimethicone copolymer': {
+                inci: 'PEG/PPG-25/25 Dimethicone/Amodimethicone Copolymer',
+                commonName: 'Heat-protective silicone copolymer',
+                roles: ['heat_protection', 'cuticle_smoothing'],
+                mechanism: 'Water-soluble silicone copolymer that forms a heat-protective film. Provides thermal protection without heavy buildup.',
+                mwClass: 'high',
+                flags: ['water_soluble', 'heat_protective'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.5, strength: 0.3 }
+            },
+            'quaternium-70': {
+                inci: 'Quaternium-70',
+                commonName: 'Quaternium-70',
+                roles: ['heat_protection', 'conditioning'],
+                mechanism: 'Cationic conditioning agent with heat-protective properties. Deposits on hair via electrostatic attraction, provides thermal barrier.',
+                mwClass: 'high',
+                flags: ['cationic', 'heat_protective'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.4, strength: 0.3 }
+            },
+
+            // ===== Ceramides & Lipids =====
+            'ceramide np': {
+                inci: 'Ceramide NP',
+                commonName: 'Ceramide NP',
+                roles: ['conditioning', 'cuticle_smoothing'],
+                mechanism: 'Intercellular lipid that fills gaps between cuticle cells. Mimics natural cell membrane complex (CMC). Reduces porosity and improves cuticle integrity.',
+                mwClass: 'mid',
+                flags: ['biomimetic', 'cmc_repair', 'cumulative'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.6, strength: 0.4, shine: 0.3 }
+            },
+            'ceramide ng': {
+                inci: 'Ceramide NG',
+                commonName: 'Ceramide NG',
+                roles: ['conditioning', 'cuticle_smoothing'],
+                mechanism: 'Ceramide variant. Same CMC-repair function as Ceramide NP. Fills intercellular gaps in cuticle layer.',
+                mwClass: 'mid',
+                flags: ['biomimetic', 'cmc_repair', 'cumulative'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.6, strength: 0.4, shine: 0.3 }
+            },
+            'phytosphingosine': {
+                inci: 'Phytosphingosine',
+                commonName: 'Phytosphingosine',
+                roles: ['conditioning'],
+                mechanism: 'Sphingolipid precursor. Supports ceramide function in the CMC. Anti-inflammatory properties for scalp.',
+                mwClass: 'mid',
+                flags: ['biomimetic', 'anti_inflammatory'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.3, strength: 0.2 }
+            },
+
+            // ===== Preservatives & Functional Additives =====
+            'phenoxyethanol': {
+                inci: 'Phenoxyethanol',
+                commonName: 'Phenoxyethanol',
+                roles: ['preservative'],
+                mechanism: 'Broad-spectrum preservative. No direct hair benefit — prevents microbial growth in formula.',
+                mwClass: 'low',
+                flags: ['preservative', 'no_hair_benefit'],
+                interactionFlags: [],
+                outcomeWeights: {}
+            },
+            'methylisothiazolinone': {
+                inci: 'Methylisothiazolinone',
+                commonName: 'MIT (preservative)',
+                roles: ['preservative'],
+                mechanism: 'Preservative. Effective antimicrobial but associated with contact sensitization. Being phased out of leave-on products in EU.',
+                mwClass: 'low',
+                flags: ['preservative', 'sensitization_risk', 'no_hair_benefit'],
+                interactionFlags: [],
+                outcomeWeights: {}
+            },
+            'edta': {
+                inci: 'Disodium EDTA',
+                commonName: 'EDTA (chelator)',
+                roles: ['chelating'],
+                mechanism: 'Chelating agent. Binds metal ions (calcium, magnesium, iron) from hard water that deposit on hair and cause dullness/dryness.',
+                mwClass: 'low',
+                flags: ['chelating', 'hard_water_treatment'],
+                interactionFlags: ['enhances_subsequent_conditioning'],
+                outcomeWeights: { shine: 0.2, cleanliness: 0.2 }
+            },
+            'tocopheryl acetate': {
+                inci: 'Tocopheryl Acetate',
+                commonName: 'Vitamin E',
+                roles: ['antioxidant'],
+                mechanism: 'Antioxidant that protects against UV and environmental oxidative damage. Mild emollient properties.',
+                mwClass: 'mid',
+                flags: ['antioxidant', 'uv_protective'],
+                interactionFlags: [],
+                outcomeWeights: { damage_prevention: 0.2 }
+            },
+            'ascorbic acid': {
+                inci: 'Ascorbic Acid',
+                commonName: 'Vitamin C',
+                roles: ['antioxidant', 'chelating'],
+                mechanism: 'Antioxidant and mild chelator. Can help remove mineral buildup. Acidic — helps close cuticle.',
+                mwClass: 'low',
+                flags: ['antioxidant', 'chelating', 'ph_adjuster'],
+                interactionFlags: [],
+                outcomeWeights: { shine: 0.2, cleanliness: 0.2 }
+            },
+
+            // ===== UV Filters =====
+            'benzophenone-4': {
+                inci: 'Benzophenone-4',
+                commonName: 'Benzophenone-4 (UV filter)',
+                roles: ['uv_filter'],
+                mechanism: 'UV absorber that protects hair protein and color from photodegradation. Water-soluble.',
+                mwClass: 'low',
+                flags: ['uv_protective', 'color_protection'],
+                interactionFlags: [],
+                outcomeWeights: { damage_prevention: 0.3 }
+            },
+            'ethylhexyl methoxycinnamate': {
+                inci: 'Ethylhexyl Methoxycinnamate',
+                commonName: 'Octinoxate (UV filter)',
+                roles: ['uv_filter'],
+                mechanism: 'UVB absorber. Protects hair keratin from UV-induced disulfide bond breakage.',
+                mwClass: 'low',
+                flags: ['uv_protective'],
+                interactionFlags: [],
+                outcomeWeights: { damage_prevention: 0.3 }
+            },
+
+            // ===== Thickeners & Texture Agents =====
+            'hydroxyethylcellulose': {
+                inci: 'Hydroxyethylcellulose',
+                commonName: 'HEC (thickener)',
+                roles: ['film_forming'],
+                mechanism: 'Non-ionic cellulose derivative. Thickens formulas and provides mild film-forming hold. Very common in gels.',
+                mwClass: 'high',
+                flags: ['thickener', 'mild_hold'],
+                interactionFlags: [],
+                outcomeWeights: { hold: 0.2 }
+            },
+            'carbomer': {
+                inci: 'Carbomer',
+                commonName: 'Carbomer (thickener)',
+                roles: ['film_forming'],
+                mechanism: 'Cross-linked polyacrylic acid polymer. Gel-forming thickener. No direct hair benefit — provides product texture.',
+                mwClass: 'high',
+                flags: ['thickener', 'no_direct_hair_benefit'],
+                interactionFlags: [],
+                outcomeWeights: {}
+            },
+            'xanthan gum': {
+                inci: 'Xanthan Gum',
+                commonName: 'Xanthan Gum',
+                roles: ['film_forming'],
+                mechanism: 'Polysaccharide thickener. Provides slip and mild hold. Common in curl creams.',
+                mwClass: 'high',
+                flags: ['thickener', 'mild_hold', 'natural'],
+                interactionFlags: [],
+                outcomeWeights: { hold: 0.1, definition: 0.1 }
+            },
+            'guar hydroxypropyltrimonium chloride': {
+                inci: 'Guar Hydroxypropyltrimonium Chloride',
+                commonName: 'Cationic Guar',
+                roles: ['conditioning'],
+                mechanism: 'Cationic polysaccharide derived from guar gum. Deposits on hair for conditioning and detangling. Common in 2-in-1 and co-wash products.',
+                mwClass: 'high',
+                flags: ['cationic', 'conditioning_polymer', 'natural_derived'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.4, softness: 0.3 }
+            },
+
+            // ===== Specialty / Niche Ingredients =====
+            'polyquaternium-55': {
+                inci: 'Polyquaternium-55',
+                commonName: 'PQ-55',
+                roles: ['hold', 'conditioning'],
+                mechanism: 'Cationic styling polymer. Provides flexible hold with conditioning. Less stiff than PVP-based polymers.',
+                mwClass: 'high',
+                flags: ['cationic', 'flexible_hold', 'conditioning_polymer'],
+                interactionFlags: [],
+                outcomeWeights: { hold: 0.6, definition: 0.5, smoothness: 0.3 }
+            },
+            'aminopropyl triethoxysilane': {
+                inci: 'Aminopropyl Triethoxysilane',
+                commonName: 'Aminopropyl Triethoxysilane',
+                roles: ['cuticle_smoothing'],
+                mechanism: 'Reactive silane that bonds covalently to hair surface. More durable than standard silicones. Used in professional treatments.',
+                mwClass: 'low',
+                flags: ['covalent_bonding', 'durable'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.7, shine: 0.5 }
+            },
+            'isopropyl myristate': {
+                inci: 'Isopropyl Myristate',
+                commonName: 'Isopropyl Myristate',
+                roles: ['emollient'],
+                mechanism: 'Lightweight ester emollient. Provides dry, non-greasy feel. Solvent for other ingredients.',
+                mwClass: 'low',
+                flags: ['emollient', 'lightweight', 'solvent'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.2 }
+            },
+            'isododecane': {
+                inci: 'Isododecane',
+                commonName: 'Isododecane',
+                roles: ['emollient'],
+                mechanism: 'Volatile hydrocarbon emollient. Evaporates after application — provides temporary slip and helps spread other ingredients.',
+                mwClass: 'low',
+                flags: ['volatile', 'carrier', 'no_residue'],
+                interactionFlags: [],
+                outcomeWeights: {}
+            },
+            'ethylhexyl palmitate': {
+                inci: 'Ethylhexyl Palmitate',
+                commonName: 'Ethylhexyl Palmitate',
+                roles: ['emollient'],
+                mechanism: 'Lightweight ester emollient. Provides softness without heaviness. Non-greasy feel.',
+                mwClass: 'low',
+                flags: ['emollient', 'lightweight'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.2, softness: 0.2 }
+            },
+            'niacinamide': {
+                inci: 'Niacinamide',
+                commonName: 'Vitamin B3',
+                roles: ['conditioning'],
+                mechanism: 'Improves scalp barrier function and sebum regulation. Mild anti-inflammatory. Limited direct hair shaft benefit.',
+                mwClass: 'low',
+                flags: ['scalp_benefit', 'anti_inflammatory'],
+                interactionFlags: [],
+                outcomeWeights: { damage_prevention: 0.2 }
+            },
+            'caffeine': {
+                inci: 'Caffeine',
+                commonName: 'Caffeine',
+                roles: ['conditioning'],
+                mechanism: 'Stimulates scalp microcirculation. May support hair growth at follicle level. No direct shaft benefit.',
+                mwClass: 'low',
+                flags: ['scalp_benefit', 'growth_support'],
+                interactionFlags: [],
+                outcomeWeights: {}
+            },
+            'menthol': {
+                inci: 'Menthol',
+                commonName: 'Menthol',
+                roles: ['conditioning'],
+                mechanism: 'Cooling sensation on scalp. Mild vasodilator. No direct hair shaft benefit — purely sensory.',
+                mwClass: 'low',
+                flags: ['scalp_benefit', 'sensory'],
+                interactionFlags: [],
+                outcomeWeights: {}
+            },
+            'biotin': {
+                inci: 'Biotin',
+                commonName: 'Biotin (Vitamin B7)',
+                roles: ['conditioning'],
+                mechanism: 'Topical biotin has no proven benefit for hair shaft. Marketing ingredient. Oral biotin only helps if deficient.',
+                mwClass: 'low',
+                flags: ['marketing_claim', 'no_proven_topical_benefit'],
+                interactionFlags: [],
+                outcomeWeights: {}
+            },
+            'linalool': {
+                inci: 'Linalool',
+                commonName: 'Linalool (fragrance)',
+                roles: ['preservative'],
+                mechanism: 'Fragrance component. No hair benefit. Can be a sensitizer for some people.',
+                mwClass: 'low',
+                flags: ['fragrance', 'potential_sensitizer', 'no_hair_benefit'],
+                interactionFlags: [],
+                outcomeWeights: {}
+            },
+            'limonene': {
+                inci: 'Limonene',
+                commonName: 'Limonene (fragrance)',
+                roles: ['preservative'],
+                mechanism: 'Fragrance component derived from citrus. No hair benefit. Potential sensitizer.',
+                mwClass: 'low',
+                flags: ['fragrance', 'potential_sensitizer', 'no_hair_benefit'],
+                interactionFlags: [],
+                outcomeWeights: {}
+            }
+        };
+
+        // ===== IngredientKB Lookup Functions =====
+        const IngredientKB = (function() {
+            // Pre-build role index for fast lookups
+            const _roleIndex = {};
+            Object.keys(INGREDIENT_KB).forEach(function(key) {
+                var entry = INGREDIENT_KB[key];
+                entry.roles.forEach(function(role) {
+                    if (!_roleIndex[role]) _roleIndex[role] = [];
+                    _roleIndex[role].push(key);
+                });
+            });
+
+            /**
+             * Get all ingredients that serve a given functional role.
+             * @param {string} role - e.g. 'cuticle_smoothing', 'bond_repair', 'protein_fill'
+             * @returns {Array<{key: string, entry: object}>}
+             */
+            function getByRole(role) {
+                var keys = _roleIndex[role] || [];
+                return keys.map(function(key) {
+                    return { key: key, entry: INGREDIENT_KB[key] };
+                });
+            }
+
+            /**
+             * Get an ingredient by its normalized INCI name (case-insensitive).
+             * @param {string} name - INCI name or common name
+             * @returns {object|null} The ingredient entry or null
+             */
+            function getByName(name) {
+                if (!name) return null;
+                var normalized = name.toLowerCase().trim();
+
+                // Direct key match
+                if (INGREDIENT_KB[normalized]) {
+                    return INGREDIENT_KB[normalized];
+                }
+
+                // Search by INCI name (case-insensitive)
+                var keys = Object.keys(INGREDIENT_KB);
+                for (var i = 0; i < keys.length; i++) {
+                    var entry = INGREDIENT_KB[keys[i]];
+                    if (entry.inci.toLowerCase() === normalized) {
+                        return entry;
+                    }
+                    if (entry.commonName.toLowerCase() === normalized) {
+                        return entry;
+                    }
+                }
+                return null;
+            }
+
+            /**
+             * Fuzzy match an ingredient name against the KB.
+             * Uses Levenshtein distance: ≤2 for short names (≤10 chars), ≤3 for longer names.
+             * @param {string} input - Raw ingredient name from a product label
+             * @returns {Array<{key: string, entry: object, distance: number}>} Matches sorted by distance
+             */
+            function fuzzyMatch(input) {
+                if (!input) return [];
+                var normalized = input.toLowerCase().trim()
+                    .replace(/\s*\(.*?\)\s*/g, '')  // Remove parentheticals like (and), (CI 12345)
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                if (!normalized) return [];
+
+                // Try exact match first
+                var exact = getByName(normalized);
+                if (exact) {
+                    var exactKey = Object.keys(INGREDIENT_KB).find(function(k) {
+                        return k === normalized || INGREDIENT_KB[k].inci.toLowerCase() === normalized || INGREDIENT_KB[k].commonName.toLowerCase() === normalized;
+                    });
+                    return [{ key: exactKey || normalized, entry: exact, distance: 0 }];
+                }
+
+                var maxDist = normalized.length <= 10 ? 2 : 3;
+                var matches = [];
+                var keys = Object.keys(INGREDIENT_KB);
+
+                for (var i = 0; i < keys.length; i++) {
+                    var key = keys[i];
+                    var entry = INGREDIENT_KB[key];
+
+                    // Check against key, INCI name, and common name
+                    var candidates = [key, entry.inci.toLowerCase(), entry.commonName.toLowerCase()];
+                    var bestDist = Infinity;
+
+                    for (var c = 0; c < candidates.length; c++) {
+                        var d = levenshtein(normalized, candidates[c]);
+                        if (d < bestDist) bestDist = d;
+
+                        // Also check if input is a substring or vice versa
+                        if (candidates[c].indexOf(normalized) !== -1 || normalized.indexOf(candidates[c]) !== -1) {
+                            bestDist = Math.min(bestDist, 1);
+                        }
+                    }
+
+                    if (bestDist <= maxDist) {
+                        matches.push({ key: key, entry: entry, distance: bestDist });
+                    }
+                }
+
+                matches.sort(function(a, b) { return a.distance - b.distance; });
+                return matches;
+            }
+
+            /**
+             * Get interaction flags for a given ingredient.
+             * @param {string} ingredientName - INCI name or key
+             * @returns {Array<string>} Interaction flags
+             */
+            function getInteractionFlags(ingredientName) {
+                var entry = getByName(ingredientName);
+                if (!entry) return [];
+                return entry.interactionFlags || [];
+            }
+
+            /**
+             * Get all available functional roles in the KB.
+             * @returns {Array<string>}
+             */
+            function getRoles() {
+                return Object.keys(_roleIndex);
+            }
+
+            /**
+             * Get the total number of ingredients in the KB.
+             * @returns {number}
+             */
+            function size() {
+                return Object.keys(INGREDIENT_KB).length;
+            }
+
+            /**
+             * Analyze an ingredient list and return aggregate profile.
+             * @param {Array<string>} ingredientNames - Array of INCI names
+             * @returns {object} { matched, unmatched, detectedRoles, outcomeProfile, flags, interactionFlags }
+             */
+            function analyzeIngredientList(ingredientNames) {
+                var matched = [];
+                var unmatched = [];
+                var rolesSet = {};
+                var outcomeProfile = {};
+                var allFlags = [];
+                var allInteractionFlags = [];
+
+                ingredientNames.forEach(function(name) {
+                    var results = fuzzyMatch(name);
+                    if (results.length > 0 && results[0].distance <= 1) {
+                        var best = results[0];
+                        matched.push({ input: name, key: best.key, entry: best.entry, distance: best.distance });
+
+                        // Aggregate roles
+                        best.entry.roles.forEach(function(role) { rolesSet[role] = true; });
+
+                        // Aggregate outcome weights (take max per outcome)
+                        var weights = best.entry.outcomeWeights || {};
+                        Object.keys(weights).forEach(function(outcome) {
+                            if (!outcomeProfile[outcome] || Math.abs(weights[outcome]) > Math.abs(outcomeProfile[outcome])) {
+                                outcomeProfile[outcome] = weights[outcome];
+                            }
+                        });
+
+                        // Collect flags
+                        (best.entry.flags || []).forEach(function(f) {
+                            if (allFlags.indexOf(f) === -1) allFlags.push(f);
+                        });
+                        (best.entry.interactionFlags || []).forEach(function(f) {
+                            if (allInteractionFlags.indexOf(f) === -1) allInteractionFlags.push(f);
+                        });
+                    } else {
+                        unmatched.push(name);
+                    }
+                });
+
+                return {
+                    matched: matched,
+                    unmatched: unmatched,
+                    detectedRoles: Object.keys(rolesSet),
+                    outcomeProfile: outcomeProfile,
+                    flags: allFlags,
+                    interactionFlags: allInteractionFlags
+                };
+            }
+
+            // Levenshtein distance (standard dynamic programming)
+            function levenshtein(a, b) {
+                if (a === b) return 0;
+                if (a.length === 0) return b.length;
+                if (b.length === 0) return a.length;
+
+                // Optimization: if length difference exceeds max possible threshold, skip
+                if (Math.abs(a.length - b.length) > 3) return Math.abs(a.length - b.length);
+
+                var matrix = [];
+                for (var i = 0; i <= b.length; i++) {
+                    matrix[i] = [i];
+                }
+                for (var j = 0; j <= a.length; j++) {
+                    matrix[0][j] = j;
+                }
+
+                for (i = 1; i <= b.length; i++) {
+                    for (j = 1; j <= a.length; j++) {
+                        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                            matrix[i][j] = matrix[i - 1][j - 1];
+                        } else {
+                            matrix[i][j] = Math.min(
+                                matrix[i - 1][j - 1] + 1,  // substitution
+                                matrix[i][j - 1] + 1,      // insertion
+                                matrix[i - 1][j] + 1       // deletion
+                            );
+                        }
+                    }
+                }
+                return matrix[b.length][a.length];
+            }
+
+            return {
+                getByRole: getByRole,
+                getByName: getByName,
+                fuzzyMatch: fuzzyMatch,
+                getInteractionFlags: getInteractionFlags,
+                getRoles: getRoles,
+                size: size,
+                analyzeIngredientList: analyzeIngredientList,
+                _levenshtein: levenshtein  // exposed for testing
+            };
+        })();
