@@ -77,15 +77,15 @@
 | 8 | everpure-bond-conditioner | Bond Repair Conditioner | L'Oréal EverPure | primary | ✅ DONE | `research/products/everpure-bond-conditioner.md` — tier confirmed |
 | 9 | everpure-clarifying | Clarifying Shampoo | L'Oréal EverPure | primary | ✅ DONE | `research/products/everpure-clarifying.md` — tier confirmed (periodic use) |
 | 10 | everpure-bond-pre | Bond Repair Pre-Shampoo Treatment | L'Oréal EverPure | supporting | ✅ DONE | `research/products/everpure-bond-pre.md` — tier confirmed (Supporting Cast) |
-| 11 | everpure-glossing-mask | Glossing 5-Min Lamination Mask | L'Oréal EverPure | supporting | 📋 PLANNED | |
+| 11 | everpure-glossing-mask | Glossing 5-Min Lamination Mask | L'Oréal EverPure | supporting | ✅ DONE | `research/products/everpure-glossing-mask.md` — 90% score, tier confirmed |
 
 ## Batch 3: L'Oréal Elvive / Other L'Oréal
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
 | 12 | loreal-21in1 | 21-in-1 Leave-In Spray | L'Oréal EverPure | primary | ✅ DONE | `research/products/loreal-21in1.md` — tier confirmed |
-| 13 | loreal-wonder-water | 8 Second Wonder Water | L'Oréal Elvive | supporting | 📋 PLANNED | |
-| 14 | elvive-total-repair-5-balm | Total Repair 5 Damage Erasing Balm | L'Oréal Elvive | supporting | 📋 PLANNED | |
+| 13 | loreal-wonder-water | 8 Second Wonder Water | L'Oréal Elvive | supporting | ✅ DONE | `research/products/loreal-wonder-water.md` — 95% score, tier confirmed |
+| 14 | elvive-total-repair-5-balm | Total Repair 5 Damage Erasing Balm | L'Oréal Elvive | supporting | 📋 PLANNED | **Additional research question:** Does the Elvive provide complementary benefits to Garnier conditioner despite shared amodimethicone? Assess: (1) protein type/concentration differences, (2) whether longer dwell + heat cap changes deposition outcomes, (3) whether cortex-level protein fill + cuticle-level silicone seal = genuinely different targets. Determines whether mask+conditioner is valid or redundant for this specific pair. |
 
 ## Batch 4: Garnier Fructis Line
 
@@ -99,7 +99,7 @@
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
-| 18 | nym-curl-talk-gel | Curl Talk Flash Freeze Gel | Not Your Mother's | primary | 📋 PLANNED | |
+| 18 | nym-curl-talk-gel | Curl Talk Flash Freeze Gel | Not Your Mother's | primary | ✅ DONE | `research/products/nym-curl-talk-gel.md` — 95% score, tier confirmed |
 | 19 | marc-anthony-shield | Grow Long Anti-Frizz Shield | Marc Anthony | primary | 📋 PLANNED | |
 | 31 | garnier-diamond-sleek | Diamond Sleek Shine-Coat Smoothing Spray | Garnier Fructis | primary | 📋 PLANNED | Same active (Polysilicone-29) as Marc Anthony — interchangeable |
 | 20 | got2b-ultra-glued | Glued Blasting Freeze Spray/Gel | Got2b | supporting | 📋 PLANNED | |
@@ -141,17 +141,17 @@
 ## Progress
 
 - **Total products:** 31
-- **Completed:** 12 (Dove conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + conditioner + 21-in-1 + clarifying + pre-shampoo + Garnier Color Repair)
-- **Remaining:** 19
+- **Completed:** 15 (Dove conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + conditioner + 21-in-1 + clarifying + pre-shampoo + Garnier Color Repair + EverPure Glossing Mask + Wonder Water + NYM Curl Talk Gel)
+- **Remaining:** 16
 - **Estimated sessions:** ~7-8 (2-3 products per session)
 
 ## Next Session Starts With
 
-1. `everpure-glossing-mask` — Glossing 5-Min Lamination Mask (L'Oréal EverPure, supporting tier)
-2. `loreal-wonder-water` — 8 Second Wonder Water (L'Oréal Elvive, supporting tier)
-3. `nym-curl-talk-gel` — Curl Talk Flash Freeze Gel (Not Your Mother's, primary tier)
+1. `elvive-total-repair-5-balm` — Total Repair 5 Damage Erasing Balm (L'Oréal Elvive, supporting tier)
+2. `garnier-pre-shampoo` — Hair Filler Inner Fiber Repair Pre-Shampoo (Garnier Fructis, supporting tier)
+3. `marc-anthony-shield` — Grow Long Anti-Frizz Shield (Marc Anthony, primary tier)
 
-**Rationale:** Garnier Color Repair deep dive complete (confirmed co-primary with EverPure, 87.5% score). EverPure clarifying and pre-shampoo are done — glossing mask finishes the EverPure line. Then styling products.
+**Rationale:** Wonder Water and NYM Curl Talk Gel complete (both 95%). Next batch covers remaining L'Oréal Elvive + Garnier supporting products + primary heat protectant.
 
 ---
 
