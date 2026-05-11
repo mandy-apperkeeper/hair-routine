@@ -2015,7 +2015,11 @@
                 <button class="btn-primary" id="dev-notes-save" style="flex:1;min-height:48px;">Save</button>
                 <button class="btn-secondary" id="dev-notes-close" style="flex:1;min-height:48px;">Cancel</button>
             </div>
+            <div id="dev-notes-status" style="margin-top:0.5rem;font-size:0.8rem;text-align:center;color:var(--text-secondary);"></div>
             <div id="dev-notes-list" style="margin-top:1rem;max-height:40vh;overflow-y:auto;"></div>
+            <div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border);">
+                <button class="btn-secondary" id="dev-notes-send-all" style="width:100%;min-height:48px;">📤 Send all to dev machine</button>
+            </div>
         </div>
     </div>
 
@@ -12925,12 +12929,20 @@
     // ===== Dev Notes (quick-add for feature requests while using the app) =====
     (function() {
         var DEV_NOTES_KEY = 'hair-routine-dev-notes';
+        var DROP_URL_KEY = 'hair-routine-drop-url';
+        var DEFAULT_DROP_URL = 'http://computus-prime:8080/api/drop';
         var fab = document.getElementById('dev-notes-fab');
         var overlay = document.getElementById('dev-notes-overlay');
         var input = document.getElementById('dev-notes-input');
         var saveBtn = document.getElementById('dev-notes-save');
         var closeBtn = document.getElementById('dev-notes-close');
         var listEl = document.getElementById('dev-notes-list');
+        var statusEl = document.getElementById('dev-notes-status');
+        var sendAllBtn = document.getElementById('dev-notes-send-all');
+
+        function getDropUrl() {
+            try { return localStorage.getItem(DROP_URL_KEY) || DEFAULT_DROP_URL; } catch(e) { return DEFAULT_DROP_URL; }
+        }
 
         function getNotes() {
             try {
@@ -12947,14 +12959,16 @@
             var notes = getNotes();
             if (notes.length === 0) {
                 listEl.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;text-align:center;">No notes yet. Add one above!</p>';
+                sendAllBtn.style.display = 'none';
                 return;
             }
+            sendAllBtn.style.display = '';
             var html = '<p style="color:var(--text-secondary);font-size:0.75rem;margin-bottom:0.5rem;">' + notes.length + ' note' + (notes.length !== 1 ? 's' : '') + '</p>';
             for (var i = notes.length - 1; i >= 0; i--) {
                 var note = notes[i];
                 html += '<div class="dev-note-item" data-idx="' + i + '">';
                 html += '<p class="note-text">' + escapeHtml(note.text) + '</p>';
-                html += '<p class="note-meta">' + formatNoteDate(note.date) + '</p>';
+                html += '<p class="note-meta">' + formatNoteDate(note.date) + (note.sent ? ' ✓ sent' : '') + '</p>';
                 html += '<button class="note-delete" aria-label="Delete note" data-idx="' + i + '">✕</button>';
                 html += '</div>';
             }
@@ -12983,9 +12997,16 @@
             return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
         }
 
+        function setStatus(msg, isError) {
+            statusEl.textContent = msg;
+            statusEl.style.color = isError ? 'var(--accent)' : 'var(--green)';
+            if (msg) setTimeout(function() { statusEl.textContent = ''; }, 4000);
+        }
+
         function openNotes() {
             overlay.classList.add('visible');
             input.value = '';
+            statusEl.textContent = '';
             renderNotes();
             setTimeout(function() { input.focus(); }, 100);
         }
@@ -13001,13 +13022,71 @@
             var text = input.value.trim();
             if (!text) return;
             var notes = getNotes();
-            notes.push({ text: text, date: new Date().toISOString() });
+            notes.push({ text: text, date: new Date().toISOString(), sent: false });
             saveNotes(notes);
             input.value = '';
             renderNotes();
-            // Brief visual feedback
             saveBtn.textContent = '✓ Saved';
             setTimeout(function() { saveBtn.textContent = 'Save'; }, 1000);
+        };
+
+        // Send all unsent notes to Local Drop
+        sendAllBtn.onclick = function() {
+            var notes = getNotes();
+            var unsent = notes.filter(function(n) { return !n.sent; });
+            if (unsent.length === 0) {
+                setStatus('All notes already sent', false);
+                return;
+            }
+
+            var payload = {
+                app: 'hair-routine',
+                type: 'dev-notes',
+                sentAt: new Date().toISOString(),
+                notes: unsent.map(function(n) { return { text: n.text, date: n.date }; })
+            };
+
+            var url = getDropUrl();
+            sendAllBtn.disabled = true;
+            sendAllBtn.textContent = '📤 Sending...';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Filename': 'hair-routine-dev-notes.json',
+                    'X-Tag': 'dev-notes',
+                    'X-Device': 'ipad'
+                },
+                body: JSON.stringify(payload, null, 2)
+            }).then(function(resp) {
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.json();
+            }).then(function(data) {
+                if (data.success) {
+                    // Mark all as sent
+                    var notes = getNotes();
+                    notes.forEach(function(n) { n.sent = true; });
+                    saveNotes(notes);
+                    renderNotes();
+                    setStatus('✓ ' + unsent.length + ' note' + (unsent.length !== 1 ? 's' : '') + ' sent to dev machine', false);
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            }).catch(function(err) {
+                setStatus('Failed: ' + err.message + '. Check Tailscale connection.', true);
+                // If it's a network error, offer to configure the URL
+                if (err.message.indexOf('fetch') !== -1 || err.message.indexOf('network') !== -1 || err.message.indexOf('Failed') !== -1) {
+                    var newUrl = prompt('Local Drop URL (current: ' + url + '):', url);
+                    if (newUrl && newUrl !== url) {
+                        try { localStorage.setItem(DROP_URL_KEY, newUrl); } catch(e) {}
+                        setStatus('URL updated. Try again.', false);
+                    }
+                }
+            }).finally(function() {
+                sendAllBtn.disabled = false;
+                sendAllBtn.textContent = '📤 Send all to dev machine';
+            });
         };
 
         // Close on backdrop tap
@@ -13015,7 +13094,7 @@
             if (e.target === overlay) closeNotes();
         };
 
-        // Keyboard: Enter to save (with Ctrl/Cmd), Escape to close
+        // Keyboard: Ctrl+Enter to save, Escape to close
         input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
@@ -13026,11 +13105,11 @@
             }
         });
 
-        // Show note count badge on FAB if there are notes
-        var noteCount = getNotes().length;
-        if (noteCount > 0) {
-            fab.setAttribute('data-count', noteCount);
-            fab.title = noteCount + ' dev note' + (noteCount !== 1 ? 's' : '');
+        // Show note count badge on FAB if there are unsent notes
+        var unsent = getNotes().filter(function(n) { return !n.sent; });
+        if (unsent.length > 0) {
+            fab.setAttribute('data-count', unsent.length);
+            fab.title = unsent.length + ' unsent dev note' + (unsent.length !== 1 ? 's' : '');
         }
     })();
 
