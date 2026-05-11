@@ -1765,6 +1765,10 @@
             <!-- Daily Plan (generated dynamically) -->
             <div id="daily-plan-container"></div>
 
+            <!-- Pre-wash Recommendation Card (active intelligence) -->
+            <div id="recommendation-card" class="card" style="display:none;border-color:var(--green);margin-bottom:0.75rem;" aria-label="Product recommendations for today" aria-live="polite">
+            </div>
+
             <!-- Insight card (hidden until feedback engine has data) -->
             <div class="insight-card" id="insight-card" aria-label="Personalized insight">
                 <p id="insight-message"></p>
@@ -6011,6 +6015,398 @@
                 incrementWashCount: incrementWashCount,
                 removeFromRotation: removeFromRotation,
                 ROTATION_FREQUENCY: ROTATION_FREQUENCY
+            };
+        })();
+
+        // ===== RecommendationEngine (Active Intelligence) =====
+        // Provides product recommendations based on domain rules (Tier 1, always active),
+        // data-driven insights from BeliefTracker (Tier 2, 3+ events; Tier 3, 10+ events),
+        // and conflict warnings for current conditions.
+        const RecommendationEngine = (function() {
+
+            // Dew point threshold for humidity-sensitive recommendations (in Fahrenheit)
+            var DEW_POINT_HUMID_THRESHOLD = 60;
+            var DEW_POINT_DRY_THRESHOLD = 40;
+
+            /**
+             * Get all recommendations for current conditions.
+             * @param {object} conditions - { dewPoint: number|null, lane: string|null }
+             * @returns {Array} recommendations sorted by tier then confidence
+             *   Each: { productId, productName, reason, tier, mechanism, confidence }
+             */
+            function getRecommendations(conditions) {
+                var state = StateManager.getState();
+                var inventory = state.inventory || [];
+                var events = state.events || [];
+                var sealState = state.sealState || { active: false };
+                var dewPoint = conditions.dewPoint;
+                var lane = conditions.lane || null;
+
+                var recommendations = [];
+
+                // --- Tier 1: Domain rules (always active) ---
+                recommendations = recommendations.concat(getDomainRules(inventory, sealState, dewPoint, lane, events));
+
+                // --- Tier 2: Data-driven (3+ events) ---
+                var ratedEvents = events.filter(function(e) { return e.rating; });
+                if (ratedEvents.length >= 3) {
+                    recommendations = recommendations.concat(getDataDrivenTier2(inventory, state, dewPoint));
+                }
+
+                // --- Tier 3: Condition-correlated (10+ events) ---
+                if (ratedEvents.length >= 10) {
+                    recommendations = recommendations.concat(getDataDrivenTier3(inventory, state, dewPoint, ratedEvents));
+                }
+
+                // Deduplicate by productId (keep highest tier)
+                var seen = {};
+                var deduped = [];
+                recommendations.forEach(function(rec) {
+                    if (!seen[rec.productId]) {
+                        seen[rec.productId] = true;
+                        deduped.push(rec);
+                    }
+                });
+
+                // Sort: tier ascending (1 first), then confidence descending
+                deduped.sort(function(a, b) {
+                    if (a.tier !== b.tier) return a.tier - b.tier;
+                    var confOrder = { high: 0, medium: 1, low: 2 };
+                    return (confOrder[a.confidence] || 2) - (confOrder[b.confidence] || 2);
+                });
+
+                return deduped;
+            }
+
+            /**
+             * Tier 1: Domain rules — always active, based on hair science.
+             */
+            function getDomainRules(inventory, sealState, dewPoint, lane, events) {
+                var rules = [];
+
+                // Rule 1: Amodimethicone conditioner every wash
+                var amoConds = inventory.filter(function(p) {
+                    return p.intelligence && p.intelligence.step === 'conditioner' &&
+                           p.intelligence.mechanisms && p.intelligence.mechanisms.indexOf('cuticle_smoothing') !== -1 &&
+                           !p.usingUp;
+                });
+                if (amoConds.length > 0) {
+                    rules.push({
+                        productId: amoConds[0].id,
+                        productName: amoConds[0].brand + ' ' + amoConds[0].name,
+                        reason: 'Amodimethicone conditioner every wash — smooths cuticle, builds cumulative protection',
+                        tier: 1,
+                        mechanism: 'cuticle_smoothing',
+                        confidence: 'high'
+                    });
+                }
+
+                // Rule 2: Got2b over NYM when dew point > 60°F
+                if (dewPoint !== null && dewPoint > DEW_POINT_HUMID_THRESHOLD && (lane === 'curly' || lane === null)) {
+                    var got2b = inventory.find(function(p) { return p.id === 'got2b-ultra-glued'; });
+                    if (got2b) {
+                        rules.push({
+                            productId: 'got2b-ultra-glued',
+                            productName: got2b.brand + ' ' + got2b.name,
+                            reason: 'Dew point ' + dewPoint + '\u00B0F — Got2b\u2019s stronger PQ-69 hold outperforms NYM in humidity',
+                            tier: 1,
+                            mechanism: 'humidity_barrier',
+                            confidence: 'high'
+                        });
+                    }
+                }
+
+                // Rule 3: Don't use curly products while seal is active
+                // (This is a warning, not a product recommendation — handled in getConflictWarnings)
+
+                // Rule 4: Clarify before protein treatment if >7 days since last clarify
+                var lastClarify = null;
+                for (var i = events.length - 1; i >= 0; i--) {
+                    var ev = events[i];
+                    if ((ev.treatments && ev.treatments.indexOf('clarify') !== -1) ||
+                        (ev.products && ev.products.indexOf('everpure-clarifying') !== -1)) {
+                        lastClarify = ev;
+                        break;
+                    }
+                }
+                if (lastClarify && lastClarify.date) {
+                    var daysSinceClarify = daysSince(lastClarify.date);
+                    if (daysSinceClarify !== null && daysSinceClarify > 7) {
+                        var clarifyProd = inventory.find(function(p) { return p.id === 'everpure-clarifying'; });
+                        if (clarifyProd) {
+                            rules.push({
+                                productId: 'everpure-clarifying',
+                                productName: clarifyProd.brand + ' ' + clarifyProd.name,
+                                reason: daysSinceClarify + ' days since last clarify — clear buildup before protein treatment for better absorption',
+                                tier: 1,
+                                mechanism: 'clarifying',
+                                confidence: 'medium'
+                            });
+                        }
+                    }
+                }
+
+                // Rule 5: Leave-in every wash (amodimethicone cumulative benefit)
+                var leaveIn = inventory.find(function(p) { return p.id === 'loreal-21in1'; });
+                if (leaveIn) {
+                    rules.push({
+                        productId: 'loreal-21in1',
+                        productName: leaveIn.brand + ' ' + leaveIn.name,
+                        reason: 'Amodimethicone leave-in every wash — cumulative cuticle repair + coconut oil penetration',
+                        tier: 1,
+                        mechanism: 'cuticle_smoothing',
+                        confidence: 'high'
+                    });
+                }
+
+                return rules;
+            }
+
+            /**
+             * Tier 2: Data-driven — surface products where Bayesian posterior strongly deviates from prior.
+             * Requires 3+ events.
+             */
+            function getDataDrivenTier2(inventory, state, dewPoint) {
+                var recommendations = [];
+                var beliefs = state.beliefs || {};
+
+                inventory.forEach(function(product) {
+                    if (!beliefs[product.id] || !product.intelligence || !product.intelligence.outcomes) return;
+
+                    var productBeliefs = beliefs[product.id];
+                    var dominated = false;
+
+                    // Check each outcome dimension
+                    Object.keys(productBeliefs).forEach(function(outcome) {
+                        if (dominated) return;
+                        var belief = productBeliefs[outcome];
+                        if (!belief || belief.n < 3) return;
+
+                        var prior = product.intelligence.outcomes[outcome];
+                        if (prior === undefined) return;
+
+                        // Posterior significantly above prior = product performing better than expected
+                        var sd = Math.sqrt(belief.variance);
+                        var zScore = (belief.mu - prior) / (sd || 0.01);
+
+                        if (zScore > 1.0 && belief.mu > 0.6) {
+                            // Product is outperforming expectations
+                            recommendations.push({
+                                productId: product.id,
+                                productName: product.brand + ' ' + product.name,
+                                reason: 'Your data shows ' + product.name + ' outperforms expectations for ' + outcome.replace(/_/g, ' ') + ' (n=' + belief.n + ')',
+                                tier: 2,
+                                mechanism: outcome,
+                                confidence: belief.n >= 8 ? 'high' : 'medium'
+                            });
+                            dominated = true; // one rec per product
+                        }
+                    });
+                });
+
+                return recommendations;
+            }
+
+            /**
+             * Tier 3: Condition-correlated — surface products that correlate with good outcomes
+             * in similar conditions. Requires 10+ events.
+             */
+            function getDataDrivenTier3(inventory, state, dewPoint, ratedEvents) {
+                var recommendations = [];
+                if (dewPoint === null) return recommendations;
+
+                // Determine current dew point category
+                var currentCategory;
+                if (dewPoint < DEW_POINT_DRY_THRESHOLD) currentCategory = 'dry';
+                else if (dewPoint <= DEW_POINT_HUMID_THRESHOLD) currentCategory = 'moderate';
+                else currentCategory = 'humid';
+
+                // Find events in the same dew point category
+                var sameConditionEvents = ratedEvents.filter(function(e) {
+                    if (e.dewPoint === null || e.dewPoint === undefined) return currentCategory === 'moderate';
+                    if (e.dewPoint < DEW_POINT_DRY_THRESHOLD) return currentCategory === 'dry';
+                    if (e.dewPoint <= DEW_POINT_HUMID_THRESHOLD) return currentCategory === 'moderate';
+                    return currentCategory === 'humid';
+                });
+
+                if (sameConditionEvents.length < 5) return recommendations;
+
+                // For each product, check if it correlates with good outcomes in this condition
+                inventory.forEach(function(product) {
+                    var withProd = sameConditionEvents.filter(function(e) {
+                        return (e.products || []).indexOf(product.id) !== -1;
+                    });
+                    var withoutProd = sameConditionEvents.filter(function(e) {
+                        return (e.products || []).indexOf(product.id) === -1;
+                    });
+
+                    if (withProd.length >= 3 && withoutProd.length >= 3) {
+                        var meanWith = average(withProd.map(function(e) { return e.rating; }));
+                        var meanWithout = average(withoutProd.map(function(e) { return e.rating; }));
+                        var diff = meanWith - meanWithout;
+
+                        if (diff > 0.5) {
+                            recommendations.push({
+                                productId: product.id,
+                                productName: product.brand + ' ' + product.name,
+                                reason: 'In ' + currentCategory + ' conditions, washes with ' + product.name + ' rate ' + (Math.round(diff * 10) / 10) + ' points higher (n=' + withProd.length + ')',
+                                tier: 3,
+                                mechanism: 'condition_correlation',
+                                confidence: withProd.length >= 7 ? 'medium' : 'low'
+                            });
+                        }
+                    }
+                });
+
+                return recommendations;
+            }
+
+            /**
+             * Get conflict warnings for current conditions and selected products.
+             * @param {object} conditions - { dewPoint, lane, selectedProducts: [] }
+             * @returns {Array} warnings: { type, message, detail, suggestion }
+             */
+            function getConflictWarnings(conditions) {
+                var state = StateManager.getState();
+                var inventory = state.inventory || [];
+                var sealState = state.sealState || { active: false };
+                var selectedProducts = conditions.selectedProducts || [];
+                var dewPoint = conditions.dewPoint;
+                var warnings = [];
+
+                // Warning 1: Seal state blocks curly products
+                if (sealState.active && conditions.lane === 'curly') {
+                    warnings.push({
+                        type: 'seal_blocks_curly',
+                        message: 'Seal is active — gel won\u2019t adhere properly',
+                        detail: 'Polysilicone-29 from your last blowout is still coating the hair. Gel needs a clean surface to form a cast.',
+                        suggestion: 'Clarify first with EverPure Clarifying Shampoo to remove the seal.'
+                    });
+                }
+
+                // Warning 2: Seal state blocks treatments
+                if (sealState.active) {
+                    var treatmentProducts = selectedProducts.filter(function(pid) {
+                        var prod = inventory.find(function(p) { return p.id === pid; });
+                        return prod && prod.intelligence && (
+                            prod.intelligence.step === 'bond_repair' ||
+                            prod.intelligence.step === 'deep_condition'
+                        );
+                    });
+                    if (treatmentProducts.length > 0) {
+                        warnings.push({
+                            type: 'seal_blocks_treatment',
+                            message: 'Seal blocks treatment absorption',
+                            detail: 'The Polysilicone-29 layer prevents bond repair and deep conditioning products from penetrating.',
+                            suggestion: 'Do treatments on clarifying day when the seal has been removed.'
+                        });
+                    }
+                }
+
+                // Warning 3: PQ-69 + Polysilicone-29 conflict
+                var hasPQ69 = selectedProducts.some(function(pid) {
+                    return pid === 'nym-curl-talk-gel' || pid === 'got2b-ultra-glued';
+                });
+                var hasPolySilicone = selectedProducts.some(function(pid) {
+                    return pid === 'marc-anthony-shield' || pid === 'garnier-diamond-sleek';
+                });
+                if (hasPQ69 && hasPolySilicone) {
+                    warnings.push({
+                        type: 'pq69_polysilicone_conflict',
+                        message: 'PQ-69 gel and heat seal in same wash',
+                        detail: 'PQ-69 residue may block Polysilicone-29 from adhering to the cuticle, reducing heat protection effectiveness.',
+                        suggestion: 'Use one or the other. If you need both, clarify between applications.'
+                    });
+                }
+
+                // Warning 4: Product performs poorly in current dew point
+                if (dewPoint !== null) {
+                    selectedProducts.forEach(function(pid) {
+                        var prod = inventory.find(function(p) { return p.id === pid; });
+                        if (!prod) return;
+
+                        // NYM gel in high humidity — Got2b is better
+                        if (pid === 'nym-curl-talk-gel' && dewPoint > DEW_POINT_HUMID_THRESHOLD) {
+                            warnings.push({
+                                type: 'suboptimal_for_conditions',
+                                message: prod.name + ' may underperform today',
+                                detail: 'Dew point is ' + dewPoint + '\u00B0F. NYM\u2019s lighter hold may not hold up against this humidity.',
+                                suggestion: 'Consider Got2b Glued for stronger humidity resistance.'
+                            });
+                        }
+
+                        // Glycerin-heavy products in high humidity
+                        if (prod.intelligence && prod.intelligence.ingredients) {
+                            var hasGlycerin = prod.intelligence.ingredients.indexOf('glycerin') !== -1;
+                            if (hasGlycerin && dewPoint > 65 && prod.intelligence.step === 'styling') {
+                                warnings.push({
+                                    type: 'glycerin_humidity',
+                                    message: prod.name + ' contains glycerin',
+                                    detail: 'At dew point ' + dewPoint + '\u00B0F, glycerin draws excess moisture from the air into the hair, causing frizz.',
+                                    suggestion: 'Glycerin-free alternatives perform better in high humidity.'
+                                });
+                            }
+                        }
+                    });
+                }
+
+                return warnings;
+            }
+
+            /**
+             * Get "missing step" warnings — products usually used that correlate with better ratings.
+             * @param {Array} selectedProducts - currently selected product IDs
+             * @returns {Array} suggestions: { productId, productName, reason }
+             */
+            function getMissingStepWarnings(selectedProducts) {
+                var state = StateManager.getState();
+                var events = state.events || [];
+                var inventory = state.inventory || [];
+                var ratedEvents = events.filter(function(e) { return e.rating; });
+
+                if (ratedEvents.length < 5) return [];
+
+                var suggestions = [];
+
+                // For each product NOT in selectedProducts, check if it's usually used and correlates with better ratings
+                inventory.forEach(function(product) {
+                    if (selectedProducts.indexOf(product.id) !== -1) return; // already selected
+                    if (product.usingUp) return; // don't suggest use-up products
+
+                    var withProd = ratedEvents.filter(function(e) { return (e.products || []).indexOf(product.id) !== -1; });
+                    var withoutProd = ratedEvents.filter(function(e) { return (e.products || []).indexOf(product.id) === -1; });
+
+                    // Product must be used in >50% of washes (it's a "usual" product)
+                    if (withProd.length < ratedEvents.length * 0.5) return;
+                    if (withoutProd.length < 3) return;
+
+                    var meanWith = average(withProd.map(function(e) { return e.rating; }));
+                    var meanWithout = average(withoutProd.map(function(e) { return e.rating; }));
+
+                    if (meanWith - meanWithout > 0.5) {
+                        suggestions.push({
+                            productId: product.id,
+                            productName: product.brand + ' ' + product.name,
+                            reason: 'Usually in your routine — washes without it average ' + (Math.round((meanWith - meanWithout) * 10) / 10) + ' points lower'
+                        });
+                    }
+                });
+
+                return suggestions;
+            }
+
+            // --- Helper ---
+            function average(arr) {
+                if (arr.length === 0) return 0;
+                var sum = 0;
+                for (var i = 0; i < arr.length; i++) sum += arr[i];
+                return sum / arr.length;
+            }
+
+            return {
+                getRecommendations: getRecommendations,
+                getConflictWarnings: getConflictWarnings,
+                getMissingStepWarnings: getMissingStepWarnings
             };
         })();
 
