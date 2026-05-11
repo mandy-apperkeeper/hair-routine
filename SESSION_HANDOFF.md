@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 26)
+**Last updated:** May 10, 2026 (Session 27)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -9,43 +9,53 @@
 ## Current State
 
 ### What's Live & Working
-- Everything from Session 25 remains working
-- **Seal state indicator** in status bar — shows "🔒 X washes left" when seal is active, hidden when inactive
-- **Export reminder card** — appears when 5+ events logged and 30+ days since last export (or never exported). Dismissable per month. "Export now" triggers JSON download.
+- Everything from Session 26 remains working
+- No code changes this session (research-only)
 
-### What Was Done This Session (26)
+### What Was Done This Session (27)
 
-1. **Committed seal state indicator + export reminder** — These were uncommitted changes from Session 25. Auto-committed and pushed.
-2. **Orientation / next-build assessment** — Reviewed all specs, handoffs, and project state to determine next code build.
+1. **Product Deep Dive: EverPure Bond Repair Shampoo** (`research/products/everpure-bond-shampoo.md`)
+   - 5-surfactant sulfate-free system analyzed (SCI, sulfosuccinate, sarcosinate, coco-betaine, SLSA)
+   - Amodimethicone delivery via coacervation mechanism confirmed
+   - Citric acid "bond repair" claim assessed: legitimate for pH/cuticle closure, overstated for cortical crosslinking in rinse-off format
+   - Two formulation versions identified (34-ingredient current vs 41-ingredient reformulated)
+   - **Tier confirmed: Primary Rotation**
 
-### What Was NOT Built (session was orientation-only)
+2. **Product Deep Dive: EverPure Bond Repair Conditioner** (`research/products/everpure-bond-conditioner.md`)
+   - Current formula (May 2026) is remarkably clean: only 21 ingredients, amodimethicone-only (no dimethicone)
+   - Older formula (INCIDecoder Feb 2026) has dimethicone + bis-cetearyl amodimethicone — L'Oréal improved it
+   - Behentrimonium chloride (C22) at position 3 = premium detangling for coarse hair
+   - Amodimethicone at position 4 = optimal delivery in conditioner format
+   - **Tier confirmed: Primary Rotation**
 
-No new code was written this session. The session was spent assessing what's next.
+3. **Product Deep Dive: L'Oréal 21-in-1 Leave-In Spray** (`research/products/loreal-21in1.md`)
+   - Coconut oil at position 2 = cortex-penetrating oil in leave-on format (optimal delivery)
+   - Amodimethicone at position 3 = selective conditioning in leave-on format (optimal delivery)
+   - Ethylhexyl salicylate = UV protection (rare in leave-ins, genuine differentiator)
+   - PQ-37 = film-forming polymer for curl definition support
+   - Minor concern: dimethicone (pos 10) + dimethiconol (pos 19) present but at lower concentrations
+   - **Tier confirmed: Primary Rotation**
+
+4. **Updated PRODUCT_DEEP_DIVE_QUEUE.md** — 9/30 complete, next batch: EverPure Clarifying + Pre-Shampoo + Garnier Color Repair Conditioner
 
 ### Decisions Made This Session
 
-- **Next code build is Product Intelligence** — specifically Task 1.1 (IngredientKB module, ~40-60KB of ingredient data). Everything else in the intelligence spec depends on it.
-- **Product Deep Dive Pipeline remains the research priority** — but that's research writing, not code.
-- **Hair photo upload needs its own spec** — it's in CHANGE_LOG as high priority but is a major new capability (AI integration, new UI, new data flow).
+- **EverPure conditioner has been reformulated** — current production (May 2026) removes dimethicone entirely. If Mandy's bottle is the older version, she'll get the improved formula on next purchase.
+- **21-in-1 and Pantene Miracle Rescue are complementary, not competing** — 21-in-1 is daily protection/conditioning, Pantene is strategic bond repair.
+- **All three EverPure daily drivers confirmed as Primary tier** — no changes needed.
 
 ### Known Issues (carry to next session)
 
 - **iOS silent mode mutes Web Audio** — expected platform behavior. Vibration still works as fallback.
-- If the app is fully backgrounded when timer expires, the chime plays when you return to the app. No way to play audio from a backgrounded web app without a native wrapper.
+- If the app is fully backgrounded when timer expires, the chime plays when you return to the app.
+- Session 25 commit still needs push (timer alert fix).
 
 ### What's NOT Done (carry forward)
 
 #### PRODUCT DEEP DIVE PIPELINE (next priority — research)
-**Start with:** 3 remaining Dove products (INCI already pulled):
-1. `dove-bond-shampoo` — Bond Strength Repair Shampoo
-2. `dove-intensive-shampoo` — Intensive Repair Shampoo
-3. `dove-10in1-serum` — Bond Repair 10-in-1 Serum
+**Next batch:** EverPure Clarifying + Pre-Shampoo Treatment, then Garnier Color Repair Conditioner
 
-**Then:** L'Oréal 21-in-1 Leave-In + Garnier Color Repair Conditioner (daily drivers, highest educational value)
-
-**Protocol:** deep-dive-auto.md + research-data-adherence.md. Score with v2 rubric. One product at a time.
-
-**Queue file:** `research/PRODUCT_DEEP_DIVE_QUEUE.md` has full tracking, INCI data, and template.
+**Queue file:** `research/PRODUCT_DEEP_DIVE_QUEUE.md` has full tracking.
 
 #### FOLD DATA ADHERENCE INTO GLOBAL PROTOCOL
 - Add "Data Adherence" section to `~/.kiro/steering/deep-dive-auto.md`
@@ -54,13 +64,14 @@ No new code was written this session. The session was spent assessing what's nex
 #### USE-UP PRODUCT ROTATION (code — after research pipeline progresses)
 Design approach scoped in Session 22. Needs research docs to inform compensation logic.
 
-#### Post-wash texture/curl retention tracking
-Future feature — scoped in Session 22.
+#### PRODUCT INTELLIGENCE (next code build)
+- Task 1.1: IngredientKB module (~40-60KB ingredient data)
+- Everything else in the intelligence spec depends on it
 
 #### Other carry-forward items
-- Daily Plan polish, Product Intelligence system
+- Daily Plan polish
 - Data persistence beyond localStorage (cloud sync/backup)
-- Service worker already registered and working (v8)
+- Hair photo upload (needs its own spec)
 
 ---
 
@@ -135,6 +146,8 @@ All previous decisions remain, plus:
 | 23 | Dove placement discussion, research-data-adherence steering, deep-dive scoped | Complete |
 | 24 | Product deep dive pipeline: queue, template, execution plan | Complete |
 | 25 | **Timer alert sound fix — Web Audio chime + Audible compatibility** | Complete |
+| 26 | Orientation, seal state commit, next-build assessment | Complete |
+| 27 | **Product deep dives: EverPure shampoo + conditioner + 21-in-1 leave-in** | Complete |
 | 26 | **Orientation — seal indicator + export reminder committed, next-build assessed** | Complete |
 
 ---
