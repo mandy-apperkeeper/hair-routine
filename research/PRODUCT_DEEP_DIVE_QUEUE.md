@@ -65,9 +65,9 @@
 | 1 | dove-bond-conditioner | Bond Strength Repair Conditioner | Dove | use-up | ✅ DONE | DOVE_DEEP_DIVE.md — full analysis |
 | 2 | dove-intensive-conditioner | Intensive Repair Conditioner | Dove | use-up | ✅ DONE | DOVE_DEEP_DIVE.md — full analysis |
 | 3 | dove-bond-mask | Bond Strength Hair Mask | Dove | use-up | ✅ DONE | DOVE_DEEP_DIVE.md — formulation analyzed (Angle 4) |
-| 4 | dove-intensive-shampoo | Intensive Repair Shampoo | Dove | use-up | ⏳ QUEUED | Barely mentioned in Dove deep dive — needs own analysis |
-| 5 | dove-bond-shampoo | Bond Strength Repair Shampoo | Dove | use-up | ⏳ QUEUED | Not covered in Dove deep dive |
-| 6 | dove-10in1-serum | Bond Repair 10-in-1 Serum | Dove | supporting | ⏳ QUEUED | Not covered — notable as only Dove product in supporting tier |
+| 4 | dove-intensive-shampoo | Intensive Repair Shampoo | Dove | use-up | ✅ DONE | `DOVE_SHAMPOO_DEEP_DIVE.md` — full analysis |
+| 5 | dove-bond-shampoo | Bond Strength Repair Shampoo | Dove | use-up | ✅ DONE | `DOVE_SHAMPOO_DEEP_DIVE.md` — full analysis |
+| 6 | dove-10in1-serum | Bond Repair 10-in-1 Serum | Dove | supporting | ✅ DONE | `research/products/dove-10in1-serum.md` — confirms supporting tier |
 
 ## Batch 2: L'Oréal EverPure Line (Primary + Supporting)
 
@@ -140,26 +140,15 @@
 ## Progress
 
 - **Total products:** 30
-- **Completed:** 3 (Dove deep dive — conditioners + mask)
-- **Remaining:** 27
-- **Estimated sessions:** ~10-14 (2-3 products per session)
+- **Completed:** 6 (Dove deep dive conditioners/mask + shampoos + 10-in-1 serum)
+- **Remaining:** 24
+- **Estimated sessions:** ~9-12 (2-3 products per session)
 
 ## Next Session Starts With
 
-1. `dove-bond-shampoo` — Bond Strength Repair Shampoo (INCI already pulled)
-2. `dove-intensive-shampoo` — Intensive Repair Shampoo (INCI already pulled)
-3. `dove-10in1-serum` — Bond Repair 10-in-1 Serum (INCI already pulled — notable as only Dove product in supporting tier)
+1. `everpure-bond-shampoo` — Bond Repair Shampoo (L'Oréal EverPure, primary tier — daily driver)
+2. `everpure-bond-conditioner` — Bond Repair Conditioner (L'Oréal EverPure, primary tier — daily driver)
+3. `loreal-21in1` — 21-in-1 Leave-In Spray (L'Oréal EverPure, primary tier — best leave-in, highest educational value)
 
-**INCI data pre-fetched (May 10, 2026):**
-
-### dove-bond-shampoo (INCIDecoder, Jul 2024)
-Aqua, Sodium C12-13 Pareth Sulfate, Cocamidopropyl Betaine, Sodium Chloride, Parfum, Dimethiconol, Citric Acid, Sodium Benzoate, Glycerin, Glycol Distearate, Carbomer, Gluconolactone, Sodium Laureth Sulfate, Guar Hydroxypropyltrimonium Chloride, PPG-9, Tea-Dodecylbenzenesulfonate, Cocamide MEA, Sodium Sulfate, Trehalose, Disodium EDTA, Propylene Glycol, PEG-45M, Prunus Amygdalus Dulcis (Sweet Almond) Oil, Argania Spinosa Kernel Oil, Cocos Nucifera (Coconut) Oil, CI 77019, CI 77891, CI 19140, CI 17200, CI 42090, Benzyl Salicylate, Citronellol, Hexyl Cinnamal, Limonene, Linalool
-
-### dove-intensive-shampoo — Damage Therapy version (INCIDecoder, Dec 2025)
-Water (Eau), Sodium Laureth Sulfate, Cocamidopropyl Betaine, Dimethiconol, Fragrance (Parfum), Citric Acid, Glycerin, Sodium Chloride, Sodium Benzoate, Glycol Distearate, Carbomer, Gluconolactone, Guar Hydroxypropyltrimonium Chloride, Tea-Dodecylbenzenesulfonate, PPG-9, Cocamide MEA, Sodium Sulfate, Trehalose, Disodium EDTA, PEG-45M, Benzyl Salicylate, Citronellol, Hexyl Cinnamal, Limonene, Linalool, Mica (CI 77019), Titanium Dioxide (CI 77891)
-
-### dove-10in1-serum (INCIDecoder, Aug 2025)
-Cyclopentasiloxane, Cyclohexasiloxane, Dimethiconol, Phenyl Trimethicone, Aminopropyl Dimethicone, Fragrance (Parfum), Dimethicone Crosspolymer, Prunus Armeniaca (Apricot) Kernel Oil, Lens Esculenta (Lentil) Seed Extract, Hydrolyzed Cicer Seed Extract, Chenopodium Quinoa Seed Extract, Benzyl Alcohol, Benzyl Salicylate, Citronellol, Geraniol, Hexyl Cinnamal, Limonene, Linalool
-
-**Key finding pre-noted:** Aminopropyl dimethicone (position 5 in serum) is an amine-functionalized silicone — same family as amodimethicone. It carries a slight positive charge that targets damaged hair. This likely explains why the serum earned supporting tier while other Dove products are use-up. Full analysis needed.
+**Rationale:** Dove batch complete. Moving to primary-tier daily drivers per priority order. The L'Oréal 21-in-1 is especially important because the Dove serum deep dive references it as the comparison product — analyzing it next validates or challenges that comparison.
 
