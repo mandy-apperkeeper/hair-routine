@@ -8201,6 +8201,23 @@
             updateSealState(washEvent);
             FeedbackEngine.analyze();
 
+            // Track which heat protectant was used for A/B alternation
+            if (selectedLane === 'blowout') {
+                var heatProd2 = null;
+                for (var hp2 = 0; hp2 < products.length; hp2++) {
+                    if (products[hp2] === 'marc-anthony-shield' || products[hp2] === 'garnier-diamond-sleek') {
+                        heatProd2 = products[hp2];
+                        break;
+                    }
+                }
+                if (heatProd2) {
+                    var st2 = StateManager.getState();
+                    st2.settings = st2.settings || {};
+                    st2.settings.lastHeatProtectant = heatProd2;
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st2)); } catch(e) {}
+                }
+            }
+
             // Navigate back to landing
             showView('landing');
             document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
