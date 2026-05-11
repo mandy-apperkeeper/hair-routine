@@ -8672,25 +8672,69 @@
 
                 if (!plan || !plan.steps) return result;
 
+                // Check productSwaps for upgrade detection
+                var swaps = plan.productSwaps || [];
+                for (var s = 0; s < swaps.length; s++) {
+                    // If a styling product was swapped, gel is upgraded
+                    if (swaps[s].from === 'nym-curl-talk-gel' || swaps[s].to === 'got2b-ultra-glued') {
+                        result.gelUpgraded = true;
+                    }
+                    // If a conditioner was swapped, conditioner is upgraded
+                    if (swaps[s].from && swaps[s].to && swaps[s].from !== swaps[s].to) {
+                        // Check if the swap target is a deep conditioner or upgrade
+                        var deepIds = ['elvive-total-repair-5-balm', 'ogx-bond-repair-mask'];
+                        if (deepIds.indexOf(swaps[s].to) !== -1) {
+                            result.conditionerUpgraded = true;
+                        }
+                    }
+                }
+
                 for (var i = 0; i < plan.steps.length; i++) {
                     var step = plan.steps[i];
-                    if (step.stepType === 'gloss' || step.productId === 'loreal-wonder-water' || step.productId === 'everpure-glossing-mask') {
+                    if (step.stepType === 'gloss') {
                         result.hasGloss = true;
                     }
                     if (step.productId === 'elvive-total-repair-5-balm' || step.productId === 'ogx-bond-repair-mask') {
                         result.conditionerUpgraded = true;
                     }
+                    // Also detect conditioner upgrade if the step was swapped via productSwaps
+                    if (step.stepType === 'conditioner' && step.id) {
+                        for (var sw = 0; sw < swaps.length; sw++) {
+                            if (swaps[sw].step === step.id) {
+                                result.conditionerUpgraded = true;
+                                break;
+                            }
+                        }
+                    }
                     if (step.stepType === 'conditioner' && step.timer && step.timer.duration >= 600) {
                         result.hasHeatCap = true;
                     }
-                    if (step.stepType === 'pre_wash' || step.productId === 'pure-coconut-oil') {
+                    if (step.stepType === 'pre_wash') {
                         result.hasPreWash = true;
                     }
                     if (step.productId === 'got2b-ultra-glued') {
                         result.gelUpgraded = true;
                     }
+                    // Also detect gel upgrade if styling step was swapped
+                    if (step.stepType === 'styling' && step.id) {
+                        for (var sg = 0; sg < swaps.length; sg++) {
+                            if (swaps[sg].step === step.id) {
+                                result.gelUpgraded = true;
+                                break;
+                            }
+                        }
+                    }
                     if (step.stepType === 'finishing') {
                         result.hasFinishingOils = true;
+                    }
+                    if (step.stepType === 'shampoo' && step.id) {
+                        // Detect clarify swap
+                        for (var sc = 0; sc < swaps.length; sc++) {
+                            if (swaps[sc].step === step.id && swaps[sc].to && swaps[sc].to.indexOf('clarif') !== -1) {
+                                result.hasClarify = true;
+                                break;
+                            }
+                        }
                     }
                     if (step.productId === 'everpure-clarifying') {
                         result.hasClarify = true;
@@ -8717,31 +8761,31 @@
             }
 
             var INTERVENTIONS = {
-                'frizz-humidity': function(plan) {
+                'frizz-humidity': function(plan, context) {
                     var existing = getExistingAdjustments(plan);
-                    if (!existing.gelUpgraded) swapGelToGot2b(plan);
+                    if (!existing.gelUpgraded) swapGelToGot2b(plan, context);
                     if (!existing.hasGloss) {
-                        addWonderWater(plan);
+                        addWonderWater(plan, context);
                     } else if (!existing.hasHeatCap) {
                         upgradeConditionerTime(plan, 600);
                     }
                     return plan;
                 },
 
-                'frizz-dry-air': function(plan) {
+                'frizz-dry-air': function(plan, context) {
                     var existing = getExistingAdjustments(plan);
-                    if (!existing.conditionerUpgraded) upgradeConditioner(plan);
+                    if (!existing.conditionerUpgraded) upgradeConditioner(plan, context);
                     upgradeConditionerTime(plan, 600);
-                    if (!existing.hasGloss) addWonderWater(plan);
+                    if (!existing.hasGloss) addWonderWater(plan, context);
                     return plan;
                 },
 
-                'frizz-buildup': function(plan) {
-                    swapToClarify(plan);
+                'frizz-buildup': function(plan, context) {
+                    swapToClarify(plan, context);
                     return plan;
                 },
 
-                'frizz-friction': function(plan) {
+                'frizz-friction': function(plan, context) {
                     var existing = getExistingAdjustments(plan);
                     if (existing.hasLeaveIn) {
                         addTipToLeaveIn(plan, 'Extra on hairline and regrowth \u2014 friction damage is worst there.');
@@ -8749,22 +8793,22 @@
                     return plan;
                 },
 
-                'dry-moisture-deficit': function(plan) {
+                'dry-moisture-deficit': function(plan, context) {
                     var existing = getExistingAdjustments(plan);
-                    if (!existing.conditionerUpgraded) upgradeConditioner(plan);
+                    if (!existing.conditionerUpgraded) upgradeConditioner(plan, context);
                     upgradeConditionerTime(plan, 600);
-                    if (!existing.hasGloss) addWonderWater(plan);
+                    if (!existing.hasGloss) addWonderWater(plan, context);
                     return plan;
                 },
 
-                'dry-overwash': function(plan) {
+                'dry-overwash': function(plan, context) {
                     var existing = getExistingAdjustments(plan);
-                    if (!existing.hasPreWash) addPreWash(plan);
+                    if (!existing.hasPreWash) addPreWash(plan, context);
                     addGeneralTip(plan, 'Consider extending wash interval \u2014 frequent sulfate exposure strips lipids.');
                     return plan;
                 },
 
-                'dry-clarify-aftermath': function(plan) {
+                'dry-clarify-aftermath': function(plan, context) {
                     var existing = getExistingAdjustments(plan);
                     upgradeConditionerTime(plan, 600);
                     if (existing.hasLeaveIn) {
@@ -8773,9 +8817,9 @@
                     return plan;
                 },
 
-                'stiff-moisture': function(plan) {
+                'stiff-moisture': function(plan, context) {
                     var existing = getExistingAdjustments(plan);
-                    if (!existing.conditionerUpgraded) upgradeConditioner(plan);
+                    if (!existing.conditionerUpgraded) upgradeConditioner(plan, context);
                     upgradeConditionerTime(plan, 600);
                     if (existing.hasLeaveIn) {
                         addTipToLeaveIn(plan, 'Generous application \u2014 stiff hair is moisture-starved.');
@@ -8783,25 +8827,25 @@
                     return plan;
                 },
 
-                'stiff-gel-cast': function(plan) {
+                'stiff-gel-cast': function(plan, context) {
                     addGeneralTip(plan, 'Try a water mist + re-scrunch to break the gel cast without rewashing.');
                     return plan;
                 },
 
-                'curl-hold-weak': function(plan) {
+                'curl-hold-weak': function(plan, context) {
                     var existing = getExistingAdjustments(plan);
-                    if (!existing.gelUpgraded) swapGelToGot2b(plan);
+                    if (!existing.gelUpgraded) swapGelToGot2b(plan, context);
                     return plan;
                 },
 
-                'curl-humidity': function(plan) {
+                'curl-humidity': function(plan, context) {
                     var existing = getExistingAdjustments(plan);
-                    if (!existing.gelUpgraded) swapGelToGot2b(plan);
-                    if (!existing.hasGloss) addWonderWater(plan);
+                    if (!existing.gelUpgraded) swapGelToGot2b(plan, context);
+                    if (!existing.hasGloss) addWonderWater(plan, context);
                     return plan;
                 },
 
-                'curl-weight': function(plan) {
+                'curl-weight': function(plan, context) {
                     if (plan.steps) {
                         for (var i = 0; i < plan.steps.length; i++) {
                             if (plan.steps[i].stepType === 'leave_in') {
@@ -8815,17 +8859,17 @@
                     return plan;
                 },
 
-                'curl-buildup': function(plan) {
-                    swapToClarify(plan);
+                'curl-buildup': function(plan, context) {
+                    swapToClarify(plan, context);
                     return plan;
                 },
 
-                'buildup-overdue': function(plan) {
-                    swapToClarify(plan);
+                'buildup-overdue': function(plan, context) {
+                    swapToClarify(plan, context);
                     return plan;
                 },
 
-                'buildup-heavy-application': function(plan) {
+                'buildup-heavy-application': function(plan, context) {
                     addGeneralTip(plan, 'Use less product today \u2014 last wash may have been over-applied.');
                     if (plan.steps) {
                         for (var i = 0; i < plan.steps.length; i++) {
@@ -8840,37 +8884,70 @@
 
             // ===== Intervention Helpers =====
 
-            function swapGelToGot2b(plan) {
+            function swapGelToGot2b(plan, context) {
                 if (!plan.steps) return;
+                var inventory = context && context.inventory ? context.inventory : [];
+                var conditions = { dewPoint: context ? context.dewPoint : null, sealActive: context ? context.sealActive : false };
+                var ranked = PlanGenerator.rankProducts('styling', conditions, inventory);
+
+                // Find the best gel that isn't the current one
+                var bestGel = null;
+                for (var r = 0; r < ranked.length; r++) {
+                    if (ranked[r].productId !== 'nym-curl-talk-gel') {
+                        bestGel = ranked[r];
+                        break;
+                    }
+                }
+                // Fallback to got2b if rankProducts returns nothing useful
+                if (!bestGel) {
+                    bestGel = { productId: 'got2b-ultra-glued', productName: 'Ultra Glued Invincible Styling Gel', reason: 'Stronger hold + humidity barrier' };
+                }
+
                 for (var i = 0; i < plan.steps.length; i++) {
-                    if (plan.steps[i].stepType === 'styling' && plan.steps[i].productId === 'nym-curl-talk-gel') {
-                        plan.steps[i].productId = 'got2b-ultra-glued';
-                        plan.steps[i].productName = 'Ultra Glued Invincible Styling Gel';
-                        plan.steps[i].instruction = 'Glycerin-free PQ-69 gel. Stronger hold + humidity barrier.';
+                    if (plan.steps[i].stepType === 'styling' && plan.steps[i].productId !== bestGel.productId) {
+                        var oldId = plan.steps[i].productId;
+                        plan.steps[i].productId = bestGel.productId;
+                        plan.steps[i].productName = bestGel.productName;
+                        plan.steps[i].instruction = bestGel.reason || 'Upgraded gel for current conditions.';
                         if (!plan.productSwaps) plan.productSwaps = [];
-                        plan.productSwaps.push({ step: plan.steps[i].id, from: 'nym-curl-talk-gel', to: 'got2b-ultra-glued' });
+                        plan.productSwaps.push({ step: plan.steps[i].id, from: oldId, to: bestGel.productId });
                         break;
                     }
                 }
             }
 
-            function addWonderWater(plan) {
+            function addWonderWater(plan, context) {
                 if (!plan.steps) return;
+                var inventory = context && context.inventory ? context.inventory : [];
+                var conditions = { dewPoint: context ? context.dewPoint : null, sealActive: context ? context.sealActive : false };
+                var ranked = PlanGenerator.rankProducts('gloss', conditions, inventory);
+
+                // Use top-ranked gloss product, fallback to Wonder Water
+                var bestGloss = ranked.length > 0 ? ranked[0] : {
+                    productId: 'loreal-wonder-water',
+                    productName: '8 Second Wonder Water',
+                    reason: 'Lamellar rinse seals cuticle'
+                };
+
                 var insertIdx = -1;
                 for (var i = 0; i < plan.steps.length; i++) {
                     if (plan.steps[i].stepType === 'conditioner') { insertIdx = i + 1; break; }
                 }
                 if (insertIdx === -1) insertIdx = plan.steps.length;
+
+                var timerDuration = bestGloss.productId === 'loreal-wonder-water' ? 8 : 180;
+                var timerLabel = bestGloss.productId === 'loreal-wonder-water' ? 'Wonder Water' : bestGloss.productName;
+
                 plan.steps.splice(insertIdx, 0, {
                     id: 'step-gloss-diag',
                     number: insertIdx + 1,
                     stepType: 'gloss',
-                    productId: 'loreal-wonder-water',
-                    productName: '8 Second Wonder Water',
-                    instruction: 'Spray evenly through lengths. Rinse after 8 seconds.',
+                    productId: bestGloss.productId,
+                    productName: bestGloss.productName,
+                    instruction: bestGloss.reason || 'Gloss treatment for cuticle sealing.',
                     scienceBadge: null,
-                    timer: { duration: 8, label: 'Wonder Water' },
-                    tip: 'Lamellar rinse seals cuticle \u2014 helps lock in moisture and block humidity.',
+                    timer: { duration: timerDuration, label: timerLabel },
+                    tip: bestGloss.reason || 'Seals cuticle \u2014 helps lock in moisture and block humidity.',
                     phase: 'PREP & WASH',
                     alternatives: []
                 });
@@ -8879,16 +8956,38 @@
                 }
             }
 
-            function upgradeConditioner(plan) {
+            function upgradeConditioner(plan, context) {
                 if (!plan.steps) return;
+                var inventory = context && context.inventory ? context.inventory : [];
+                var conditions = { dewPoint: context ? context.dewPoint : null, sealActive: context ? context.sealActive : false };
+
+                // Rank deep_condition products (richer options for upgrade)
+                var ranked = PlanGenerator.rankProducts('deep_condition', conditions, inventory);
+                // If no deep_condition products, try conditioner step
+                if (ranked.length === 0) {
+                    ranked = PlanGenerator.rankProducts('conditioner', conditions, inventory);
+                }
+
+                // Use top-ranked that isn't the current conditioner
+                var bestUpgrade = null;
                 for (var i = 0; i < plan.steps.length; i++) {
                     if (plan.steps[i].stepType === 'conditioner') {
-                        var oldId = plan.steps[i].productId;
-                        plan.steps[i].productId = 'elvive-total-repair-5-balm';
-                        plan.steps[i].productName = 'Total Repair 5 Damage Erasing Balm';
-                        plan.steps[i].instruction = 'Section into 4+ parts. Apply generously. Heat cap on for deep moisture.';
+                        var currentId = plan.steps[i].productId;
+                        for (var r = 0; r < ranked.length; r++) {
+                            if (ranked[r].productId !== currentId) {
+                                bestUpgrade = ranked[r];
+                                break;
+                            }
+                        }
+                        if (!bestUpgrade) {
+                            bestUpgrade = { productId: 'elvive-total-repair-5-balm', productName: 'Total Repair 5 Damage Erasing Balm', reason: 'Deep conditioning upgrade' };
+                        }
+
+                        plan.steps[i].productId = bestUpgrade.productId;
+                        plan.steps[i].productName = bestUpgrade.productName;
+                        plan.steps[i].instruction = 'Section into 4+ parts. Apply generously. ' + (bestUpgrade.reason || 'Deep moisture treatment.');
                         if (!plan.productSwaps) plan.productSwaps = [];
-                        plan.productSwaps.push({ step: plan.steps[i].id, from: oldId, to: 'elvive-total-repair-5-balm' });
+                        plan.productSwaps.push({ step: plan.steps[i].id, from: currentId, to: bestUpgrade.productId });
                         break;
                     }
                 }
@@ -8910,33 +9009,76 @@
                 }
             }
 
-            function swapToClarify(plan) {
+            function swapToClarify(plan, context) {
                 if (!plan.steps) return;
+                var inventory = context && context.inventory ? context.inventory : [];
+                var conditions = { dewPoint: context ? context.dewPoint : null, sealActive: context ? context.sealActive : false };
+                var ranked = PlanGenerator.rankProducts('shampoo', conditions, inventory);
+
+                // Find a clarifying shampoo from ranked results
+                var bestClarify = null;
+                for (var r = 0; r < ranked.length; r++) {
+                    // Check if product has clarifying in its intelligence or name
+                    var prod = null;
+                    for (var p = 0; p < inventory.length; p++) {
+                        if (inventory[p].id === ranked[r].productId) { prod = inventory[p]; break; }
+                    }
+                    if (prod && prod.intelligence && prod.intelligence.mechanisms &&
+                        prod.intelligence.mechanisms.indexOf('clarifying') !== -1) {
+                        bestClarify = ranked[r];
+                        break;
+                    }
+                    // Also match by product ID pattern
+                    if (ranked[r].productId.indexOf('clarif') !== -1) {
+                        bestClarify = ranked[r];
+                        break;
+                    }
+                }
+                // Fallback
+                if (!bestClarify) {
+                    bestClarify = { productId: 'everpure-clarifying', productName: 'Clarifying Shampoo', reason: 'Removes silicone and product buildup' };
+                }
+
                 for (var i = 0; i < plan.steps.length; i++) {
                     if (plan.steps[i].stepType === 'shampoo') {
                         var oldId = plan.steps[i].productId;
-                        plan.steps[i].productId = 'everpure-clarifying';
-                        plan.steps[i].productName = 'Clarifying Shampoo';
-                        plan.steps[i].instruction = 'Full clarifying wash \u2014 removes silicone and product buildup.';
+                        plan.steps[i].productId = bestClarify.productId;
+                        plan.steps[i].productName = bestClarify.productName;
+                        plan.steps[i].instruction = 'Full clarifying wash \u2014 ' + (bestClarify.reason || 'removes silicone and product buildup') + '.';
                         if (!plan.productSwaps) plan.productSwaps = [];
-                        plan.productSwaps.push({ step: plan.steps[i].id, from: oldId, to: 'everpure-clarifying' });
+                        plan.productSwaps.push({ step: plan.steps[i].id, from: oldId, to: bestClarify.productId });
                         break;
                     }
                 }
             }
 
-            function addPreWash(plan) {
+            function addPreWash(plan, context) {
                 if (!plan.steps) return;
+                var inventory = context && context.inventory ? context.inventory : [];
+                var conditions = { dewPoint: context ? context.dewPoint : null, sealActive: context ? context.sealActive : false };
+                var ranked = PlanGenerator.rankProducts('pre_wash', conditions, inventory);
+
+                // Use top-ranked pre-wash, fallback to coconut oil
+                var bestPreWash = ranked.length > 0 ? ranked[0] : {
+                    productId: 'pure-coconut-oil',
+                    productName: 'Pure Coconut Oil',
+                    reason: 'Penetrates cortex — prevents protein loss'
+                };
+
+                var instruction = bestPreWash.productId === 'pure-coconut-oil'
+                    ? 'Apply to lengths and ends. Leave 20+ minutes (or overnight). Prevents hygral fatigue during wash.'
+                    : 'Apply to lengths and ends. Leave 20+ minutes. ' + (bestPreWash.reason || 'Pre-wash protection.');
+
                 plan.steps.unshift({
                     id: 'step-prewash-diag',
                     number: 1,
                     stepType: 'pre_wash',
-                    productId: 'pure-coconut-oil',
-                    productName: 'Pure Coconut Oil',
-                    instruction: 'Apply to lengths and ends. Leave 20+ minutes (or overnight). Prevents hygral fatigue during wash.',
+                    productId: bestPreWash.productId,
+                    productName: bestPreWash.productName,
+                    instruction: instruction,
                     scienceBadge: null,
-                    timer: { duration: 1200, label: 'Coconut oil pre-wash' },
-                    tip: 'Lauric acid penetrates cortex \u2014 protects protein structure during washing.',
+                    timer: { duration: 1200, label: bestPreWash.productName + ' pre-wash' },
+                    tip: bestPreWash.reason || 'Pre-wash oil protects protein structure during washing.',
                     phase: 'PREP & WASH',
                     alternatives: []
                 });
@@ -10321,13 +10463,18 @@
             var events = state.events || [];
             var lastEvent = events.length > 0 ? events[events.length - 1] : null;
 
+            var inventory = state.inventory || [];
+            var sealState = state.sealState || { active: false };
+
             var context = {
                 dewPoint: detectedDewPoint,
                 daysSinceClarify: null,
                 daysSinceWash: null,
                 lastRating: lastEvent ? lastEvent.rating : null,
                 lastWashUsedGel: false,
-                currentGel: 'nym-curl-talk-gel'
+                currentGel: 'nym-curl-talk-gel',
+                inventory: inventory,
+                sealActive: sealState.active
             };
 
             // Calculate days since clarify
@@ -12930,7 +13077,7 @@
     (function() {
         var DEV_NOTES_KEY = 'hair-routine-dev-notes';
         var DROP_URL_KEY = 'hair-routine-drop-url';
-        var DEFAULT_DROP_URL = 'https://192.168.68.36:8443/api/drop';
+        var DEFAULT_DROP_URL = '/api/drop';
         var fab = document.getElementById('dev-notes-fab');
         var overlay = document.getElementById('dev-notes-overlay');
         var input = document.getElementById('dev-notes-input');
@@ -12943,9 +13090,8 @@
         function getDropUrl() {
             try {
                 var stored = localStorage.getItem(DROP_URL_KEY);
-                // Migrate old URLs (HTTP or hostname-based) to current IP-based HTTPS
-                if (stored === 'http://computus-prime:8080/api/drop' ||
-                    stored === 'https://computus-prime:8443/api/drop') {
+                // Migrate old absolute URLs to relative (now same-origin via Cauldron)
+                if (stored && stored.indexOf('/api/drop') !== -1 && stored !== '/api/drop') {
                     localStorage.setItem(DROP_URL_KEY, DEFAULT_DROP_URL);
                     return DEFAULT_DROP_URL;
                 }
