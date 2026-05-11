@@ -6841,39 +6841,88 @@
                     }
                 }
 
-                // === Tiered Conditioning Logic ===
-                // Every wash includes richer conditioning. Suggest intensity based on context.
-                var conditioningTier = 'standard'; // default: conditioner + heat cap option
-                var conditioningTip = null;
+                // === Tiered Conditioning Plan ===
+                // Every wash includes richer conditioning. Pick specific product + method based on context.
+                // Priority: post-clarify > dry air > use-up day > normal
+                var condPlan = { product: null, productName: null, method: '', timer: 300, timerLabel: 'Conditioner', heatCap: false, tip: '' };
 
-                // Check if last wash was a clarify — suggest mask day
-                var lastTreats = [];
+                // Determine conditioning context
+                var lastWashTreats = [];
                 var evts = state.events || [];
                 for (var ei = evts.length - 1; ei >= 0; ei--) {
-                    lastTreats = evts[ei].treatments || [];
+                    lastWashTreats = evts[ei].treatments || [];
                     break;
                 }
-                if (lastTreats.indexOf('clarify') !== -1) {
-                    conditioningTier = 'mask';
-                    conditioningTip = '🧖 Mask day — post-clarify hair is stripped. Use Elvive balm or mask with heat cap for deeper repair.';
-                } else if (dewPoint !== null && dewPoint < 35) {
-                    conditioningTier = 'boost';
-                    conditioningTip = '💧 Dry air — consider heat cap or upgrading to a richer conditioner/mask today.';
+                var isPostClarify = lastWashTreats.indexOf('clarify') !== -1;
+                var isDryAir = dewPoint !== null && dewPoint < 35;
+                var isUseUpDay = useUpSwap !== null;
+
+                if (isPostClarify) {
+                    // Mask day — hair is stripped, needs deep repair
+                    condPlan.product = 'elvive-total-repair-5-balm';
+                    condPlan.productName = 'Total Repair 5 Damage Erasing Balm';
+                    condPlan.method = 'Section into 4+ parts. Apply generously mid-lengths to ends. Heat cap on.';
+                    condPlan.timer = 600;
+                    condPlan.timerLabel = 'Deep condition — mask day';
+                    condPlan.heatCap = true;
+                    condPlan.tip = '🧖 Mask day — post-clarify hair is stripped. Elvive balm has protein + ceramide for deep repair.';
+                } else if (isDryAir) {
+                    // Dry air — boost conditioning with heat cap
+                    condPlan.product = 'garnier-color-repair-cond';
+                    condPlan.productName = 'Color Repair Conditioner';
+                    condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — dry air means cuticle needs extra help sealing.';
+                    condPlan.timer = 420;
+                    condPlan.timerLabel = 'Conditioner + heat cap (dry air)';
+                    condPlan.heatCap = true;
+                    condPlan.tip = '💧 Dry air — heat cap helps conditioner penetrate. Swap to Elvive balm if hair feels extra parched.';
+                } else if (isUseUpDay) {
+                    // Use-up rotation — weaker conditioner, compensate with heat cap
+                    condPlan.product = useUpSwap.productId;
+                    condPlan.productName = useUpSwap.productName || 'Use-up conditioner';
+                    condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap recommended — compensates for weaker formula.';
+                    condPlan.timer = 300;
+                    condPlan.timerLabel = 'Conditioner + heat cap (compensate)';
+                    condPlan.heatCap = true;
+                    condPlan.tip = '♻️ Use-up day — heat cap compensates for weaker formula. Garnier Color Repair available as alternative.';
                 } else {
-                    conditioningTip = '✨ Condition generously — heat cap optional for extra penetration. Mask/balm always available as alternatives.';
+                    // Normal wash — good conditioner, heat cap optional
+                    condPlan.product = 'garnier-color-repair-cond';
+                    condPlan.productName = 'Color Repair Conditioner';
+                    condPlan.method = 'Section into 4+ parts. Apply generously mid-lengths to ends. Detangle with wide-tooth comb.';
+                    condPlan.timer = 300;
+                    condPlan.timerLabel = 'Conditioner';
+                    condPlan.heatCap = false;
+                    condPlan.tip = '✨ Heat cap optional for extra penetration. Elvive balm or OGX mask available if you want deeper conditioning today.';
                 }
 
-                // Apply tier tip to the conditioner step
+                // Apply conditioning plan to the conditioner step
                 for (var ct = 0; ct < planSteps.length; ct++) {
                     if (planSteps[ct].stepType === 'conditioner') {
-                        // Only set tip if not already overridden by use-up note or adjustment
-                        if (!planSteps[ct].tip) {
-                            planSteps[ct].tip = conditioningTip;
+                        // Override product if conditioning plan specifies one
+                        // Post-clarify and dry-air override even use-up rotation (hair needs it more)
+                        var canOverrideProduct = !planSteps[ct].useUpNote || isPostClarify || isDryAir;
+                        if (condPlan.product && canOverrideProduct) {
+                            planSteps[ct].productId = condPlan.product;
+                            planSteps[ct].productName = condPlan.productName;
+                            planSteps[ct].inventoryName = condPlan.productName;
+                            if (isPostClarify || isDryAir) {
+                                planSteps[ct].useUpNote = null; // Clear use-up note — overridden by conditioning need
+                            }
                         }
-                        // For mask tier, suggest longer timer
-                        if (conditioningTier === 'mask' && planSteps[ct].timer) {
-                            planSteps[ct].timer.duration = 600; // 10 min for mask day
-                            planSteps[ct].timer.label = 'Deep condition (mask day)';
+                        // Set instruction to include method
+                        planSteps[ct].instruction = condPlan.method;
+                        // Set timer
+                        if (planSteps[ct].timer) {
+                            planSteps[ct].timer.duration = condPlan.timer;
+                            planSteps[ct].timer.label = condPlan.timerLabel;
+                        }
+                        // Set tip
+                        if (!planSteps[ct].tip) {
+                            planSteps[ct].tip = condPlan.tip;
+                        }
+                        // Add heat cap indicator to step label if recommended
+                        if (condPlan.heatCap) {
+                            planSteps[ct].stepLabel = (planSteps[ct].stepLabel || 'Conditioner') + ' 🧢';
                         }
                         break;
                     }
