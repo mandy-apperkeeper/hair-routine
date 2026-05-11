@@ -1,5 +1,5 @@
 const fs = require('fs');
-const html = fs.readFileSync('hair-routine/index.html', 'utf8');
+const html = fs.readFileSync('index.html', 'utf8');
 
 var checks = 0;
 var fails = 0;
