@@ -7733,7 +7733,7 @@
                 // === Tiered Conditioning Plan ===
                 // Every wash includes richer conditioning. Pick specific product + method based on context.
                 // Priority: post-clarify > auto-upgrade (poor recent results) > dry air > use-up day > normal
-                // When deep conditioning is warranted, show BOTH mask + regular conditioner (dual conditioning).
+                // When deep conditioning is warranted, the mask REPLACES the regular conditioner (same core actives).
                 var condPlan = { product: null, productName: null, method: '', timer: 300, timerLabel: 'Conditioner', heatCap: false, tip: '', needsDual: false };
 
                 // Determine conditioning context
@@ -7784,7 +7784,7 @@
 
                 if (isPostClarify) {
                     // Mask day — hair is stripped, needs deep repair
-                    // Dual conditioning: mask first (structural), then regular conditioner (sealing)
+                    // Mask replaces conditioner: provides amodimethicone + ceramide + protein in one step
                     condPlan.product = 'elvive-total-repair-5-balm';
                     condPlan.productName = "L'Or\u00e9al Elvive Total Repair 5 Damage Erasing Balm";
                     condPlan.method = 'Section into 4+ parts. Apply generously mid-lengths to ends. Heat cap on.';
@@ -7795,7 +7795,7 @@
                     condPlan.needsDual = true;
                 } else if (needsAutoUpgrade) {
                     // Auto-upgrade — recent poor results warrant deeper conditioning
-                    // Dual conditioning: mask first, then regular conditioner
+                    // Mask replaces conditioner: same core actives, plus protein
                     condPlan.product = 'elvive-total-repair-5-balm';
                     condPlan.productName = "L'Or\u00e9al Elvive Total Repair 5 Damage Erasing Balm";
                     condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — your hair needs extra repair today.';
@@ -7806,7 +7806,7 @@
                     condPlan.needsDual = true;
                 } else if (isDryAir) {
                     // Dry air — boost conditioning with heat cap
-                    // Dual conditioning when combined with poor recent rating
+                    // Mask replaces conditioner when combined with poor recent rating
                     var dryAirDual = (evts.length >= 1 && evts[evts.length - 1].rating && evts[evts.length - 1].rating <= 3);
                     if (dryAirDual) {
                         condPlan.product = 'elvive-total-repair-5-balm';
@@ -7850,49 +7850,70 @@
                 for (var ct = 0; ct < planSteps.length; ct++) {
                     if (planSteps[ct].stepType === 'conditioner') {
                         if (condPlan.needsDual) {
-                            // === DUAL CONDITIONING ===
-                            // Insert mask step BEFORE the regular conditioner step.
-                            // Mask: deep repair, longer dwell, heat cap, structural (protein + ceramide)
-                            // Regular conditioner: full amodimethicone conditioning (selective cuticle repair, different mechanism)
-                            var maskStep = {
-                                id: 'step-mask-' + (ct + 1),
-                                number: planSteps[ct].number,
-                                stepType: 'deep_condition',
-                                productId: condPlan.product,
-                                productName: condPlan.productName,
-                                stepLabel: 'Deep Condition (Mask) 🧢',
-                                inventoryName: condPlan.productName,
-                                instruction: condPlan.method,
-                                scienceBadge: null,
-                                timer: { duration: condPlan.timer, label: condPlan.timerLabel },
-                                tip: condPlan.tip,
-                                phase: planSteps[ct].phase,
-                                alternatives: rankProducts('deep_condition', conditions, inventory),
-                                useUpNote: null
-                            };
-
-                            // Insert mask before conditioner
-                            planSteps.splice(ct, 0, maskStep);
-
-                            // Update the regular conditioner step (now at ct+1)
-                            var regStep = planSteps[ct + 1];
-                            regStep.number = regStep.number + 1;
-                            // Full conditioner step — amodimethicone does its own cuticle repair work
-                            regStep.productId = 'garnier-color-repair-cond';
-                            regStep.productName = 'Garnier Color Repair Conditioner';
-                            regStep.inventoryName = 'Garnier Color Repair Conditioner';
-                            regStep.instruction = 'Section into 4+ parts. Apply generously mid-lengths to ends. Full 5 min — amodimethicone selectively fills damaged cuticle gaps. Different mechanism than the mask.';
-                            regStep.stepLabel = 'Conditioner';
-                            if (regStep.timer) {
-                                regStep.timer.duration = 300;
-                                regStep.timer.label = 'Conditioner';
+                            // === MASK DAY: CHECK MECHANISM OVERLAP ===
+                            // If the mask shares the conditioner's primary active (amodimethicone),
+                            // it replaces the conditioner (redundant to use both).
+                            // If the mask has genuinely different mechanisms, show both steps.
+                            var maskIngredients = [];
+                            var condIngredients = [];
+                            for (var ii = 0; ii < inventory.length; ii++) {
+                                if (inventory[ii].id === condPlan.product && inventory[ii].intelligence && inventory[ii].intelligence.ingredients) {
+                                    maskIngredients = inventory[ii].intelligence.ingredients;
+                                }
+                                if (inventory[ii].id === 'garnier-color-repair-cond' && inventory[ii].intelligence && inventory[ii].intelligence.ingredients) {
+                                    condIngredients = inventory[ii].intelligence.ingredients;
+                                }
                             }
-                            regStep.tip = '✨ Not redundant with the mask — amodimethicone selectively binds to damaged cuticle areas, filling gaps the mask\u2019s protein/ceramide can\u2019t reach.';
-                            regStep.useUpNote = null;
+                            // Check if mask contains the conditioner's primary active
+                            var maskHasConditionerActive = maskIngredients.indexOf('amodimethicone') !== -1;
 
-                            // Re-number subsequent steps
-                            for (var rn = ct + 2; rn < planSteps.length; rn++) {
-                                planSteps[rn].number = rn + 1;
+                            if (maskHasConditionerActive) {
+                                // Mask replaces conditioner — same core active, mask is a superset
+                                planSteps[ct].stepType = 'deep_condition';
+                                planSteps[ct].productId = condPlan.product;
+                                planSteps[ct].productName = condPlan.productName;
+                                planSteps[ct].inventoryName = condPlan.productName;
+                                planSteps[ct].stepLabel = 'Deep Condition (Mask) 🧢';
+                                planSteps[ct].instruction = condPlan.method;
+                                planSteps[ct].scienceBadge = null;
+                                if (planSteps[ct].timer) {
+                                    planSteps[ct].timer.duration = condPlan.timer;
+                                    planSteps[ct].timer.label = condPlan.timerLabel;
+                                }
+                                planSteps[ct].tip = condPlan.tip;
+                                planSteps[ct].alternatives = rankProducts('deep_condition', conditions, inventory);
+                                planSteps[ct].useUpNote = null;
+                            } else {
+                                // Mask has different mechanisms — show both steps (mask first, then conditioner)
+                                var maskStep = {
+                                    id: 'step-mask-' + (ct + 1),
+                                    number: planSteps[ct].number,
+                                    stepType: 'deep_condition',
+                                    productId: condPlan.product,
+                                    productName: condPlan.productName,
+                                    stepLabel: 'Deep Condition (Mask) 🧢',
+                                    inventoryName: condPlan.productName,
+                                    instruction: condPlan.method,
+                                    scienceBadge: null,
+                                    timer: { duration: condPlan.timer, label: condPlan.timerLabel },
+                                    tip: condPlan.tip,
+                                    phase: planSteps[ct].phase,
+                                    alternatives: rankProducts('deep_condition', conditions, inventory),
+                                    useUpNote: null
+                                };
+
+                                // Insert mask before conditioner
+                                planSteps.splice(ct, 0, maskStep);
+
+                                // Update the regular conditioner step (now at ct+1)
+                                var regStep = planSteps[ct + 1];
+                                regStep.number = regStep.number + 1;
+                                regStep.tip = '✨ Conditioner after mask — different active mechanisms, not redundant.';
+
+                                // Re-number subsequent steps
+                                for (var rn = ct + 2; rn < planSteps.length; rn++) {
+                                    planSteps[rn].number = rn + 1;
+                                }
                             }
                         } else {
                             // === SINGLE CONDITIONING (original behavior) ===
@@ -9176,50 +9197,70 @@
                 }
 
                 if (isDeepUpgrade && !hasMask) {
-                    // === DUAL CONDITIONING (diagnostic-triggered) ===
-                    // Insert mask step BEFORE the conditioner, keep conditioner as sealing step
+                    // === MASK DAY (diagnostic-triggered): CHECK MECHANISM OVERLAP ===
                     var maskProd = null;
                     for (var mp = 0; mp < inventory.length; mp++) {
                         if (inventory[mp].id === bestUpgrade.productId) { maskProd = inventory[mp]; break; }
                     }
                     var maskTime = (maskProd && maskProd.intelligence && maskProd.intelligence.recommendedTime) || 300;
-                    var maskStep = {
-                        id: 'step-mask-diag',
-                        number: condStep.number,
-                        stepType: 'deep_condition',
-                        productId: bestUpgrade.productId,
-                        productName: bestUpgrade.productName,
-                        stepLabel: 'Deep Condition (Mask) 🧢',
-                        inventoryName: bestUpgrade.productName,
-                        instruction: 'Section into 4+ parts. Apply generously. Heat cap on. ' + (bestUpgrade.reason || 'Upgraded for current conditions.'),
-                        scienceBadge: null,
-                        timer: { duration: maskTime, label: 'Deep condition 🧢' },
-                        tip: '🧖 Mask step added — ' + (bestUpgrade.reason || 'deep conditioning upgrade for current hair state.'),
-                        phase: condStep.phase,
-                        alternatives: [],
-                        useUpNote: null
-                    };
+                    var maskIngr = (maskProd && maskProd.intelligence && maskProd.intelligence.ingredients) || [];
 
-                    // Insert mask before conditioner
-                    plan.steps.splice(condIdx, 0, maskStep);
+                    // Check if mask contains the conditioner's primary active (amodimethicone)
+                    var maskSharesActive = maskIngr.indexOf('amodimethicone') !== -1;
 
-                    // Update the regular conditioner step (now at condIdx+1)
-                    var regStep = plan.steps[condIdx + 1];
-                    regStep.instruction = 'Section into 4+ parts. Apply generously mid-lengths to ends. Full 5 min — amodimethicone selectively fills damaged cuticle gaps. Different mechanism than the mask.';
-                    regStep.stepLabel = 'Conditioner';
-                    if (regStep.timer) {
-                        regStep.timer.duration = 300;
-                        regStep.timer.label = 'Conditioner';
+                    if (maskSharesActive) {
+                        // Mask replaces conditioner — same core active, mask is a superset
+                        condStep.stepType = 'deep_condition';
+                        condStep.productId = bestUpgrade.productId;
+                        condStep.productName = bestUpgrade.productName;
+                        condStep.inventoryName = bestUpgrade.productName;
+                        condStep.stepLabel = 'Deep Condition (Mask) 🧢';
+                        condStep.instruction = 'Section into 4+ parts. Apply generously. Heat cap on. ' + (bestUpgrade.reason || 'Upgraded for current conditions.');
+                        if (condStep.timer) {
+                            condStep.timer.duration = maskTime;
+                            condStep.timer.label = 'Deep condition 🧢';
+                        } else {
+                            condStep.timer = { duration: maskTime, label: 'Deep condition 🧢' };
+                        }
+                        condStep.tip = '🧖 Mask replaces conditioner today — ' + (bestUpgrade.reason || 'deep conditioning upgrade for current hair state.') + ' Same core actives (amodimethicone + ceramide), plus protein.';
+                        condStep.alternatives = [];
+                        condStep.useUpNote = null;
+
+                        if (!plan.productSwaps) plan.productSwaps = [];
+                        plan.productSwaps.push({ step: condStep.id, from: currentId, to: bestUpgrade.productId });
+                    } else {
+                        // Mask has different mechanisms — show both steps
+                        var maskStep = {
+                            id: 'step-mask-diag',
+                            number: condStep.number,
+                            stepType: 'deep_condition',
+                            productId: bestUpgrade.productId,
+                            productName: bestUpgrade.productName,
+                            stepLabel: 'Deep Condition (Mask) 🧢',
+                            inventoryName: bestUpgrade.productName,
+                            instruction: 'Section into 4+ parts. Apply generously. Heat cap on. ' + (bestUpgrade.reason || 'Upgraded for current conditions.'),
+                            scienceBadge: null,
+                            timer: { duration: maskTime, label: 'Deep condition 🧢' },
+                            tip: '🧖 Mask + conditioner — different active mechanisms, not redundant. ' + (bestUpgrade.reason || ''),
+                            phase: condStep.phase,
+                            alternatives: [],
+                            useUpNote: null
+                        };
+
+                        // Insert mask before conditioner
+                        plan.steps.splice(condIdx, 0, maskStep);
+
+                        // Update conditioner step tip (now at condIdx+1)
+                        plan.steps[condIdx + 1].tip = '✨ Conditioner after mask — different active mechanisms, not redundant.';
+
+                        // Re-number subsequent steps
+                        for (var rn = condIdx + 1; rn < plan.steps.length; rn++) {
+                            plan.steps[rn].number = rn + 1;
+                        }
+
+                        if (!plan.productSwaps) plan.productSwaps = [];
+                        plan.productSwaps.push({ step: maskStep.id, from: null, to: bestUpgrade.productId });
                     }
-                    regStep.tip = '✨ Not redundant with the mask — amodimethicone selectively binds to damaged cuticle areas, filling gaps the mask\u2019s protein/ceramide can\u2019t reach.';
-
-                    // Re-number subsequent steps
-                    for (var rn = condIdx + 1; rn < plan.steps.length; rn++) {
-                        plan.steps[rn].number = rn + 1;
-                    }
-
-                    if (!plan.productSwaps) plan.productSwaps = [];
-                    plan.productSwaps.push({ step: maskStep.id, from: null, to: bestUpgrade.productId });
                 } else if (!hasMask) {
                     // === SINGLE SWAP (upgrade is a regular conditioner, or mask already exists) ===
                     condStep.productId = bestUpgrade.productId;
