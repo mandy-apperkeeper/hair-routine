@@ -1729,6 +1729,68 @@
             from { transform: translateX(-50%) translateY(20px); opacity: 0; }
             to { transform: translateX(-50%) translateY(0); opacity: 1; }
         }
+
+        /* Dev Notes FAB + Overlay */
+        .dev-notes-fab {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            font-size: 1.25rem;
+            cursor: pointer;
+            z-index: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: transform 0.15s;
+        }
+        .dev-notes-fab:active { transform: scale(0.9); }
+        .dev-notes-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0,0,0,0.6);
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .dev-notes-overlay.visible { display: flex; }
+        .dev-notes-sheet {
+            background: var(--bg-warm);
+            border-radius: 16px 16px 0 0;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .dev-note-item {
+            background: var(--card);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+        .dev-note-item .note-text { color: var(--text); font-size: 0.9rem; margin: 0; white-space: pre-wrap; }
+        .dev-note-item .note-meta { color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem; }
+        .dev-note-item .note-delete {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 4px;
+            min-width: 32px;
+            min-height: 32px;
+        }
     </style>
 </head>
 <body>
@@ -1940,6 +2002,20 @@
             <p id="info-mechanism"></p>
             <p id="info-reason"></p>
             <div id="info-badge"></div>
+        </div>
+    </div>
+
+    <!-- Dev Notes — quick-add for feature requests / observations while using the app -->
+    <button class="dev-notes-fab" id="dev-notes-fab" aria-label="Add a dev note" title="Dev note">📝</button>
+    <div class="dev-notes-overlay" id="dev-notes-overlay" role="dialog" aria-label="Dev notes" aria-modal="true">
+        <div class="dev-notes-sheet">
+            <h4 style="margin:0 0 0.75rem 0;color:var(--gold);">Dev Notes</h4>
+            <textarea id="dev-notes-input" placeholder="What should change? Bug? Idea? Observation..." rows="3" aria-label="Note text" style="width:100%;box-sizing:border-box;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0.75rem;font-size:1rem;font-family:system-ui;resize:vertical;min-height:80px;"></textarea>
+            <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+                <button class="btn-primary" id="dev-notes-save" style="flex:1;min-height:48px;">Save</button>
+                <button class="btn-secondary" id="dev-notes-close" style="flex:1;min-height:48px;">Cancel</button>
+            </div>
+            <div id="dev-notes-list" style="margin-top:1rem;max-height:40vh;overflow-y:auto;"></div>
         </div>
     </div>
 
@@ -12844,6 +12920,118 @@
 
         // Re-check every 5 minutes (catches network changes, stale cache)
         setInterval(updateHealthDot, 5 * 60 * 1000);
+    })();
+
+    // ===== Dev Notes (quick-add for feature requests while using the app) =====
+    (function() {
+        var DEV_NOTES_KEY = 'hair-routine-dev-notes';
+        var fab = document.getElementById('dev-notes-fab');
+        var overlay = document.getElementById('dev-notes-overlay');
+        var input = document.getElementById('dev-notes-input');
+        var saveBtn = document.getElementById('dev-notes-save');
+        var closeBtn = document.getElementById('dev-notes-close');
+        var listEl = document.getElementById('dev-notes-list');
+
+        function getNotes() {
+            try {
+                var raw = localStorage.getItem(DEV_NOTES_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch(e) { return []; }
+        }
+
+        function saveNotes(notes) {
+            try { localStorage.setItem(DEV_NOTES_KEY, JSON.stringify(notes)); } catch(e) {}
+        }
+
+        function renderNotes() {
+            var notes = getNotes();
+            if (notes.length === 0) {
+                listEl.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;text-align:center;">No notes yet. Add one above!</p>';
+                return;
+            }
+            var html = '<p style="color:var(--text-secondary);font-size:0.75rem;margin-bottom:0.5rem;">' + notes.length + ' note' + (notes.length !== 1 ? 's' : '') + '</p>';
+            for (var i = notes.length - 1; i >= 0; i--) {
+                var note = notes[i];
+                html += '<div class="dev-note-item" data-idx="' + i + '">';
+                html += '<p class="note-text">' + escapeHtml(note.text) + '</p>';
+                html += '<p class="note-meta">' + formatNoteDate(note.date) + '</p>';
+                html += '<button class="note-delete" aria-label="Delete note" data-idx="' + i + '">✕</button>';
+                html += '</div>';
+            }
+            listEl.innerHTML = html;
+
+            // Wire delete buttons
+            listEl.querySelectorAll('.note-delete').forEach(function(btn) {
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    var idx = parseInt(btn.getAttribute('data-idx'));
+                    var notes = getNotes();
+                    notes.splice(idx, 1);
+                    saveNotes(notes);
+                    renderNotes();
+                };
+            });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function formatNoteDate(dateStr) {
+            var d = new Date(dateStr);
+            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+        }
+
+        function openNotes() {
+            overlay.classList.add('visible');
+            input.value = '';
+            renderNotes();
+            setTimeout(function() { input.focus(); }, 100);
+        }
+
+        function closeNotes() {
+            overlay.classList.remove('visible');
+        }
+
+        fab.onclick = openNotes;
+        closeBtn.onclick = closeNotes;
+
+        saveBtn.onclick = function() {
+            var text = input.value.trim();
+            if (!text) return;
+            var notes = getNotes();
+            notes.push({ text: text, date: new Date().toISOString() });
+            saveNotes(notes);
+            input.value = '';
+            renderNotes();
+            // Brief visual feedback
+            saveBtn.textContent = '✓ Saved';
+            setTimeout(function() { saveBtn.textContent = 'Save'; }, 1000);
+        };
+
+        // Close on backdrop tap
+        overlay.onclick = function(e) {
+            if (e.target === overlay) closeNotes();
+        };
+
+        // Keyboard: Enter to save (with Ctrl/Cmd), Escape to close
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                saveBtn.click();
+            }
+            if (e.key === 'Escape') {
+                closeNotes();
+            }
+        });
+
+        // Show note count badge on FAB if there are notes
+        var noteCount = getNotes().length;
+        if (noteCount > 0) {
+            fab.setAttribute('data-count', noteCount);
+            fab.title = noteCount + ' dev note' + (noteCount !== 1 ? 's' : '');
+        }
     })();
 
     // Service Worker Registration + Update Handling
