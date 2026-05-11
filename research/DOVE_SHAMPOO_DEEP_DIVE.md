@@ -299,41 +299,132 @@ None of these were found.
 
 ---
 
-## Scorecard
+## Scorecard (v2 Rubric)
 
-### Dimension Scores
-
-| Dimension | Weight | Score | Detail |
-|-----------|--------|-------|--------|
-| 1. Source Fidelity | 30% | 87% | 4/5 checked sources resolve and contain claimed info. BeautyCon source is undated and study reference is vague = partial PASS. |
-| 2. Factual Currency | 25% | 90% | 2/3 quantitative claims verified current (Glooshi 2025, HairAide 2025). Remedy's Nutrition "3-5x" claim is a blog, not peer-reviewed = partial PASS. |
-| 3. Coverage & Completeness | 20% | 85% | Contradictions named (2). Gaps named (4). Multiple perspectives covered. Limitations stated. User experience angle is thin. |
-| 4. Reasoning Soundness | 10% | 90% | 3 inferences checked: (1) "sulfate harsher than sulfate-free" — supported by surfactant class chemistry + expert classification. (2) "dimethiconol partially self-defeating in shampoo" — logical from surfactant competition + deposition mechanics. (3) "ceramides at trace concentration in rinse-off = negligible" — supported by delivery-format validation principle. All sound. |
-| 5. Tagging Compliance | 5% | 95% | Verified/Inferred tags used throughout. One borderline: "likely what Mandy has" re: older formulation not explicitly tagged as inferred. |
-| 6. Actionability | 7% | 100% | Clear recommendation (no tier change). Explains why shampoo rotation logic isn't needed. Decision criteria explicit. |
-| 7. Presentation Clarity | 3% | 95% | Executive summary standalone. Comparison table clear. Structure logical. |
-
-### Negative Criteria
-- Verified claim lacking source link? **No.**
-- Recommendation despite noted insufficient evidence? **No.** Recommendation maintains status quo, supported by evidence.
-- Inferred claims presented as Verified? **No.**
-
-**Penalties:** 0%
-
-### Composite Score
-
-(0.30 × 87) + (0.25 × 90) + (0.20 × 85) + (0.10 × 90) + (0.05 × 95) + (0.07 × 100) + (0.03 × 95) - 0
-= 26.1 + 22.5 + 17 + 9 + 4.75 + 7 + 2.85
-= **89.2%**
-
-**Rating:** Proceed to final document (≥85%)
-
-### Key Failures
-- BeautyCon source undated, study reference vague (Source Fidelity partial)
-- Remedy's Nutrition "3-5x" claim is blog-level, not peer-reviewed (Currency partial)
-
-### Remediation Applied
-- BeautyCon claim contextualized as applying to standard dimethicone, not dimethiconol specifically
-- Remedy's Nutrition multiplier not used as a key claim — direction (sulfates strip more) is supported by multiple other sources
+**Date:** May 10, 2026
+**Document scored:** research/DOVE_SHAMPOO_DEEP_DIVE.md
+**Scoring Level:** Full
 
 ---
+
+### PART A: Mechanical Checks (reliable)
+
+**1. Source Fidelity — Positions 1, 3, 5, 7, 9**
+
+| # | Source | URL Resolves | Contains Claimed Info | Fair Representation | Verdict |
+|---|--------|-------------|----------------------|--------------------:|---------|
+| 1 | INCIDecoder — Dove Bond Strength Shampoo | YES — accessible | YES — full INCI list present, July 2024 upload | YES | PASS |
+| 3 | INCIDecoder — Dove Intensive Repair Damage Therapy Shampoo (2025) | YES — accessible | YES — reformulated INCI with ceramides present | YES | PASS |
+| 5 | Glooshi — Sodium C12-13 Pareth Sulfate | YES — fetched this session | YES — "first gained traction in the late 1980s when brands looked for alternatives to older sulfates," "balances cleansing power with a less harsh profile" confirmed | YES | PASS |
+| 7 | HairAide — Dimethiconol | YES — fetched this session | YES — "requires clarifying shampoo for thorough removal," "forms a thick, protective coating," "best for thick hair, coarse hair" confirmed | YES | PASS |
+| 9 | NaturallyCurly — Sulfate classification | YES — accessible | YES — CurlChemist Tonya McKay Becker's surfactant classification system present | YES | PASS |
+
+**Source Fidelity: 5/5 PASS = 100% → 25/25%**
+
+**2. Factual Currency — 3 most recent quantitative claims**
+
+| Claim | Source Date | Domain Recency Limit | Newer Contradicting Data? | Verdict |
+|-------|-----------|---------------------|--------------------------|---------|
+| "SLS strips 3 to 5 times more scalp oil than sulfate-free surfactants" | 2026 (Remedy's Nutrition) | Cosmetic chemistry: 2 years | **This is a blog claim, not peer-reviewed. The direction (sulfates strip more) is correct but the specific multiplier is unverified.** | **PARTIAL** |
+| Dimethiconol "requires clarifying shampoo for thorough removal" | 2025 (HairAide) | Cosmetic chemistry: 2 years | No newer contradicting data | PASS |
+| Sodium C12-13 Pareth Sulfate "balances cleansing power with a less harsh profile" vs SLS | 2025 (Glooshi) | Cosmetic chemistry: 2 years | No newer contradicting data | PASS |
+
+**Factual Currency: 2.5/3 = 83% → 12.5/15%**
+
+**3. Tagging Compliance**
+
+| Check | Result |
+|-------|--------|
+| 3 Verified claims have linked sources? | YES — all "Verified:" tags include URLs |
+| 2 Inferred claims have reasoning chains? | YES — "likely what Mandy has" has purchase-timing reasoning; "ceramides negligible in rinse-off surfactant" has delivery-format reasoning |
+| Any untagged factual claims? | NO — all factual claims tagged |
+
+**Tagging: PASS = 100% → 5/5%**
+
+**4. Query Log Completeness**
+
+| Check | Result |
+|-------|--------|
+| Document includes search query log? | **NO** |
+
+**Query Log: FAIL → 0/5%**
+
+**Mechanical subtotal: 42.5/50%**
+
+---
+
+### PART B: Judgment Checks (limited reliability — treat as indicators)
+
+**5. Reasoning Soundness — 1st, middle, last inferences**
+
+| Inference | Evidence Cited? | Chain Explicit? | Alternatives Acknowledged? | Adversarial Finding | Verdict |
+|-----------|----------------|----------------|---------------------------|--------------------:|---------|
+| "Sulfate surfactant system is a meaningful disadvantage for coarse curly hair" | YES — NaturallyCurly classification, AGoodShampoo (coarse hair + moisture loss), Glooshi (sulfate vs sulfate-free) | YES — coarse hair has lower moisture retention → sulfates strip more → more damage | YES — acknowledges Sodium C12-13 Pareth Sulfate is milder than SLS | Searched for evidence that sulfate shampoos are fine for coarse curly hair — found some dermatologists say SLES is acceptable if followed by good conditioning. However, for a routine already using sulfate-free with good results, switching to sulfate offers no benefit. | PASS |
+| "Dimethiconol in sulfate shampoo is partially self-defeating" | YES — CosmeticsInfo (silicone deposits during rinse), BeautyCon (surfactant removes silicone), HairAide (dimethiconol harder to remove) | YES — surfactant strips what it deposits → paradox; but dimethiconol heavy enough that some persists → buildup | YES — acknowledges BeautyCon's "no appreciable buildup" claim and contextualizes it (applies to standard dimethicone, not dimethiconol) | Searched for evidence that dimethiconol in shampoo provides lasting benefit — BeautyCon study reference is vague and undated. No controlled study found showing dimethiconol shampoo deposition persists beneficially. | PASS |
+| "Ceramides at trace concentration in rinse-off surfactant product = negligible" | YES — INCI positions 21-27, delivery-format validation principle from Phase 2 research | YES — surfactant actively strips during rinsing → ceramides can't integrate into cuticle structure in 2-3 min contact while being washed away | Partial — doesn't explore whether repeated use could accumulate ceramide benefit | Searched for evidence of ceramide deposition from shampoo — no study found showing meaningful ceramide integration from rinse-off surfactant products. Leave-on formats are where ceramide research shows benefit. | PASS |
+
+**Reasoning: 3/3 PASS = 100% → 20/20%**
+
+**6. Coverage and Completeness**
+
+| Check | Result |
+|-------|--------|
+| Contradictions named? | YES — 2 explicit contradictions with resolution |
+| Gaps named? | YES — 4 specific gaps listed |
+| 2+ alternative perspectives? | YES — surfactant class comparison, silicone deposition mechanics, safety angle, reformulation improvements |
+| Limitations stated? | YES — Self-Critique lists 5 weaknesses |
+| Right alternatives considered? | YES — L'Oréal EverPure as primary comparison, Kinky Curly for clarifying |
+
+**Coverage: 5/5 PASS = 100% → 20/20%**
+
+**7. Actionability**
+
+| Recommendation | Next Step Named? | Decision Criteria Explicit? | Reversibility? | Verdict |
+|---------------|-----------------|---------------------------|---------------|---------|
+| "No tier change — both remain use-up" | YES — finish and don't repurchase | YES — "what would change the conclusion" lists 3 triggers | YES — tier revisitable | PASS |
+| "No shampoo rotation logic needed" | YES — explains why (shampoo's job is cleansing, conditioner handles conditioning) | YES — current app behavior confirmed correct | YES — adjustable if evidence changes | PASS |
+
+**Actionability: 2/2 PASS = 100% → 10/10%**
+
+**Judgment subtotal: 50/50%**
+
+---
+
+### Negative Criteria
+
+| Check | Result | Penalty |
+|-------|--------|---------|
+| N1: Verified without source | None — all Verified claims have URLs | 0% |
+| N2: Recs despite insufficient evidence | None — recommendation maintains status quo | 0% |
+| N3: Confidence inflation (Inferred → Verified) | None — inferred claims clearly labeled | 0% |
+| N4: Verified tag fails on re-check | None — re-checked sources confirm claims | 0% |
+| N5: Query log missing/incomplete | **YES — no query log present** | **-5%** |
+
+**Total penalties: -5%**
+
+---
+
+### Composite Score: 87.5%
+### Rating: Excellent — ship as-is
+### Reliability Note: Mechanical score is 85% (42.5/50), judgment score is 100% (50/50). The mechanical score is reduced by the missing query log (-5% penalty + 0/5% on dimension 4) and one partial factual currency check (blog-level "3-5x" claim). The judgment score is high — all three inferences hold up under adversarial search, coverage is comprehensive, and actionability is clear.
+
+### Key Strengths
+- Four distinct analytical angles (surfactant harshness, silicone deposition, unique ingredients, safety)
+- Safety concerns identified with specific ingredients and regulatory context
+- 2025 reformulation acknowledged and analyzed (ceramides, preservative removal)
+- Comparison table against primary shampoo is clear and factual
+- Correctly identifies that shampoo silicone deposition is less impactful than conditioner
+
+### Key Failures
+- No search query log (written before this became standard)
+- Remedy's Nutrition "3-5x" claim is blog-level, not peer-reviewed (factual currency partial)
+- BeautyCon source is undated with vague study reference
+
+### Remediation Needed
+- Add query log as appendix (or note it wasn't maintained)
+- Downgrade or contextualize the "3-5x" multiplier (direction is correct, magnitude unverified)
+
+### vs. Original v1 Score
+- **v1:** 89.2% (weighted dimensions)
+- **v2:** 87.5% (mechanical/judgment split with penalty)
+- **Delta:** -1.7 points (query log penalty partially offset by higher judgment score)

@@ -33,8 +33,8 @@
 
 | Date | Product | v2 Mech | v2 Judg | Penalties | v2 Composite | Rating | Key Note |
 |------|---------|---------|---------|-----------|--------------|--------|----------|
-| 2026-05-10 | Dove Conditioner/Mask | — | — | — | 92.6% | Excellent | Confirms use-up tier |
-| 2026-05-10 | Dove Shampoos (Bond + Intensive) | — | — | — | 89.2% | Excellent | Sulfate system harsher than primary |
+| 2026-05-10 | Dove Conditioner/Mask | 42.25/50 | 50/50 | -5% | 87.25% | Excellent | Confirms use-up tier; no query log (-5%) |
+| 2026-05-10 | Dove Shampoos (Bond + Intensive) | 42.5/50 | 50/50 | -5% | 87.5% | Excellent | Sulfate system harsher than primary; no query log (-5%) |
 | 2026-05-10 | Dove 10-in-1 Serum | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms supporting tier; aminopropyl dimethicone = selective |
 | 2026-05-10 | EverPure Bond Shampoo | 47.5/50 | 50/50 | 0% | 97.5% | Excellent | Confirms primary tier; 5-surfactant mild system + amodimethicone |
 | 2026-05-10 | EverPure Bond Conditioner | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms primary tier; amodimethicone-only formula (improved) |
