@@ -148,10 +148,10 @@
 ## Next Session Starts With
 
 1. `garnier-color-repair-cond` — Color Repair Conditioner (Garnier Fructis, primary tier — **HIGHEST PRIORITY**: adversarial finding A4 shows near-identical formula to EverPure with potentially superior amodimethicone concentration + pseudoceramide. Full deep dive needed to confirm.)
-2. `everpure-clarifying` — Clarifying Shampoo (L'Oréal EverPure, primary tier — periodic clarifying)
-3. `everpure-bond-pre` — Bond Repair Pre-Shampoo Treatment (L'Oréal EverPure, supporting tier)
+2. `everpure-glossing-mask` — Glossing 5-Min Lamination Mask (L'Oréal EverPure, supporting tier)
+3. `loreal-wonder-water` — 8 Second Wonder Water (L'Oréal Elvive, supporting tier)
 
-**Rationale:** Garnier conditioner moved to #1 because the adversarial pass (A4) revealed it's a near-identical formula to EverPure Bond Repair Conditioner — same amodimethicone-only system, same behentrimonium chloride, same citric acid + arginine, but with amodimethicone at position 3 (vs EverPure's position 4) and a pseudoceramide that EverPure lacks. Full deep dive will determine if it should be co-primary or replace EverPure as the primary conditioner.
+**Rationale:** Garnier conditioner remains #1 because the adversarial pass (A4) revealed it's a near-identical formula to EverPure Bond Repair Conditioner — same amodimethicone-only system, same behentrimonium chloride, same citric acid + arginine, but with amodimethicone at position 3 (vs EverPure's position 4) and a pseudoceramide that EverPure lacks. Full deep dive will determine if it should be co-primary or replace EverPure as the primary conditioner. EverPure clarifying and pre-shampoo are now complete — glossing mask finishes the EverPure line.
 
 ---
 
