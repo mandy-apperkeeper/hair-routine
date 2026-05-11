@@ -314,6 +314,107 @@
             flex-shrink: 0;
         }
 
+        /* ===== Health Dot ===== */
+        .health-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            border: none;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            padding: 0;
+            min-height: 10px;
+            min-width: 10px;
+            position: relative;
+            top: -1px;
+        }
+
+        .health-dot.amber {
+            background: #d4a574;
+        }
+
+        .health-dot.red {
+            background: var(--accent);
+            animation: pulse-health 2s infinite;
+        }
+
+        @keyframes pulse-health {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ===== Diagnostics Overlay ===== */
+        .diagnostics-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 600;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .diagnostics-overlay.visible {
+            display: flex;
+        }
+
+        .diagnostics-sheet {
+            background: var(--bg-warm);
+            border-radius: 16px 16px 0 0;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 480px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .diagnostics-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .diag-check {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .diag-check:last-child {
+            border-bottom: none;
+        }
+
+        .diag-icon {
+            flex-shrink: 0;
+            width: 1.2rem;
+            text-align: center;
+        }
+
+        .diag-label {
+            color: var(--text);
+        }
+
+        .diag-detail {
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            margin-top: 0.15rem;
+        }
+
         /* ===== Timer ===== */
         .timer-box {
             background: var(--surface);
@@ -1601,9 +1702,23 @@
     </div>
 
     <header>
-        <h1>Hair Routine</h1>
+        <h1>Hair Routine <button id="health-dot" class="health-dot" aria-label="App health status — tap for diagnostics" title="App health"></button></h1>
         <p class="subtitle">2C-3A · Coarse · Very Thick · Adaptive Care</p>
     </header>
+
+    <!-- Diagnostics overlay (bottom sheet) -->
+    <div class="diagnostics-overlay" id="diagnostics-overlay" role="dialog" aria-label="App diagnostics" aria-modal="true">
+        <div class="diagnostics-sheet">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <h3 style="margin:0;color:var(--gold);">Diagnostics</h3>
+                <button class="diagnostics-close" id="diagnostics-close" aria-label="Close diagnostics">✕</button>
+            </div>
+            <div id="diagnostics-results" aria-live="polite">
+                <p style="color:var(--text-secondary);">Running checks...</p>
+            </div>
+            <button class="btn-secondary" id="diagnostics-rerun" style="margin-top:1rem;">Run again</button>
+        </div>
+    </div>
 
     <nav aria-label="Main navigation">
         <button data-view="landing" aria-current="true">Home</button>
@@ -9951,6 +10066,325 @@
             daysSince,
             updateSealState
         };
+    })();
+
+    // ===== Health Monitor =====
+    (function() {
+        var healthDot = document.getElementById('health-dot');
+        var overlay = document.getElementById('diagnostics-overlay');
+        var resultsContainer = document.getElementById('diagnostics-results');
+        var closeBtn = document.getElementById('diagnostics-close');
+        var rerunBtn = document.getElementById('diagnostics-rerun');
+
+        function estimateStorageUsage() {
+            var total = 0;
+            try {
+                for (var i = 0; i < localStorage.length; i++) {
+                    var key = localStorage.key(i);
+                    total += key.length + localStorage.getItem(key).length;
+                }
+            } catch (e) {
+                return { bytes: 0, error: true };
+            }
+            return { bytes: total * 2, error: false }; // UTF-16 = 2 bytes per char
+        }
+
+        function checkStorage() {
+            var result = { name: 'localStorage', status: 'pass', detail: '' };
+
+            // Check availability
+            try {
+                var testKey = '__health_check__';
+                localStorage.setItem(testKey, '1');
+                localStorage.removeItem(testKey);
+            } catch (e) {
+                result.status = 'fail';
+                result.detail = 'Cannot read/write — private browsing or storage disabled';
+                return result;
+            }
+
+            // Check data exists
+            var raw = localStorage.getItem('hair-routine-data');
+            if (!raw) {
+                result.status = 'warn';
+                result.detail = 'No hair data found — fresh install or data was cleared';
+                return result;
+            }
+
+            // Check parseable
+            var parsed;
+            try {
+                parsed = JSON.parse(raw);
+            } catch (e) {
+                result.status = 'fail';
+                result.detail = 'Data exists but is corrupted (cannot parse JSON)';
+                return result;
+            }
+
+            // Check schema version
+            if (parsed.version !== 13) {
+                result.status = 'warn';
+                result.detail = 'Schema version ' + (parsed.version || 'unknown') + ' (expected 13) — may need migration';
+                return result;
+            }
+
+            // Check usage
+            var usage = estimateStorageUsage();
+            var usageKB = Math.round(usage.bytes / 1024);
+            var estimatedQuota = 5120; // 5MB typical
+            var pct = Math.round((usage.bytes / (estimatedQuota * 1024)) * 100);
+
+            if (pct > 80) {
+                result.status = 'warn';
+                result.detail = usageKB + ' KB used (~' + pct + '% of typical 5MB quota) — consider exporting a backup';
+            } else {
+                result.detail = usageKB + ' KB used (~' + pct + '% of quota)';
+            }
+
+            return result;
+        }
+
+        function checkDataIntegrity() {
+            var result = { name: 'Data integrity', status: 'pass', detail: '' };
+
+            var raw = localStorage.getItem('hair-routine-data');
+            if (!raw) {
+                result.status = 'warn';
+                result.detail = 'No data to check';
+                return result;
+            }
+
+            var parsed;
+            try { parsed = JSON.parse(raw); } catch (e) {
+                result.status = 'fail';
+                result.detail = 'Cannot parse data';
+                return result;
+            }
+
+            var events = parsed.events || [];
+            var issues = [];
+
+            // Check events have required fields
+            var malformed = 0;
+            for (var i = 0; i < events.length; i++) {
+                if (!events[i].date || !events[i].lane) malformed++;
+            }
+            if (malformed > 0) {
+                issues.push(malformed + ' event(s) missing date or lane');
+            }
+
+            // Check for orphaned product references
+            var inventoryIds = (parsed.inventory || []).map(function(p) { return p.id; });
+            var orphanedProducts = new Set();
+            for (var j = 0; j < events.length; j++) {
+                var prods = events[j].products || [];
+                for (var k = 0; k < prods.length; k++) {
+                    if (!inventoryIds.includes(prods[k])) {
+                        orphanedProducts.add(prods[k]);
+                    }
+                }
+            }
+            if (orphanedProducts.size > 0) {
+                issues.push(orphanedProducts.size + ' product ID(s) in history not in inventory');
+            }
+
+            if (issues.length > 0) {
+                result.status = issues.some(function(i) { return i.includes('missing date'); }) ? 'fail' : 'warn';
+                result.detail = issues.join('; ');
+            } else {
+                result.detail = events.length + ' events, all valid';
+            }
+
+            return result;
+        }
+
+        function checkDewPoint() {
+            var result = { name: 'Weather (dew point)', status: 'pass', detail: '' };
+
+            // Check cached dew point
+            var cached = null;
+            try {
+                var raw = localStorage.getItem('hair_dewpoint_cache');
+                if (raw) cached = JSON.parse(raw);
+            } catch (e) {}
+
+            if (!cached) {
+                result.status = 'warn';
+                result.detail = 'No cached dew point — API may not have been reached yet';
+                return result;
+            }
+
+            var ageMs = Date.now() - (cached.timestamp || 0);
+            var ageHours = Math.round(ageMs / (1000 * 60 * 60) * 10) / 10;
+
+            if (ageHours > 6) {
+                result.status = 'warn';
+                result.detail = 'Last reading: ' + cached.dewPoint + '°F, ' + ageHours + 'h ago (stale — will refresh on next plan load)';
+            } else {
+                result.detail = 'Last reading: ' + cached.dewPoint + '°F, ' + ageHours + 'h ago';
+            }
+
+            return result;
+        }
+
+        function checkServiceWorker() {
+            var result = { name: 'Service worker', status: 'pass', detail: '' };
+
+            if (!('serviceWorker' in navigator)) {
+                result.status = 'warn';
+                result.detail = 'Not supported in this browser';
+                return result;
+            }
+
+            if (!navigator.serviceWorker.controller) {
+                result.status = 'warn';
+                result.detail = 'Not active — first load or registration pending';
+                return result;
+            }
+
+            result.detail = 'Active and controlling page';
+            return result;
+        }
+
+        function checkNetwork() {
+            var result = { name: 'Network', status: 'pass', detail: '' };
+
+            if (!navigator.onLine) {
+                result.status = 'warn';
+                result.detail = 'Offline — app works but weather and updates unavailable';
+            } else {
+                result.detail = 'Online';
+            }
+
+            return result;
+        }
+
+        function checkLastBackup() {
+            var result = { name: 'Last backup', status: 'pass', detail: '' };
+
+            var raw = localStorage.getItem('hair-routine-data');
+            if (!raw) {
+                result.detail = 'No data to back up';
+                return result;
+            }
+
+            var parsed;
+            try { parsed = JSON.parse(raw); } catch (e) {
+                result.detail = 'Cannot read data';
+                result.status = 'warn';
+                return result;
+            }
+
+            var lastExport = parsed.lastExport;
+            if (!lastExport) {
+                var events = parsed.events || [];
+                if (events.length >= 5) {
+                    result.status = 'warn';
+                    result.detail = 'Never exported — ' + events.length + ' events at risk if device is wiped';
+                } else {
+                    result.detail = 'Never exported (low data volume — not urgent)';
+                }
+            } else {
+                var daysAgo = Math.floor((Date.now() - new Date(lastExport).getTime()) / (1000 * 60 * 60 * 24));
+                if (daysAgo > 30) {
+                    result.status = 'warn';
+                    result.detail = daysAgo + ' days since last export';
+                } else {
+                    result.detail = daysAgo + ' days since last export';
+                }
+            }
+
+            return result;
+        }
+
+        function runAllChecks() {
+            return [
+                checkStorage(),
+                checkDataIntegrity(),
+                checkDewPoint(),
+                checkServiceWorker(),
+                checkNetwork(),
+                checkLastBackup()
+            ];
+        }
+
+        function getOverallStatus(checks) {
+            var hasFail = checks.some(function(c) { return c.status === 'fail'; });
+            var hasWarn = checks.some(function(c) { return c.status === 'warn'; });
+            if (hasFail) return 'red';
+            if (hasWarn) return 'amber';
+            return 'green';
+        }
+
+        function renderChecks(checks) {
+            var icons = { pass: '✓', warn: '⚠', fail: '✗' };
+            var colors = { pass: 'var(--green)', warn: 'var(--gold)', fail: 'var(--accent)' };
+
+            var html = '';
+            for (var i = 0; i < checks.length; i++) {
+                var c = checks[i];
+                html += '<div class="diag-check">';
+                html += '<span class="diag-icon" style="color:' + colors[c.status] + ';">' + icons[c.status] + '</span>';
+                html += '<div>';
+                html += '<div class="diag-label">' + c.name + '</div>';
+                if (c.detail) {
+                    html += '<div class="diag-detail">' + c.detail + '</div>';
+                }
+                html += '</div>';
+                html += '</div>';
+            }
+            return html;
+        }
+
+        function updateHealthDot() {
+            var checks = runAllChecks();
+            var status = getOverallStatus(checks);
+
+            healthDot.classList.remove('amber', 'red');
+            if (status === 'amber') healthDot.classList.add('amber');
+            if (status === 'red') healthDot.classList.add('red');
+
+            // Update aria-label
+            var statusText = status === 'green' ? 'All systems healthy' : status === 'amber' ? 'Some warnings' : 'Issues detected';
+            healthDot.setAttribute('aria-label', 'App health: ' + statusText + ' — tap for diagnostics');
+        }
+
+        function openDiagnostics() {
+            overlay.classList.add('visible');
+            var checks = runAllChecks();
+            resultsContainer.innerHTML = renderChecks(checks);
+        }
+
+        function closeDiagnostics() {
+            overlay.classList.remove('visible');
+        }
+
+        // Wire events
+        healthDot.addEventListener('click', openDiagnostics);
+        closeBtn.addEventListener('click', closeDiagnostics);
+        rerunBtn.addEventListener('click', function() {
+            var checks = runAllChecks();
+            resultsContainer.innerHTML = renderChecks(checks);
+            updateHealthDot();
+        });
+
+        // Close on backdrop tap
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closeDiagnostics();
+        });
+
+        // Close on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay.classList.contains('visible')) {
+                closeDiagnostics();
+            }
+        });
+
+        // Run on load
+        updateHealthDot();
+
+        // Re-check every 5 minutes (catches network changes, stale cache)
+        setInterval(updateHealthDot, 5 * 60 * 1000);
     })();
 
     // Service Worker Registration + Update Handling
