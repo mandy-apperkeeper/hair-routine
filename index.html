@@ -2139,7 +2139,8 @@
                     additionalSteps: ['pre_wash'],
                     outcomes: { shine: 0.5, frizz_control: 0.4, smoothness: 0.4 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['dimethiconol', 'cyclopentasiloxane', 'cocos nucifera oil']
                 }
             },
             {
@@ -2153,7 +2154,8 @@
                     additionalSteps: ['pre_wash'],
                     outcomes: { shine: 0.4, frizz_control: 0.3, smoothness: 0.3 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['dimethiconol', 'cyclopentasiloxane', 'argania spinosa kernel oil']
                 }
             },
             // Supporting Cast — Heat Protection (Blowout)
@@ -2167,7 +2169,8 @@
                     step: 'heat_protection',
                     outcomes: { smoothness: 0.7, strength: 0.5, shine: 0.5 },
                     cumulative: true,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['amodimethicone', 'hydrolyzed wheat protein', 'panthenol', 'dimethicone']
                 }
             },
             // Use-Up Queue — Leave-in
@@ -2181,7 +2184,8 @@
                     step: 'leave_in',
                     outcomes: { smoothness: 0.5, shine: 0.4 },
                     cumulative: false,
-                    interactions: [{ with: 'loreal-21in1', type: 'outclassed_by', note: 'Generic dimethicone vs targeted amodimethicone' }]
+                    interactions: [{ with: 'loreal-21in1', type: 'outclassed_by', note: 'Generic dimethicone vs targeted amodimethicone' }],
+                    ingredients: ['dimethicone', 'simmondsia chinensis seed oil', 'polyquaternium-37']
                 }
             },
             // Supporting Cast — Finishing (Protein)
@@ -2195,7 +2199,8 @@
                     step: 'finishing',
                     outcomes: { strength: 0.6, smoothness: 0.3 },
                     cumulative: false,
-                    interactions: [{ with: 'garnier-filler-serum', type: 'complements', note: 'This fills cortex (protein), Garnier smooths cuticle (amodimethicone)' }]
+                    interactions: [{ with: 'garnier-filler-serum', type: 'complements', note: 'This fills cortex (protein), Garnier smooths cuticle (amodimethicone)' }],
+                    ingredients: ['hydrolyzed wheat protein', 'hydrolyzed keratin', 'panthenol']
                 }
             },
             // Primary Rotation — Pre-wash
@@ -2209,7 +2214,8 @@
                     step: 'pre_wash',
                     outcomes: { strength: 0.6, damage_prevention: 0.8 },
                     cumulative: true,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['cocos nucifera oil']
                 }
             },
         ];
