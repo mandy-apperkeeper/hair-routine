@@ -293,6 +293,8 @@ Red flags to avoid:
 - If the Garnier conditioner deep dive reveals it's superior on any axis — would need to re-evaluate which is the "primary" conditioner
 - If Mandy reports progressive heaviness or loss of curl definition — would suggest she has the older formula with dimethicone
 
+**Adversarial finding (May 10, 2026):** The Garnier Fructis Hair Filler Color Repair Conditioner has a nearly identical formulation: Cetearyl Alcohol, Amodimethicone (position 3 — higher than EverPure's position 4), Behentrimonium Chloride, same emulsifier system, Citric Acid + Arginine, and ALSO includes a pseudoceramide (2-Oleamido-1,3-Octadecanediol) that the current EverPure formula lacks. No dimethicone, no dimethiconol, same price range. The "no other conditioner matches it" claim is no longer accurate — Garnier is at minimum equivalent and arguably slightly better (higher amodimethicone concentration + pseudoceramide). Both are primary-tier. Full comparison in `research/ADVERSARIAL_FINDINGS.md` (A4).
+
 ---
 
 ## 11. Scorecard (v2 Rubric)
