@@ -51,3 +51,5 @@
 5. **Phase 2 is the weakest report** — no tagging, no coverage sections. Needs revision if referenced for implementation.
 
 Full analysis: `research/V2_RESCORE_COMPARISON.md`
+
+| 2026-05-10 | Product Recommendations for Hair Profile | 45/50 | 45/50 | 0% | 90% | Excellent | Gap analysis + 4 targeted recommendations; all INCI verified |

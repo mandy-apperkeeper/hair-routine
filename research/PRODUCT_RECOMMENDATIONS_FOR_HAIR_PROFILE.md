@@ -273,3 +273,70 @@ The mechanism for humidity resistance is unclear from the formulation. At $44 fo
 - [VitaLibrary — Silk Pillowcase vs Satin Bonnet](https://vitalibrary.com/silk-pillowcase-vs-satin-bonnet/) (published Dec 2024)
 - [CurlyTwirlyGirl — Silk vs Satin Bonnet](https://www.curlytwirlygirl.com/blogs/curly-blog/silk-vs-satin-bonnet-curly-hair) (published Jan 2026)
 
+
+---
+
+## Self-Critique
+
+### Strengths
+- Every recommendation has a verified INCI list with identified active mechanisms
+- Products NOT recommended are explained with specific reasoning (not just "didn't make the cut")
+- Price claims are sourced to specific retailers with access dates
+- The gap analysis clearly shows what's already covered vs. what's missing
+- Routine integration shows exactly where new products slot in
+
+### Weaknesses
+1. **Garnier Sleek & Stay's alpha-silane mechanism** — I could not find independent peer-reviewed research on "bis-(morpholinomethyl C1-4 dialkoxysiloxy) dimethicone" specifically. The crosslinking mechanism is inferred from the broader category of reactive silicones. The "5 washes" claim is manufacturer data only.
+
+2. **Color Wow Dream Coat Curly's performance on very thick hair** — reviews skew toward fine-to-medium hair. Thick, coarse hair may need more product (higher cost-per-use) or may not get sufficient coverage from a spray format. This is flagged but not resolved.
+
+3. **No primary research** — I didn't test any of these products. All claims are based on formulation analysis + published reviews + mechanism reasoning. Empirical testing on Mandy's specific hair would be the real validation.
+
+4. **Bonnet recommendation is generic** — I didn't identify a specific bonnet product with verified materials. "Any satin bonnet with adjustable drawstring" is practical advice but lacks the specificity of the other recommendations.
+
+5. **Missing: dietary/supplement angle** — the TE regrowth concern has a nutritional component (iron, ferritin, vitamin D, zinc are all implicated in TE recovery). This research focused on topical products only. A separate research pass on supplements for TE recovery would be warranted if Mandy hasn't already addressed this with her doctor.
+
+6. **Missing: technique optimization** — how to diffuse 2C-3A coarse hair, sectioning strategy for product distribution, plopping vs. microfiber towel. These are potentially higher-impact than product additions but were outside the scope of "best products."
+
+### Assumptions That Could Be Wrong
+- That Mandy blow-dries regularly enough to justify the Sleek & Stay (if she mostly air-dries, this drops in priority)
+- That the TE regrowth is still short enough to need a flyaway wand (if it's grown past 3-4 inches, it may integrate on its own)
+- That nighttime friction is a significant contributor to her frizz (if she already sleeps on silk/satin, the bonnet recommendation is moot)
+
+---
+
+## Scorecard
+
+### Mechanical Score (process adherence)
+
+| Criterion | Score | Notes |
+|-----------|-------|-------|
+| Sources verified via live lookup | 9/10 | All INCI lists verified; one mechanism (alpha-silane) relies on category inference |
+| Claims tagged (Verified/Inferred/Unverified) | 8/10 | Most claims tagged inline; a few implicit inferences in the routine section |
+| Contradictions identified | 9/10 | Virtue Frizz Block marketing vs. INCI; silk vs. satin debate; Dream Coat versions |
+| Gaps acknowledged | 9/10 | Query log shows what was searched and not found |
+| Prices sourced with dates | 10/10 | All prices linked to specific retailers with access date |
+| Alternatives considered | 9/10 | Each recommendation has rejected alternatives with reasoning |
+| Confidence levels stated | 9/10 | Summary table + inline confidence for each recommendation |
+
+**Mechanical Score: 63/70 = 90%**
+
+### Judgment Score (quality of reasoning)
+
+| Criterion | Score | Notes |
+|-----------|-------|-------|
+| Recommendations match the stated concerns | 9/10 | All 5 concerns addressed; curl retention could use more depth |
+| Mechanism-based reasoning (not marketing) | 10/10 | Every recommendation justified by identified active ingredients |
+| Cost-effectiveness considered | 9/10 | Drugstore options prioritized; premium option justified with mini trial |
+| Existing collection leveraged | 10/10 | Didn't recommend replacing anything that works; additions only |
+| Practical integration shown | 9/10 | Full routine placement for both blow-dry and air-dry days |
+| Risk assessment | 8/10 | Low-cost items recommended first; unknowns flagged; but no "what if it doesn't work" contingency |
+| Scope appropriate | 8/10 | Stayed focused on products but acknowledged technique/diet gaps |
+
+**Judgment Score: 63/70 = 90%**
+
+### Composite Score: 90%
+
+### Key Failures: None critical. Minor: alpha-silane mechanism not independently verified; bonnet recommendation lacks product specificity.
+
+---
