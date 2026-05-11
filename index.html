@@ -7703,8 +7703,9 @@
 
                 // === Tiered Conditioning Plan ===
                 // Every wash includes richer conditioning. Pick specific product + method based on context.
-                // Priority: post-clarify > dry air > use-up day > normal
-                var condPlan = { product: null, productName: null, method: '', timer: 300, timerLabel: 'Conditioner', heatCap: false, tip: '' };
+                // Priority: post-clarify > auto-upgrade (poor recent results) > dry air > use-up day > normal
+                // When deep conditioning is warranted, show BOTH mask + regular conditioner (dual conditioning).
+                var condPlan = { product: null, productName: null, method: '', timer: 300, timerLabel: 'Conditioner', heatCap: false, tip: '', needsDual: false };
 
                 // Determine conditioning context
                 var lastWashTreats = [];
@@ -7721,24 +7722,81 @@
                 var isDryAir = dewPoint !== null && dewPoint < 35;
                 var isUseUpDay = useUpSwap !== null;
 
+                // === Auto-upgrade detection ===
+                // Check recent wash history for signals that hair needs more conditioning:
+                // - Last 2 washes rated ≤ 2 (consistently poor results)
+                // - Last wash rated ≤ 2 AND reported dry/frizzy symptoms (confirmed issue)
+                var needsAutoUpgrade = false;
+                var autoUpgradeReason = '';
+                if (evts.length >= 1) {
+                    var recentRatings = [];
+                    var recentSymptoms = [];
+                    var lookback = Math.min(evts.length, 2);
+                    for (var ri = evts.length - 1; ri >= evts.length - lookback; ri--) {
+                        if (evts[ri].rating) recentRatings.push(evts[ri].rating);
+                        if (evts[ri].confirmedCause) {
+                            var causeId = evts[ri].confirmedCause.causeId || '';
+                            if (causeId.indexOf('dry') !== -1 || causeId.indexOf('frizz') !== -1 || causeId.indexOf('moisture') !== -1) {
+                                recentSymptoms.push(causeId);
+                            }
+                        }
+                    }
+                    // Two consecutive poor ratings
+                    if (recentRatings.length >= 2 && recentRatings[0] <= 2 && recentRatings[1] <= 2) {
+                        needsAutoUpgrade = true;
+                        autoUpgradeReason = 'Last 2 washes rated poorly — upgrading conditioning.';
+                    }
+                    // One poor rating + dry/frizz symptom confirmed
+                    else if (recentRatings.length >= 1 && recentRatings[0] <= 2 && recentSymptoms.length > 0) {
+                        needsAutoUpgrade = true;
+                        autoUpgradeReason = 'Recent poor rating + dry/frizz reported — upgrading conditioning.';
+                    }
+                }
+
                 if (isPostClarify) {
                     // Mask day — hair is stripped, needs deep repair
+                    // Dual conditioning: mask first (structural), then regular conditioner (sealing)
                     condPlan.product = 'elvive-total-repair-5-balm';
                     condPlan.productName = 'Total Repair 5 Damage Erasing Balm';
                     condPlan.method = 'Section into 4+ parts. Apply generously mid-lengths to ends. Heat cap on.';
                     condPlan.timer = 600;
-                    condPlan.timerLabel = 'Deep condition — mask day';
+                    condPlan.timerLabel = 'Deep condition — mask 🧢';
                     condPlan.heatCap = true;
                     condPlan.tip = '🧖 Mask day — post-clarify hair is stripped. Elvive balm has protein + ceramide for deep repair.';
+                    condPlan.needsDual = true;
+                } else if (needsAutoUpgrade) {
+                    // Auto-upgrade — recent poor results warrant deeper conditioning
+                    // Dual conditioning: mask first, then regular conditioner
+                    condPlan.product = 'elvive-total-repair-5-balm';
+                    condPlan.productName = 'Total Repair 5 Damage Erasing Balm';
+                    condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — your hair needs extra repair today.';
+                    condPlan.timer = 600;
+                    condPlan.timerLabel = 'Deep condition — repair 🧢';
+                    condPlan.heatCap = true;
+                    condPlan.tip = '📊 ' + autoUpgradeReason;
+                    condPlan.needsDual = true;
                 } else if (isDryAir) {
                     // Dry air — boost conditioning with heat cap
-                    condPlan.product = 'garnier-color-repair-cond';
-                    condPlan.productName = 'Color Repair Conditioner';
-                    condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — dry air means cuticle needs extra help sealing.';
-                    condPlan.timer = 420;
-                    condPlan.timerLabel = 'Conditioner + heat cap (dry air)';
-                    condPlan.heatCap = true;
-                    condPlan.tip = '💧 Dry air — heat cap helps conditioner penetrate. Swap to Elvive balm if hair feels extra parched.';
+                    // Dual conditioning when combined with poor recent rating
+                    var dryAirDual = (evts.length >= 1 && evts[evts.length - 1].rating && evts[evts.length - 1].rating <= 3);
+                    if (dryAirDual) {
+                        condPlan.product = 'elvive-total-repair-5-balm';
+                        condPlan.productName = 'Total Repair 5 Damage Erasing Balm';
+                        condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — dry air + recent results warrant deep repair.';
+                        condPlan.timer = 600;
+                        condPlan.timerLabel = 'Deep condition — dry air repair 🧢';
+                        condPlan.heatCap = true;
+                        condPlan.tip = '💧 Dry air + recent results below expectations — mask + conditioner today.';
+                        condPlan.needsDual = true;
+                    } else {
+                        condPlan.product = 'garnier-color-repair-cond';
+                        condPlan.productName = 'Color Repair Conditioner';
+                        condPlan.method = 'Section into 4+ parts. Apply generously. Heat cap on — dry air means cuticle needs extra help sealing.';
+                        condPlan.timer = 420;
+                        condPlan.timerLabel = 'Conditioner + heat cap (dry air)';
+                        condPlan.heatCap = true;
+                        condPlan.tip = '💧 Dry air — heat cap helps conditioner penetrate. Swap to Elvive balm if hair feels extra parched.';
+                    }
                 } else if (isUseUpDay) {
                     // Use-up rotation — weaker conditioner, compensate with heat cap
                     condPlan.product = useUpSwap.productId;
@@ -7762,31 +7820,79 @@
                 // Apply conditioning plan to the conditioner step
                 for (var ct = 0; ct < planSteps.length; ct++) {
                     if (planSteps[ct].stepType === 'conditioner') {
-                        // Override product if conditioning plan specifies one
-                        // Post-clarify and dry-air override even use-up rotation (hair needs it more)
-                        var canOverrideProduct = !planSteps[ct].useUpNote || isPostClarify || isDryAir;
-                        if (condPlan.product && canOverrideProduct) {
-                            planSteps[ct].productId = condPlan.product;
-                            planSteps[ct].productName = condPlan.productName;
-                            planSteps[ct].inventoryName = condPlan.productName;
-                            if (isPostClarify || isDryAir) {
-                                planSteps[ct].useUpNote = null; // Clear use-up note — overridden by conditioning need
+                        if (condPlan.needsDual) {
+                            // === DUAL CONDITIONING ===
+                            // Insert mask step BEFORE the regular conditioner step.
+                            // Mask: deep repair, longer dwell, heat cap, structural
+                            // Regular conditioner: brief, surface smoothing/sealing (stays as-is or gets normal product)
+                            var maskStep = {
+                                id: 'step-mask-' + (ct + 1),
+                                number: planSteps[ct].number,
+                                stepType: 'deep_condition',
+                                productId: condPlan.product,
+                                productName: condPlan.productName,
+                                stepLabel: 'Deep Condition (Mask) 🧢',
+                                inventoryName: condPlan.productName,
+                                instruction: condPlan.method,
+                                scienceBadge: null,
+                                timer: { duration: condPlan.timer, label: condPlan.timerLabel },
+                                tip: condPlan.tip,
+                                phase: planSteps[ct].phase,
+                                alternatives: rankProducts('deep_condition', conditions, inventory),
+                                useUpNote: null
+                            };
+
+                            // Insert mask before conditioner
+                            planSteps.splice(ct, 0, maskStep);
+
+                            // Update the regular conditioner step (now at ct+1)
+                            var regStep = planSteps[ct + 1];
+                            regStep.number = regStep.number + 1;
+                            // Keep regular conditioner as Garnier Color Repair (surface sealing)
+                            regStep.productId = 'garnier-color-repair-cond';
+                            regStep.productName = 'Color Repair Conditioner';
+                            regStep.inventoryName = 'Color Repair Conditioner';
+                            regStep.instruction = 'Quick rinse-through after mask. Smooths cuticle and seals in the deep treatment.';
+                            regStep.stepLabel = 'Conditioner (Seal)';
+                            if (regStep.timer) {
+                                regStep.timer.duration = 180;
+                                regStep.timer.label = 'Conditioner rinse';
                             }
-                        }
-                        // Set instruction to include method
-                        planSteps[ct].instruction = condPlan.method;
-                        // Set timer
-                        if (planSteps[ct].timer) {
-                            planSteps[ct].timer.duration = condPlan.timer;
-                            planSteps[ct].timer.label = condPlan.timerLabel;
-                        }
-                        // Set tip
-                        if (!planSteps[ct].tip) {
-                            planSteps[ct].tip = condPlan.tip;
-                        }
-                        // Add heat cap indicator to step label if recommended
-                        if (condPlan.heatCap) {
-                            planSteps[ct].stepLabel = (planSteps[ct].stepLabel || 'Conditioner') + ' 🧢';
+                            regStep.tip = '🔒 Brief conditioner after mask — seals cuticle and locks in the deep repair.';
+                            regStep.useUpNote = null;
+
+                            // Re-number subsequent steps
+                            for (var rn = ct + 2; rn < planSteps.length; rn++) {
+                                planSteps[rn].number = rn + 1;
+                            }
+                        } else {
+                            // === SINGLE CONDITIONING (original behavior) ===
+                            // Override product if conditioning plan specifies one
+                            // Post-clarify and dry-air override even use-up rotation (hair needs it more)
+                            var canOverrideProduct = !planSteps[ct].useUpNote || isPostClarify || isDryAir;
+                            if (condPlan.product && canOverrideProduct) {
+                                planSteps[ct].productId = condPlan.product;
+                                planSteps[ct].productName = condPlan.productName;
+                                planSteps[ct].inventoryName = condPlan.productName;
+                                if (isPostClarify || isDryAir) {
+                                    planSteps[ct].useUpNote = null; // Clear use-up note — overridden by conditioning need
+                                }
+                            }
+                            // Set instruction to include method
+                            planSteps[ct].instruction = condPlan.method;
+                            // Set timer
+                            if (planSteps[ct].timer) {
+                                planSteps[ct].timer.duration = condPlan.timer;
+                                planSteps[ct].timer.label = condPlan.timerLabel;
+                            }
+                            // Set tip
+                            if (!planSteps[ct].tip) {
+                                planSteps[ct].tip = condPlan.tip;
+                            }
+                            // Add heat cap indicator to step label if recommended
+                            if (condPlan.heatCap) {
+                                planSteps[ct].stepLabel = (planSteps[ct].stepLabel || 'Conditioner') + ' 🧢';
+                            }
                         }
                         break;
                     }
@@ -8695,6 +8801,10 @@
                     if (step.stepType === 'gloss') {
                         result.hasGloss = true;
                     }
+                    if (step.stepType === 'deep_condition') {
+                        result.conditionerUpgraded = true;
+                        result.hasHeatCap = true;
+                    }
                     if (step.productId === 'elvive-total-repair-5-balm' || step.productId === 'ogx-bond-repair-mask') {
                         result.conditionerUpgraded = true;
                     }
@@ -8964,9 +9074,11 @@
 
                 // Find the current conditioner step
                 var condStep = null;
+                var condIdx = -1;
                 for (var i = 0; i < plan.steps.length; i++) {
                     if (plan.steps[i].stepType === 'conditioner') {
                         condStep = plan.steps[i];
+                        condIdx = i;
                         break;
                     }
                 }
@@ -8974,9 +9086,16 @@
 
                 var currentId = condStep.productId;
 
+                // Check if a mask step already exists (dual conditioning already applied)
+                var hasMask = false;
+                for (var m = 0; m < plan.steps.length; m++) {
+                    if (plan.steps[m].stepType === 'deep_condition') {
+                        hasMask = true;
+                        break;
+                    }
+                }
+
                 // Rank ALL conditioning products (regular + deep) together.
-                // rankProducts('conditioner') already includes deep_condition products as candidates.
-                // The ranking system scores based on current conditions.
                 var allRanked = PlanGenerator.rankProducts('conditioner', conditions, inventory);
 
                 // When upgradeConditioner is called, the user has reported symptoms that warrant
@@ -9011,11 +9130,63 @@
                     bestUpgrade = { productId: 'elvive-total-repair-5-balm', productName: 'Total Repair 5 Damage Erasing Balm', reason: 'Deep conditioning upgrade' };
                 }
 
-                condStep.productId = bestUpgrade.productId;
-                condStep.productName = bestUpgrade.productName;
-                condStep.instruction = 'Section into 4+ parts. Apply generously. ' + (bestUpgrade.reason || 'Upgraded for current conditions.');
-                if (!plan.productSwaps) plan.productSwaps = [];
-                plan.productSwaps.push({ step: condStep.id, from: currentId, to: bestUpgrade.productId });
+                // Check if the best upgrade is a deep conditioner — if so, use dual conditioning
+                var isDeepUpgrade = false;
+                for (var dp = 0; dp < inventory.length; dp++) {
+                    if (inventory[dp].id === bestUpgrade.productId && inventory[dp].intelligence && inventory[dp].intelligence.step === 'deep_condition') {
+                        isDeepUpgrade = true;
+                        break;
+                    }
+                }
+
+                if (isDeepUpgrade && !hasMask) {
+                    // === DUAL CONDITIONING (diagnostic-triggered) ===
+                    // Insert mask step BEFORE the conditioner, keep conditioner as sealing step
+                    var maskStep = {
+                        id: 'step-mask-diag',
+                        number: condStep.number,
+                        stepType: 'deep_condition',
+                        productId: bestUpgrade.productId,
+                        productName: bestUpgrade.productName,
+                        stepLabel: 'Deep Condition (Mask) 🧢',
+                        inventoryName: bestUpgrade.productName,
+                        instruction: 'Section into 4+ parts. Apply generously. Heat cap on. ' + (bestUpgrade.reason || 'Upgraded for current conditions.'),
+                        scienceBadge: null,
+                        timer: { duration: 600, label: 'Deep condition 🧢' },
+                        tip: '🧖 Mask step added — ' + (bestUpgrade.reason || 'deep conditioning upgrade for current hair state.'),
+                        phase: condStep.phase,
+                        alternatives: [],
+                        useUpNote: null
+                    };
+
+                    // Insert mask before conditioner
+                    plan.steps.splice(condIdx, 0, maskStep);
+
+                    // Update the regular conditioner step (now at condIdx+1)
+                    var regStep = plan.steps[condIdx + 1];
+                    regStep.instruction = 'Quick rinse-through after mask. Smooths cuticle and seals in the deep treatment.';
+                    regStep.stepLabel = 'Conditioner (Seal)';
+                    if (regStep.timer) {
+                        regStep.timer.duration = 180;
+                        regStep.timer.label = 'Conditioner rinse';
+                    }
+                    regStep.tip = '🔒 Brief conditioner after mask — seals cuticle and locks in the deep repair.';
+
+                    // Re-number subsequent steps
+                    for (var rn = condIdx + 1; rn < plan.steps.length; rn++) {
+                        plan.steps[rn].number = rn + 1;
+                    }
+
+                    if (!plan.productSwaps) plan.productSwaps = [];
+                    plan.productSwaps.push({ step: maskStep.id, from: null, to: bestUpgrade.productId });
+                } else if (!hasMask) {
+                    // === SINGLE SWAP (upgrade is a regular conditioner, or mask already exists) ===
+                    condStep.productId = bestUpgrade.productId;
+                    condStep.productName = bestUpgrade.productName;
+                    condStep.instruction = 'Section into 4+ parts. Apply generously. ' + (bestUpgrade.reason || 'Upgraded for current conditions.');
+                    if (!plan.productSwaps) plan.productSwaps = [];
+                    plan.productSwaps.push({ step: condStep.id, from: currentId, to: bestUpgrade.productId });
+                }
             }
 
             function upgradeConditionerTime(plan, seconds) {
