@@ -10169,15 +10169,10 @@
             html += '<div id="quick-log-phases" style="margin-bottom:1.25rem;">';
             for (var pi = 0; pi < STEP_GROUPS.length; pi++) {
                 var group = STEP_GROUPS[pi];
-                // Count pre-selected products in this group
-                var groupProds = getProductsForGroup(inventory, group);
-                var preSelectedCount = 0;
-                // We'll compute this after selectedProducts is populated — use a placeholder class for update
                 html += '<div class="quick-activity-block" data-group="' + group.key + '" style="margin-bottom:0.5rem;">';
                 html += '<button class="btn-secondary quick-phase-btn" data-group="' + group.key + '" style="width:100%;justify-content:flex-start;text-align:left;">';
                 html += group.icon + ' ' + group.label;
                 if (group.heatCap) html += ' <span style="font-size:0.7rem;color:var(--muted);margin-left:0.5rem;">\uD83E\uDDE2 heat cap beneficial</span>';
-                html += '<span class="quick-phase-count" data-group-count="' + group.key + '" style="margin-left:auto;font-size:0.72rem;color:var(--green);font-weight:600;"></span>';
                 html += '</button>';
                 html += '<div class="quick-phase-products" data-group-products="' + group.key + '" style="display:none;padding:0.5rem 0 0.25rem 0.5rem;"></div>';
                 html += '</div>';
@@ -10204,63 +10199,6 @@
             // State
             var selectedProducts = [];
             var selectedRating = null;
-
-            // Pre-select products from most recent wash event
-            var state = StateManager.getState();
-            var events = state.events || [];
-            var preSelectSource = '';
-            if (events.length > 0) {
-                // Use the most recent event's products
-                var lastEvent = events[events.length - 1];
-                if (lastEvent.products && lastEvent.products.length > 0) {
-                    // Filter to products still in inventory
-                    var inventoryIds = inventory.map(function(p) { return p.id; });
-                    selectedProducts = lastEvent.products.filter(function(id) {
-                        return inventoryIds.indexOf(id) !== -1;
-                    });
-                    if (selectedProducts.length > 0) {
-                        var lastDate = new Date(lastEvent.date);
-                        var dateLabel = lastDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                        preSelectSource = 'Pre-filled from your ' + dateLabel + ' wash. Tap groups to adjust.';
-                    }
-                }
-            } else {
-                // No wash history — pre-select primary-tier products
-                selectedProducts = inventory
-                    .filter(function(p) { return p.tier === 'primary'; })
-                    .map(function(p) { return p.id; });
-                if (selectedProducts.length > 0) {
-                    preSelectSource = 'Pre-filled with your primary products. Tap groups to adjust.';
-                }
-            }
-
-            // Show pre-selection hint if applicable
-            if (preSelectSource) {
-                var hintEl = walkSection.querySelector('#quick-log-phases');
-                if (hintEl) {
-                    var hintDiv = document.createElement('div');
-                    hintDiv.style.cssText = 'font-size:0.75rem;color:var(--muted);margin-bottom:0.5rem;font-style:italic;';
-                    hintDiv.textContent = preSelectSource;
-                    hintEl.parentNode.insertBefore(hintDiv, hintEl);
-                }
-            }
-
-            // Update group count badges to show pre-selected products
-            function updateGroupCounts() {
-                for (var gi = 0; gi < STEP_GROUPS.length; gi++) {
-                    var g = STEP_GROUPS[gi];
-                    var gProds = getProductsForGroup(inventory, g);
-                    var count = 0;
-                    for (var gpi = 0; gpi < gProds.length; gpi++) {
-                        if (selectedProducts.indexOf(gProds[gpi].id) !== -1) count++;
-                    }
-                    var countEl = walkSection.querySelector('[data-group-count="' + g.key + '"]');
-                    if (countEl) {
-                        countEl.textContent = count > 0 ? count + ' selected' : '';
-                    }
-                }
-            }
-            updateGroupCounts();
 
             function renderProductsForGroup(groupKey, container) {
                 var group = STEP_GROUPS.find(function(g) { return g.key === groupKey; });

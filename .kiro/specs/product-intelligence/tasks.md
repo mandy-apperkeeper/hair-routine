@@ -66,13 +66,10 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
     - Lane auto-detected from selected style products
     - _Requirements: 3.1, 3.2, 3.3_
 
-  - [x] 4.2 Implement pre-selection from last wash
-    - On quick-log open, find the most recent wash event
-    - Pre-check all products that were used in that wash (filtered to current inventory)
-    - If no previous wash exists, pre-check products marked as primary tier
-    - Shows "N selected" count badge on each group button
-    - Hint text explains pre-fill source ("Pre-filled from your May 10 wash")
-    - User can deselect (skipped today) or select additional products
+  - [ ] 4.2 Implement smart pre-selection (DEFERRED to Recommendation Engine 8.1-8.2)
+    - Pre-selection should be driven by BeliefTracker posteriors + product ratings + current conditions
+    - NOT by recency (recency biases toward repeating routines and harms use-up rotation)
+    - Will be wired in when RecommendationEngine.getRecommendations() exists
     - _Requirements: 3.4_
 
   - [ ] 4.3 Add quick-add for unlisted products
