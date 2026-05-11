@@ -159,11 +159,11 @@
 
 These are adversarial angles identified during v2 scoring (May 10, 2026) that challenge assumptions in existing deep dives. Each should be run as a targeted adversarial search and appended to the relevant product report.
 
-| # | Question | Challenges | Target Report | Priority |
-|---|----------|-----------|---------------|----------|
-| A1 | Do sulfate-free shampoos have downsides for thick/coarse hair? (insufficient cleansing, product buildup, scalp issues) | EverPure Shampoo's "sulfate-free is always better for coarse hair" framing | `everpure-bond-shampoo.md` | Medium |
-| A2 | Does dimethicone in leave-in sprays actually build up meaningfully at spray concentrations? Or is the amount per application too small to matter? | 21-in-1's dimethicone/dimethiconol concern — may be overstated OR understated | `loreal-21in1.md` | Medium |
-| A3 | Are there competing leave-in products (mass-market, $5-15) with amodimethicone + coconut oil + UV filter that would challenge the 21-in-1's "best in category" claim? | 21-in-1's "no other leave-in matches it" conclusion | `loreal-21in1.md` | High |
+| # | Question | Challenges | Target Report | Priority | Status |
+|---|----------|-----------|---------------|----------|--------|
+| A1 | Do sulfate-free shampoos have downsides for thick/coarse hair? (insufficient cleansing, product buildup, scalp issues) | EverPure Shampoo's "sulfate-free is always better for coarse hair" framing | `everpure-bond-shampoo.md` | Medium | ✅ DONE — concern valid but mitigated by clarifying step |
+| A2 | Does dimethicone in leave-in sprays actually build up meaningfully at spray concentrations? Or is the amount per application too small to matter? | 21-in-1's dimethicone/dimethiconol concern — may be overstated OR understated | `loreal-21in1.md` | Medium | ✅ DONE — unresolved (no direct data found either way) |
+| A3 | Are there competing leave-in products (mass-market, $5-15) with amodimethicone + coconut oil + UV filter that would challenge the 21-in-1's "best in category" claim? | 21-in-1's "no other leave-in matches it" conclusion | `loreal-21in1.md` | High | ✅ DONE — Matrix Miracle Creator found (same formula, no dimethicone, no UV, higher price) |
 
 **Protocol:** Each adversarial search should:
 1. Log the actual search queries used (per Anti-Inflation Rule 3)

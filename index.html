@@ -7446,6 +7446,7 @@
 
             StateManager.saveWashEvent(event);
             updateSealState(event);
+            BeliefTracker.updateBeliefs(event);
 
             // Track which heat protectant was used for A/B alternation
             if (currentPlan.lane === 'blowout') {
@@ -7870,6 +7871,11 @@
                                 if (StateManager.isStorageAvailable()) {
                                     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
                                 }
+                                // Update beliefs with the deferred rating
+                                BeliefTracker.updateBeliefs({
+                                    products: state.events[eventIdx].products || [],
+                                    rating: rating
+                                });
                             }
                             localStorage.removeItem('hair_deferred_rating_date');
                             localStorage.removeItem('hair_deferred_rating_event_idx');
@@ -8397,6 +8403,7 @@
 
             StateManager.saveWashEvent(washEvent);
             updateSealState(washEvent);
+            BeliefTracker.updateBeliefs(washEvent);
             FeedbackEngine.analyze();
 
             // Track which heat protectant was used for A/B alternation
@@ -9725,6 +9732,7 @@
 
             StateManager.saveWashEvent(washEvent);
             updateSealState(washEvent);
+            BeliefTracker.updateBeliefs(washEvent);
             FeedbackEngine.analyze();
 
             // Track which heat protectant was used for A/B alternation
