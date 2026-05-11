@@ -12,7 +12,7 @@
  * - Posts 'SW_UPDATED' message to all clients so UI can show "Updated" indicator
  */
 
-var CACHE_VERSION = 'v10';
+var CACHE_VERSION = 'v11';
 var CACHE_NAME = 'hair-routine-cache-' + CACHE_VERSION;
 
 var PRECACHE_URLS = [
@@ -94,8 +94,9 @@ self.addEventListener('fetch', function(event) {
         return;
     }
 
-    // Other requests: network only
-    event.respondWith(fetch(event.request));
+    // Other origins (Cauldron, external APIs): don't intercept — let them pass through
+    // Wrapping cross-origin requests in respondWith causes SW cert/load errors
+    return;
 });
 
 /**
