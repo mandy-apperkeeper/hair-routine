@@ -25,7 +25,7 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 |------|------|
 | `index.html` | **Live app** (~5300 lines) — quick-log, walkthrough, history, status bar, recommendations, product inventory |
 | `hair-routine-v2.html` | Original spec build (superseded by v1 for live use) |
-| `hair-sw.js` | Service worker (exists, not yet registered) |
+| `hair-sw.js` | Service worker (registered, handles offline caching) |
 | `NEXT_STEPS.md` | Session plan with prioritized work items |
 | `SESSION_HANDOFF.md` | Current state, decisions, what's next |
 | `research/` | 5-phase product relationship research (complete) |
@@ -98,7 +98,7 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 - **Schema:** Version 12. Intelligence uses granular `step` values + optional `additionalSteps` array. Per-product experience/results ratings (v10). Use-up rotation state (v12).
 - **Known broken:** Nothing currently broken.
 - **Pending:** Research documentation write-up (coconut oil + OGX oil findings into research/ folder).
-- **What's next:** Daily Plan spec tasks.md → then implementation. Product Intelligence spec (IngredientKB, BeliefTracker) feeds into Daily Plan's recommendation engine. Service worker/PWA independent.
+- **What's next:** iPad testing of DiagnosticEngine adjust flow. Product deep dives. A6 adversarial pass.
 
 ## Design Principles (testing here first, generalize if effective)
 

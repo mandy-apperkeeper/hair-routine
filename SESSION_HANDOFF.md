@@ -68,13 +68,12 @@ The `AdjustmentEngine` (slimmed) handles only context adjustments:
 ## Next Session Priorities
 
 ### Immediate:
-1. **Service worker registration (PWA)** — `hair-sw.js` exists but isn't registered. Wire it up for offline support.
-2. **iPad testing** — verify adjust flow, cause cards, interventions on real device
+1. **iPad testing** — verify adjust flow, cause cards, interventions on real device
 
 ### Independent (any order):
-3. Product deep dives (everpure-glossing-mask, loreal-wonder-water, nym-curl-talk-gel)
-4. Re-score everpure-bond-shampoo.md
-5. A6 adversarial pass (stress-test the diagnostic engine with edge cases)
+2. Product deep dives (everpure-glossing-mask, loreal-wonder-water, nym-curl-talk-gel)
+3. Re-score everpure-bond-shampoo.md
+4. A6 adversarial pass (stress-test the diagnostic engine with edge cases)
 
 ---
 
