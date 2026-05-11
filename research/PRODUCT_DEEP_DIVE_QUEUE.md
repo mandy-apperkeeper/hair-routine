@@ -73,7 +73,7 @@
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
-| 7 | everpure-bond-shampoo | Bond Repair Shampoo | L'Oréal EverPure | primary | 📋 PLANNED | |
+| 7 | everpure-bond-shampoo | Bond Repair Shampoo | L'Oréal EverPure | primary | ✅ DONE | `research/products/everpure-bond-shampoo.md` — tier confirmed |
 | 8 | everpure-bond-conditioner | Bond Repair Conditioner | L'Oréal EverPure | primary | 📋 PLANNED | |
 | 9 | everpure-clarifying | Clarifying Shampoo | L'Oréal EverPure | primary | 📋 PLANNED | |
 | 10 | everpure-bond-pre | Bond Repair Pre-Shampoo Treatment | L'Oréal EverPure | supporting | 📋 PLANNED | |
