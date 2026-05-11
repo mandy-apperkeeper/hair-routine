@@ -13008,7 +13008,8 @@
         function setStatus(msg, isError) {
             statusEl.textContent = msg;
             statusEl.style.color = isError ? 'var(--accent)' : 'var(--green)';
-            if (msg) setTimeout(function() { statusEl.textContent = ''; }, 4000);
+            // Errors stay visible until next action; success fades after 4s
+            if (msg && !isError) setTimeout(function() { statusEl.textContent = ''; }, 4000);
         }
 
         function openNotes() {
