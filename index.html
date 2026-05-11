@@ -12930,7 +12930,7 @@
     (function() {
         var DEV_NOTES_KEY = 'hair-routine-dev-notes';
         var DROP_URL_KEY = 'hair-routine-drop-url';
-        var DEFAULT_DROP_URL = 'https://computus-prime:8443/api/drop';
+        var DEFAULT_DROP_URL = 'https://192.168.68.36:8443/api/drop';
         var fab = document.getElementById('dev-notes-fab');
         var overlay = document.getElementById('dev-notes-overlay');
         var input = document.getElementById('dev-notes-input');
@@ -12943,8 +12943,9 @@
         function getDropUrl() {
             try {
                 var stored = localStorage.getItem(DROP_URL_KEY);
-                // Migrate old HTTP URL to HTTPS
-                if (stored === 'http://computus-prime:8080/api/drop') {
+                // Migrate old URLs (HTTP or hostname-based) to current IP-based HTTPS
+                if (stored === 'http://computus-prime:8080/api/drop' ||
+                    stored === 'https://computus-prime:8443/api/drop') {
                     localStorage.setItem(DROP_URL_KEY, DEFAULT_DROP_URL);
                     return DEFAULT_DROP_URL;
                 }
