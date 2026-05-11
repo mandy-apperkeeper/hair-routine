@@ -8271,7 +8271,6 @@
                         currentObservations.quick.push(val);
                         btn.classList.add('selected');
                     }
-                    applyAdjustments();
                 };
             });
 
@@ -8287,7 +8286,6 @@
                         currentObservations.context.push(val);
                         btn.classList.add('selected');
                     }
-                    applyAdjustments();
                 };
             });
 
@@ -8303,7 +8301,6 @@
                         currentObservations.detailed.push(val);
                         btn.classList.add('selected');
                     }
-                    applyAdjustments();
                 };
             });
 
@@ -8317,10 +8314,12 @@
                 document.getElementById('adjust-layer-3').classList.add('visible');
             };
 
-            // Close button
+            // Close button — apply adjustments when done
             document.getElementById('adjust-close').onclick = function(e) {
                 e.stopPropagation();
                 overlay.classList.remove('visible');
+                // Apply all selected adjustments to the plan
+                applyAdjustments();
                 // Show toast summarizing selections
                 var allSelections = currentObservations.quick.concat(currentObservations.context, currentObservations.detailed);
                 if (allSelections.length > 0) {
@@ -8331,7 +8330,10 @@
 
             // Close on backdrop tap (only if tap is directly on the overlay backdrop, not on sheet or children)
             overlay.onclick = function(e) {
-                if (e.target === overlay) overlay.classList.remove('visible');
+                if (e.target === overlay) {
+                    overlay.classList.remove('visible');
+                    applyAdjustments();
+                }
             };
 
             // Prevent any tap inside the sheet from bubbling to the overlay backdrop handler
@@ -8344,6 +8346,7 @@
             var escHandler = function(e) {
                 if (e.key === 'Escape') {
                     overlay.classList.remove('visible');
+                    applyAdjustments();
                     document.removeEventListener('keydown', escHandler);
                 }
             };
