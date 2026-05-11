@@ -1849,7 +1849,10 @@
                     step: 'styling',
                     outcomes: { definition: 0.9, frizz_control: 0.9 },
                     cumulative: false,
-                    interactions: [{ with: 'marc-anthony-shield', type: 'blocks', note: 'PQ-69 may block polysilicone-29 deposition (medium confidence)' }],
+                    interactions: [
+                        { with: 'marc-anthony-shield', type: 'blocks', note: 'PQ-69 may block polysilicone-29 deposition (medium confidence)' },
+                        { with: 'garnier-diamond-sleek', type: 'blocks', note: 'PQ-69 may block polysilicone-29 deposition (medium confidence)' }
+                    ],
                     ingredients: ['polyquaternium-69', 'glycerin', 'pvp']
                 }
             },
@@ -1865,7 +1868,21 @@
                     outcomes: { smoothness: 0.8, strength: 0.4, frizz_control: 0.7 },
                     cumulative: false,
                     interactions: [{ with: 'nym-curl-talk-gel', type: 'blocks', note: 'PQ-69 may block polysilicone-29 (medium confidence)' }],
-                    ingredients: ['polysilicone-29', 'dimethicone', 'cyclopentasiloxane']
+                    ingredients: ['polysilicone-29', 'silicone quaternium-8', 'caffeine', 'panthenol']
+                }
+            },
+            {
+                id: 'garnier-diamond-sleek', name: 'Diamond Sleek Shine-Coat Smoothing Spray', brand: 'Garnier Fructis',
+                tier: 'primary', context: 'blowout', usingUp: false,
+                notes: 'Polysilicone-29 heat seal. Interchangeable with Marc Anthony — same active, lighter formula with hydrolyzed proteins.',
+                intelligence: {
+                    mechanisms: ['heat_protection', 'cuticle_smoothing'],
+                    delivery: 'leave_on',
+                    step: 'heat_protection',
+                    outcomes: { smoothness: 0.8, strength: 0.3, frizz_control: 0.7 },
+                    cumulative: false,
+                    interactions: [{ with: 'nym-curl-talk-gel', type: 'blocks', note: 'PQ-69 may block polysilicone-29 (medium confidence)' }],
+                    ingredients: ['polysilicone-29', 'stearamidopropyl dimethylamine', 'hydrolyzed wheat protein', 'argania spinosa kernel oil']
                 }
             },
             // Primary Rotation — Weekly
@@ -2371,6 +2388,7 @@
                     'loreal-21in1': 'leave_in',
                     'pantene-bond-spray': 'leave_in',
                     'marc-anthony-shield': 'heat_protection',
+                    'garnier-diamond-sleek': 'heat_protection',
                     'nym-curl-talk-gel': 'styling',
                     'got2b-ultra-glued': 'styling',
                     'garnier-filler-serum': 'finishing',
@@ -2730,6 +2748,16 @@
                 flags: ['heat_activated', 'durable_seal', 'activates_seal_state'],
                 interactionFlags: ['blocks_penetration_after'],
                 outcomeWeights: { smoothness: 0.8, frizz_control: 0.7, strength: 0.3 }
+            },
+            'silicone quaternium-8': {
+                inci: 'Silicone Quaternium-8',
+                commonName: 'Silicone Quaternium-8',
+                roles: ['conditioning', 'cuticle_smoothing'],
+                mechanism: 'Cationic silicone that combines conditioning (quaternary ammonium) with silicone smoothing. Deposits selectively on damaged areas due to charge attraction.',
+                mwClass: 'high',
+                flags: ['cationic', 'selective_binding', 'conditioning_silicone'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.6, shine: 0.5, frizz_control: 0.4 }
             },
 
             // ===== Bond Repair =====
@@ -3925,7 +3953,7 @@
             const products = event.products || [];
             const treatments = event.treatments || [];
 
-            if (event.lane === 'blowout' && products.includes('marc-anthony-shield')) {
+            if (event.lane === 'blowout' && (products.includes('marc-anthony-shield') || products.includes('garnier-diamond-sleek'))) {
                 // Activate seal
                 state.sealState.active = true;
                 state.sealState.appliedDate = event.date || new Date().toISOString();
@@ -3963,6 +3991,7 @@
             const PRODUCTS = {
                 NYM_GEL: 'nym-curl-talk-gel',
                 MARC_ANTHONY: 'marc-anthony-shield',
+                GARNIER_DIAMOND: 'garnier-diamond-sleek',
                 EVERPURE_CLARIFYING: 'everpure-clarifying',
                 GOT2B: 'got2b-ultra-glued',
                 OLAPLEX: 'olaplex-3',
@@ -5634,7 +5663,7 @@
 
                     // Domain rule: Heat protection required for blowout
                     if (stepType === 'heat_protection') {
-                        if (product.id === 'marc-anthony-shield') {
+                        if (product.id === 'marc-anthony-shield' || product.id === 'garnier-diamond-sleek') {
                             score += 25;
                             reasons.push('Polysilicone-29 heat seal + humidity barrier');
                         }

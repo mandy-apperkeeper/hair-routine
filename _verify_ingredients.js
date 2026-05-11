@@ -1,26 +1,35 @@
 // Verify all product ingredient arrays reference ingredients that exist in the KB
 const fs = require('fs');
 const html = fs.readFileSync('hair-routine/index.html', 'utf8');
+const script = html.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1];
 
-// Extract the full script content
-const scriptMatch = html.match(/<script[^>]*>([\s\S]*?)<\/script>/);
-const script = scriptMatch[1];
+// Extract INGREDIENT_KB + IngredientKB module (between the KB comment and StateManager)
+const kbStart = script.indexOf('// ===== IngredientKB (Ingredient Knowledge Base) =====');
+const smStart = script.indexOf('const StateManager = (function() {');
+let kbCode = script.substring(kbStart, smStart);
 
-// We need to extract just the INGREDIENT_KB data + IngredientKB module + DEFAULT_INVENTORY
-// Strategy: find and extract each piece, then eval together
-
-const kbDataStart = script.indexOf('// ===== IngredientKB (Ingredient Knowledge Base) =====');
-const kbModuleEnd = script.indexOf('})();\n', script.indexOf('return {', script.indexOf('const IngredientKB = (function()')));
-const kbSection = script.substring(kbDataStart, kbModuleEnd + 5);
-
+// Extract DEFAULT_INVENTORY — ends at "        ];\n\n        const DEFAULT_STATE"
 const invStart = script.indexOf('const DEFAULT_INVENTORY = [');
-const invEnd = script.indexOf('];\n', invStart + 100);
-const invSection = 'var ' + script.substring(invStart + 6, invEnd + 2); // change const to var
+const invEnd = script.indexOf('];\r\n\r\n        const DEFAULT_STATE');
+if (invEnd === -1) {
+    // Try Unix line endings
+    var invEndAlt = script.indexOf('];\n\n        const DEFAULT_STATE');
+    if (invEndAlt === -1) { console.error('Cannot find inventory end'); process.exit(1); }
+    var invCode = script.substring(invStart, invEndAlt + 2);
+} else {
+    var invCode = script.substring(invStart, invEnd + 2);
+}
+let invCodeFinal = invCode;
 
-const combined = kbSection + '\n' + invSection + `
+// Replace const/let with var for eval compatibility
+kbCode = kbCode.replace(/\bconst\b/g, 'var').replace(/\blet\b/g, 'var');
+invCodeFinal = invCodeFinal.replace(/\bconst\b/g, 'var');
+
+const testBody = kbCode + '\n' + invCodeFinal + `
+
 var errors = [];
-var totalIngredients = 0;
-var productsWithIngredients = 0;
+var total = 0;
+var withIngs = 0;
 
 DEFAULT_INVENTORY.forEach(function(product) {
     var ings = product.intelligence && product.intelligence.ingredients;
@@ -28,9 +37,9 @@ DEFAULT_INVENTORY.forEach(function(product) {
         errors.push(product.id + ': NO ingredients array');
         return;
     }
-    productsWithIngredients++;
+    withIngs++;
     ings.forEach(function(ing) {
-        totalIngredients++;
+        total++;
         var found = IngredientKB.getByName(ing);
         if (!found) {
             errors.push(product.id + ': "' + ing + '" NOT in KB');
@@ -38,29 +47,15 @@ DEFAULT_INVENTORY.forEach(function(product) {
     });
 });
 
-console.log('Products with ingredients:', productsWithIngredients + '/' + DEFAULT_INVENTORY.length);
-console.log('Total ingredient references:', totalIngredients);
-
+console.log('Products with ingredients: ' + withIngs + '/' + DEFAULT_INVENTORY.length);
+console.log('Total ingredient references: ' + total);
 if (errors.length > 0) {
-    console.log('\\nERRORS (' + errors.length + '):');
+    console.log('ERRORS (' + errors.length + '):');
     errors.forEach(function(e) { console.log('  ' + e); });
     process.exit(1);
 } else {
-    console.log('\\nALL INGREDIENT REFERENCES VALID');
+    console.log('ALL INGREDIENT REFERENCES VALID');
 }
 `;
 
-// Write to temp file and run
-fs.writeFileSync('hair-routine/_temp_verify.js', '(function() {\n"use strict";\n' + combined + '\n})();');
-
-try {
-    require('./_temp_verify.js');
-} catch(e) {
-    // Try eval instead
-    try {
-        eval('(function() {\n"use strict";\n' + combined + '\n})();');
-    } catch(e2) {
-        console.error('ERROR:', e2.message);
-        process.exit(1);
-    }
-}
+eval('(function() {\n' + testBody + '\n})();');

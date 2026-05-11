@@ -101,6 +101,7 @@
 |---|-----------|------|-------|------|--------|-------|
 | 18 | nym-curl-talk-gel | Curl Talk Flash Freeze Gel | Not Your Mother's | primary | 📋 PLANNED | |
 | 19 | marc-anthony-shield | Grow Long Anti-Frizz Shield | Marc Anthony | primary | 📋 PLANNED | |
+| 31 | garnier-diamond-sleek | Diamond Sleek Shine-Coat Smoothing Spray | Garnier Fructis | primary | 📋 PLANNED | Same active (Polysilicone-29) as Marc Anthony — interchangeable |
 | 20 | got2b-ultra-glued | Glued Blasting Freeze Spray/Gel | Got2b | supporting | 📋 PLANNED | |
 | 21 | maui-curl-smoothie | Curl Quench + Coconut Oil Curl Smoothie | Maui Moisture | supporting | 📋 PLANNED | |
 | 22 | ogx-bond-heat-spray | Bond Protein Repair 450°F Heat Protect Spray | OGX | supporting | 📋 PLANNED | |
@@ -139,9 +140,9 @@
 
 ## Progress
 
-- **Total products:** 30
+- **Total products:** 31
 - **Completed:** 10 (Dove conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + conditioner + 21-in-1 + clarifying)
-- **Remaining:** 20
+- **Remaining:** 21
 - **Estimated sessions:** ~7-9 (2-3 products per session)
 
 ## Next Session Starts With
