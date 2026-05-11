@@ -91,7 +91,7 @@
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
-| 15 | garnier-color-repair-cond | Color Repair Conditioner | Garnier Fructis | primary | 📋 PLANNED | Best conditioner — high priority |
+| 15 | garnier-color-repair-cond | Color Repair Conditioner | Garnier Fructis | primary | 📋 PLANNED | **ELEVATED PRIORITY** — adversarial finding (A4) confirms near-identical formula to EverPure with amodimethicone at higher position + pseudoceramide. May be co-primary or replacement. |
 | 16 | garnier-pre-shampoo | Hair Filler Inner Fiber Repair Pre-Shampoo | Garnier Fructis | supporting | 📋 PLANNED | |
 | 17 | garnier-filler-serum | Hair Filler Strength Repair Serum | Garnier Fructis | supporting | 📋 PLANNED | |
 
@@ -147,11 +147,11 @@
 
 ## Next Session Starts With
 
-1. `everpure-clarifying` — Clarifying Shampoo (L'Oréal EverPure, primary tier — periodic clarifying)
-2. `everpure-bond-pre` — Bond Repair Pre-Shampoo Treatment (L'Oréal EverPure, supporting tier)
-3. `garnier-color-repair-cond` — Color Repair Conditioner (Garnier Fructis, primary tier — best conditioner, highest comparison value)
+1. `garnier-color-repair-cond` — Color Repair Conditioner (Garnier Fructis, primary tier — **HIGHEST PRIORITY**: adversarial finding A4 shows near-identical formula to EverPure with potentially superior amodimethicone concentration + pseudoceramide. Full deep dive needed to confirm.)
+2. `everpure-clarifying` — Clarifying Shampoo (L'Oréal EverPure, primary tier — periodic clarifying)
+3. `everpure-bond-pre` — Bond Repair Pre-Shampoo Treatment (L'Oréal EverPure, supporting tier)
 
-**Rationale:** EverPure daily drivers complete. Finishing the EverPure line (clarifying + pre-shampoo) before moving to Garnier. The Garnier conditioner is especially important because the EverPure conditioner deep dive references it as the key comparison product.
+**Rationale:** Garnier conditioner moved to #1 because the adversarial pass (A4) revealed it's a near-identical formula to EverPure Bond Repair Conditioner — same amodimethicone-only system, same behentrimonium chloride, same citric acid + arginine, but with amodimethicone at position 3 (vs EverPure's position 4) and a pseudoceramide that EverPure lacks. Full deep dive will determine if it should be co-primary or replace EverPure as the primary conditioner.
 
 ---
 

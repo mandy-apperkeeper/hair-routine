@@ -173,21 +173,24 @@ The current formula is notably cleaner than the older version and cleaner than t
 
 | Feature | EverPure Bond Repair | Dove Bond Strength Conditioner | Dove Intensive Repair Conditioner | Garnier Color Repair Conditioner |
 |---------|---------------------|-------------------------------|----------------------------------|----------------------------------|
-| Primary quat | Behentrimonium Chloride (C22) | Behentrimonium Chloride | Behentrimonium Chloride | TBD (not yet researched) |
-| Silicone type | Amodimethicone only (selective) | Dimethiconol (non-selective) | Dimethiconol + Amodimethicone (trace) | TBD |
-| Buildup risk | Low (self-limiting) | Moderate-High | Moderate-High | TBD |
-| Preservatives | Phenoxyethanol + Benzoic Acid (safe) | Phenoxyethanol | MI/MCI + DMDM Hydantoin (older formula) | TBD |
-| Bond support | Citric acid + Arginine | None | None | TBD |
-| Formula complexity | 21 ingredients (clean) | ~30+ ingredients | ~35+ ingredients | TBD |
-| Tier | Primary | Use-up | Use-up | Primary |
+| Primary quat | Behentrimonium Chloride (C22) | Behentrimonium Chloride | Behentrimonium Chloride | Behentrimonium Chloride (C22) |
+| Silicone type | Amodimethicone only (selective) | Dimethiconol (non-selective) | Dimethiconol + Amodimethicone (trace) | **Amodimethicone only (selective, position 3)** |
+| Buildup risk | Low (self-limiting) | Moderate-High | Moderate-High | **Low (self-limiting)** |
+| Preservatives | Phenoxyethanol + Benzoic Acid (safe) | Phenoxyethanol | MI/MCI + DMDM Hydantoin (older formula) | Phenoxyethanol + Chlorhexidine (safe) |
+| Bond support | Citric acid + Arginine | None | None | **Citric acid + Arginine** |
+| Pseudoceramide | No (current formula) | No | No | **YES (2-Oleamido-1,3-Octadecanediol)** |
+| Formula complexity | 21 ingredients (clean) | ~30+ ingredients | ~35+ ingredients | **19 ingredients (cleanest)** |
+| Tier | Primary | Use-up | Use-up | **Primary (confirmed via adversarial A4)** |
 
-**Why EverPure wins for this hair profile:**
-1. Only conditioner in inventory with EXCLUSIVELY selective silicone (no dimethicone/dimethiconol)
-2. Cleanest formula (21 ingredients, no concerning preservatives)
+**Why EverPure wins for this hair profile (vs Dove — but see Garnier note below):**
+1. Only conditioner in inventory with EXCLUSIVELY selective silicone (no dimethicone/dimethiconol) — **Garnier also meets this criterion**
+2. Cleanest formula (21 ingredients, no concerning preservatives) — **Garnier is cleaner (19 ingredients)**
 3. Behentrimonium chloride at position 3 = high concentration = maximum detangling
-4. Amodimethicone at position 4 = high concentration = maximum selective conditioning
+4. Amodimethicone at position 4 = high concentration = maximum selective conditioning — **Garnier has it at position 3 (higher)**
 5. Won't contribute to buildup that requires extra clarifying
-6. Citric acid + arginine provide modest but real structural support
+6. Citric acid + arginine provide modest but real structural support — **Garnier also has both**
+
+**Garnier Color Repair Conditioner note (adversarial finding A4, May 2026):** The Garnier Fructis Hair Filler Color Repair Conditioner is a near-identical formula that matches or exceeds EverPure on every axis: amodimethicone at position 3 (higher concentration), same behentrimonium chloride base, same citric acid + arginine bond support, PLUS a pseudoceramide (2-Oleamido-1,3-Octadecanediol) that EverPure's current formula lacks. Both are primary-tier. Full deep dive pending — see `research/ADVERSARIAL_FINDINGS.md` (A4) for INCI comparison.
 
 ---
 
