@@ -7852,8 +7852,8 @@
                         if (condPlan.needsDual) {
                             // === DUAL CONDITIONING ===
                             // Insert mask step BEFORE the regular conditioner step.
-                            // Mask: deep repair, longer dwell, heat cap, structural
-                            // Regular conditioner: brief, surface smoothing/sealing (stays as-is or gets normal product)
+                            // Mask: deep repair, longer dwell, heat cap, structural (protein + ceramide)
+                            // Regular conditioner: full amodimethicone conditioning (selective cuticle repair, different mechanism)
                             var maskStep = {
                                 id: 'step-mask-' + (ct + 1),
                                 number: planSteps[ct].number,
@@ -7877,17 +7877,17 @@
                             // Update the regular conditioner step (now at ct+1)
                             var regStep = planSteps[ct + 1];
                             regStep.number = regStep.number + 1;
-                            // Keep regular conditioner as Garnier Color Repair (surface sealing)
+                            // Full conditioner step — amodimethicone does its own cuticle repair work
                             regStep.productId = 'garnier-color-repair-cond';
                             regStep.productName = 'Garnier Color Repair Conditioner';
                             regStep.inventoryName = 'Garnier Color Repair Conditioner';
-                            regStep.instruction = 'Section into 4+ parts. Apply mid-lengths to ends. Amodimethicone selectively binds damaged cuticle — different mechanism than the mask.';
+                            regStep.instruction = 'Section into 4+ parts. Apply generously mid-lengths to ends. Full 5 min — amodimethicone selectively fills damaged cuticle gaps. Different mechanism than the mask.';
                             regStep.stepLabel = 'Conditioner';
                             if (regStep.timer) {
                                 regStep.timer.duration = 300;
                                 regStep.timer.label = 'Conditioner';
                             }
-                            regStep.tip = '✨ Amodimethicone targets damaged cuticle areas the mask doesn\u2019t reach — different repair mechanism, not redundant.';
+                            regStep.tip = '✨ Not redundant with the mask — amodimethicone selectively binds to damaged cuticle areas, filling gaps the mask\u2019s protein/ceramide can\u2019t reach.';
                             regStep.useUpNote = null;
 
                             // Re-number subsequent steps
@@ -9205,13 +9205,13 @@
 
                     // Update the regular conditioner step (now at condIdx+1)
                     var regStep = plan.steps[condIdx + 1];
-                    regStep.instruction = 'Section into 4+ parts. Apply mid-lengths to ends. Amodimethicone selectively binds damaged cuticle — different mechanism than the mask.';
+                    regStep.instruction = 'Section into 4+ parts. Apply generously mid-lengths to ends. Full 5 min — amodimethicone selectively fills damaged cuticle gaps. Different mechanism than the mask.';
                     regStep.stepLabel = 'Conditioner';
                     if (regStep.timer) {
                         regStep.timer.duration = 300;
                         regStep.timer.label = 'Conditioner';
                     }
-                    regStep.tip = '✨ Amodimethicone targets damaged cuticle areas the mask doesn\u2019t reach — different repair mechanism, not redundant.';
+                    regStep.tip = '✨ Not redundant with the mask — amodimethicone selectively binds to damaged cuticle areas, filling gaps the mask\u2019s protein/ceramide can\u2019t reach.';
 
                     // Re-number subsequent steps
                     for (var rn = condIdx + 1; rn < plan.steps.length; rn++) {
