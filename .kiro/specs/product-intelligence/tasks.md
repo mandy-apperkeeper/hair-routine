@@ -19,7 +19,7 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
     - Target size: 40-60KB uncompressed
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-  - [ ] 1.2 Add ingredient lists to DEFAULT_INVENTORY products
+  - [x] 1.2 Add ingredient lists to DEFAULT_INVENTORY products
     - Add an `ingredients` array to each of the 24 default products containing their key INCI ingredients (not full lists — just the functionally relevant ones)
     - Source: INCIDecoder lookups already done in consultation handoff and Phase 1 research
     - This enables the DiscoveryParser to work on existing products as examples
