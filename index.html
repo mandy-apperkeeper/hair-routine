@@ -10982,41 +10982,20 @@
 
             if (!navigator.onLine) return;
 
-            // Strategy: use cached coordinates to fetch weather WITHOUT needing geolocation.
-            // This avoids the iOS Safari prompt-every-load issue on self-signed cert origins.
-            // Coordinates are cached for 24h (location doesn't change that often).
-            // Only fall back to geolocation if no cached coordinates exist.
-            try {
-                var coordCache = localStorage.getItem('hair_coords_cache');
-                if (coordCache) {
-                    var coords = JSON.parse(coordCache);
-                    var coordAgeHours = (Date.now() - coords.timestamp) / (1000 * 60 * 60);
-                    if (coordAgeHours < 24 && coords.lat !== null && coords.lon !== null) {
-                        fetchDewPointFromCoords(coords.lat, coords.lon);
-                        return;
-                    }
-                }
-            } catch(e) {}
-
-            // No cached coordinates — need geolocation
-            if (!navigator.geolocation) return;
-
-            // On iOS Safari with self-signed certs, permission state is never persisted as "granted".
-            // So we allow the prompt to fire — user sees it once, then coordinates are cached for 24h.
-            if (navigator.permissions) {
-                navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
-                    if (result.state === 'granted' || result.state === 'prompt') {
-                        fetchDewPointFromGeolocation();
-                    }
-                    // If 'denied', skip — user explicitly blocked it
-                }).catch(function() {
-                    // Permissions API not supported — try geolocation directly
-                    fetchDewPointFromGeolocation();
-                });
-            } else {
-                // No Permissions API (older browsers) — try geolocation directly
-                fetchDewPointFromGeolocation();
-            }
+            // Get location from the Cauldron server (same-origin, no permissions needed).
+            // The server resolves its own public IP to coordinates — same city, same weather.
+            // This completely avoids navigator.geolocation and its broken permission prompts
+            // on self-signed cert origins in iOS Safari.
+            fetch('/api/location', { signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined })
+                .then(function(resp) {
+                    if (!resp.ok) return null;
+                    return resp.json();
+                })
+                .then(function(loc) {
+                    if (!loc || loc.error || !loc.lat || !loc.lon) return;
+                    fetchDewPointFromCoords(loc.lat, loc.lon);
+                })
+                .catch(function() { /* silent — plan works without weather */ });
         }
 
         function fetchDewPointFromCoords(lat, lon) {
@@ -11042,28 +11021,6 @@
                     }
                 })
                 .catch(function() { /* silent — plan works without weather */ });
-        }
-
-        function fetchDewPointFromGeolocation() {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    var lat = position.coords.latitude;
-                    var lon = position.coords.longitude;
-
-                    // Cache coordinates for 24h so future loads skip the geolocation prompt entirely
-                    try {
-                        localStorage.setItem('hair_coords_cache', JSON.stringify({
-                            lat: lat,
-                            lon: lon,
-                            timestamp: Date.now()
-                        }));
-                    } catch(e) {}
-
-                    fetchDewPointFromCoords(lat, lon);
-                },
-                function() { /* geolocation denied — plan works without it */ },
-                { timeout: 5000 }
-            );
         }
 
         // ===== Inventory View =====
