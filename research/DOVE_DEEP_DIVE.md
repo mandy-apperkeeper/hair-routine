@@ -288,39 +288,130 @@ None of these were found.
 
 ---
 
-## Scorecard
+## Scorecard (v2 Rubric)
 
-### Dimension Scores
-
-| Dimension | Weight | Score | Detail |
-|-----------|--------|-------|--------|
-| 1. Source Fidelity | 30% | 90% | 4/5 sources verified (Glooshi, HairAide, INCIDecoder, Geltor all resolve and contain claimed info). PMC source inaccessible = UNABLE TO VERIFY. |
-| 2. Factual Currency | 25% | 100% | All 3 checked quantitative claims current: MW penetration thresholds (Malinauskyte 2020 — foundational, unchanged), HumaColl21 use rate (Geltor 2025), HairAide dimethiconol rating (2025). No newer contradicting data found. |
-| 3. Coverage & Completeness | 20% | 85% | Contradictions named (3). Gaps named (4). Multiple perspectives (user reviews vs. mechanism analysis). Limitations stated. Minor gap: no direct interaction-penalty measurement cited. |
-| 4. Reasoning Soundness | 10% | 90% | 3 inferences checked: (1) "buildup penalty" — evidence cited (non-selective + requires clarifying), chain explicit. (2) "SH-Polypeptide-121 too large" — MW calculation from amino acid count, threshold from Malinauskyte. (3) "frizz hypothesis fails" — evidence that Mandy's cuticle IS damaged + PQ-69 serves humidity role. All sound. |
-| 5. Tagging Compliance | 5% | 95% | Verified claims have sources. Inferred claims labeled ("Inferred:"). One borderline: "2-5% concentration" estimate not explicitly tagged as inferred. |
-| 6. Actionability | 7% | 100% | Clear recommendation (no tier change). Next steps implicit (continue use-up protocol). Decision criteria explicit (what would change the conclusion). |
-| 7. Presentation Clarity | 3% | 95% | Executive summary standalone. Terms defined where needed. Structure clear. |
-
-### Negative Criteria
-- Verified claim lacking source link? **No.** All verified claims have sources.
-- Recommendation despite noted insufficient evidence? **No.** Recommendation is to maintain status quo, supported by evidence.
-- Inferred claims presented as Verified? **No.** One borderline case (concentration estimate) but clearly framed as estimate.
-
-**Penalties:** 0%
-
-### Composite Score
-
-(0.30 × 90) + (0.25 × 100) + (0.20 × 85) + (0.10 × 90) + (0.05 × 95) + (0.07 × 100) + (0.03 × 95) - 0
-= 27 + 25 + 17 + 9 + 4.75 + 7 + 2.85
-= **92.6%**
-
-**Rating:** Proceed to final document (≥85%)
-
-### Key Failures
-- Source #20 (PMC silicone review) inaccessible — noted as gap, does not invalidate conclusions since multiple other sources cover the same ground.
-
-### Remediation Applied
-- None required (all dimensions above threshold).
+**Date:** May 10, 2026
+**Document scored:** research/DOVE_DEEP_DIVE.md
+**Scoring Level:** Full
 
 ---
+
+### PART A: Mechanical Checks (reliable)
+
+**1. Source Fidelity — Positions 1, 3, 5, 7, 9**
+
+| # | Source | URL Resolves | Contains Claimed Info | Fair Representation | Verdict |
+|---|--------|-------------|----------------------|--------------------:|---------|
+| 1 | Glooshi — Dimethicone/Silsesquioxane Copolymer | YES — fetched this session | YES — "lightweight film that is both pliable and durable," "film forming, hair conditioning, and hair fixing" confirmed | YES | PASS |
+| 3 | HairAide — Amodimethicone | YES — fetched this session | YES — selective binding to damaged areas confirmed | YES | PASS |
+| 5 | INCIDecoder — SH-Polypeptide-121 | YES — fetched this session | YES — "single chain recombinant human peptide, produced by fermentation in E. coli," "contains a maximum of 957 amino acids" confirmed | YES | PASS |
+| 7 | INCI Guide — SH-Polypeptide-121 | UNABLE TO VERIFY — not re-fetched this session | Report claims it confirms skin-focused positioning | N/A | UNABLE TO VERIFY |
+| 9 | INCIDecoder — Dove Bond Strength Conditioner | YES — accessible | YES — product INCI list present | YES | PASS |
+
+**Source Fidelity: 4 PASS + 1 UNABLE = (4 + 0.5)/5 = 90% → 22.5/25%**
+
+**2. Factual Currency — 3 most recent quantitative claims**
+
+| Claim | Source Date | Domain Recency Limit | Newer Contradicting Data? | Verdict |
+|-------|-----------|---------------------|--------------------------|---------|
+| MW penetration thresholds (<1 kDa deep, 1-10 kDa outer cortex, >10 kDa surface only) | 2020 (Malinauskyte) | Academic: 5 years | No newer contradicting data — still the definitive study on keratin peptide penetration | PASS |
+| HumaColl21 recommended use rate 0.1-1% | 2025 (Geltor) | Manufacturer data: current | No newer contradicting data — confirmed on Geltor site this session | PASS |
+| Dimethiconol "requires clarifying shampoo for thorough removal" | 2025 (HairAide) | Cosmetic chemistry: 2 years | No newer contradicting data | PASS |
+
+**Factual Currency: 3/3 PASS = 100% → 15/15%**
+
+**3. Tagging Compliance**
+
+| Check | Result |
+|-------|--------|
+| 3 Verified claims have linked sources? | YES — all "Verified:" tags include URLs |
+| 2 Inferred claims have reasoning chains? | YES — "2-5% concentration" has INCI position reasoning; "interaction penalty" has mechanism reasoning |
+| Any untagged factual claims? | **Borderline** — "2-5% concentration" estimate noted in original v1 scorecard as not explicitly tagged. However, it's clearly framed as an estimate. |
+
+**Tagging: PASS (borderline) = 95% → 4.75/5%**
+
+**4. Query Log Completeness**
+
+| Check | Result |
+|-------|--------|
+| Document includes search query log? | **NO** |
+
+**Query Log: FAIL → 0/5%**
+
+**Mechanical subtotal: 42.25/50%**
+
+---
+
+### PART B: Judgment Checks (limited reliability — treat as indicators)
+
+**5. Reasoning Soundness — 1st, middle, last inferences**
+
+| Inference | Evidence Cited? | Chain Explicit? | Alternatives Acknowledged? | Adversarial Finding | Verdict |
+|-----------|----------------|----------------|---------------------------|--------------------:|---------|
+| "Dimethiconol buildup penalty outweighs heavier-coating benefit for coarse hair" | YES — HairAide (buildup risk, requires clarifying), Lab Muffin (amodimethicone self-limits) | YES — non-selective = accumulates → requires clarifying → strips → re-coat cycle | YES — acknowledges HairAide recommends dimethiconol for coarse hair, explains why that's a different question | Searched for evidence that dimethiconol provides lasting benefit without buildup on coarse curly hair — none found. The "no appreciable buildup" claim from BeautyCon applies to standard dimethicone, not dimethiconol. | PASS |
+| "SH-Polypeptide-121 too large for hair penetration" | YES — INCIDecoder (957 AA), Malinauskyte 2020 (MW thresholds), Geltor (skin-focused claims) | YES — 957 AA × ~110 Da = ~105 kDa >> 10 kDa surface-only threshold | YES — acknowledges it could be a fragment, but even at half size still too large | Searched for evidence of SH-Polypeptide-121 hair-specific efficacy — none found. All manufacturer data is skin-focused. | PASS |
+| "Frizz hypothesis fails because Mandy's cuticle IS damaged + PQ-69 serves humidity barrier" | YES — frizz mechanism sources (Hairstory, SmartScience, Differ), hair profile context | YES — damaged cuticle = amodimethicone has binding sites; humidity barrier = PQ-69 gel film > conditioner silicone | YES — explicitly states what would change the conclusion | Searched for evidence that non-selective silicone provides frizz benefit on damaged hair that amodimethicone misses — none found. Amodimethicone targets damaged areas where frizz originates. | PASS |
+
+**Reasoning: 3/3 PASS = 100% → 20/20%**
+
+**6. Coverage and Completeness**
+
+| Check | Result |
+|-------|--------|
+| Contradictions named? | YES — 3 explicit contradictions with resolution |
+| Gaps named? | YES — 4 specific gaps listed |
+| 2+ alternative perspectives? | YES — user reviews (positive), ingredient databases (recommend for coarse), mechanism analysis (inferior to amodimethicone) |
+| Limitations stated? | YES — Self-Critique lists 5 weaknesses + 2 assumptions that could be wrong |
+| Right alternatives considered? | YES — dimethiconol vs amodimethicone, SH-Polypeptide-121 vs hydrolyzed proteins, non-selective vs selective for frizz |
+
+**Coverage: 5/5 PASS = 100% → 20/20%**
+
+**7. Actionability**
+
+| Recommendation | Next Step Named? | Decision Criteria Explicit? | Reversibility? | Verdict |
+|---------------|-----------------|---------------------------|---------------|---------|
+| "No tier change — continue use-up with compensation" | YES — continue use-up protocol | YES — "what would change the conclusion" lists 3 specific triggers | YES — tier revisitable if new evidence emerges | PASS |
+| "Compensation protocol remains correct" | YES — ensure leave-in and other steps use primary-tier products | YES — explains why compensation works (layered deposition) | YES — adjustable | PASS |
+
+**Actionability: 2/2 PASS = 100% → 10/10%**
+
+**Judgment subtotal: 50/50%**
+
+---
+
+### Negative Criteria
+
+| Check | Result | Penalty |
+|-------|--------|---------|
+| N1: Verified without source | None — all Verified claims have URLs | 0% |
+| N2: Recs despite insufficient evidence | None — recommendation maintains status quo | 0% |
+| N3: Confidence inflation (Inferred → Verified) | None — inferred claims clearly labeled | 0% |
+| N4: Verified tag fails on re-check | None — re-checked sources confirm claims | 0% |
+| N5: Query log missing/incomplete | **YES — no query log present** | **-5%** |
+
+**Total penalties: -5%**
+
+---
+
+### Composite Score: 87.25%
+### Rating: Excellent — ship as-is
+### Reliability Note: Mechanical score is 84.5% (42.25/50), judgment score is 100% (50/50). The mechanical score is reduced by the missing query log (-5% penalty + 0/5% on dimension 4). The judgment score is high — reasoning is thorough with explicit adversarial searches, coverage is comprehensive, and actionability is clear. The missing query log is a process gap from before that became standard practice.
+
+### Key Strengths
+- Four distinct analytical angles provide comprehensive coverage
+- MW calculation for SH-Polypeptide-121 is a novel analytical contribution
+- Contradictions section is thorough (3 named with resolution)
+- Self-Critique identifies the right weaknesses
+- Formulation comparison across 5 Dove variants shows depth
+
+### Key Failures
+- No search query log (written before this became standard)
+- One source (INCI Guide) not re-verified this session
+
+### Remediation Needed
+- Add query log as appendix (or note it wasn't maintained for this document)
+
+### vs. Original v1 Score
+- **v1:** 92.6% (weighted dimensions)
+- **v2:** 87.25% (mechanical/judgment split with penalty)
+- **Delta:** -5.35 points (entirely from missing query log)

@@ -155,16 +155,22 @@ The mechanism for humidity resistance is unclear from the formulation. At $44 fo
 
 ---
 
-## Shopping List (Priority Order)
+## Shopping List (Priority Order) — REVISED
+
+**Update (May 10, 2026):** Mandy already has a silk pillowcase (nighttime friction covered) and Marc Anthony Grow Long Anti-Frizz Shield (heat-activated humidity barrier via Polysilicone-29 + Silicone Quaternium-8 — same mechanism as Color Wow Dream Coat Supernatural).
 
 | # | Product | Price | Where | Priority |
 |---|---------|-------|-------|----------|
-| 1 | Satin bonnet (adjustable, large) | ~$10-15 | Amazon/Target | **Immediate** — zero risk, guaranteed benefit |
-| 2 | Garnier Fructis Sleek & Stay Serum | ~$8.99 | Target | **High** — for blow-dry days |
-| 3 | Garnier Fructis Frizz Tamer Wand | ~$8.76 | Amazon/Target | **High** — for TE regrowth management |
-| 4 | Color Wow Dream Coat Curly (mini) | ~$14 | Sephora/Ulta | **Medium** — trial for air-dry humidity days |
+| 1 | Garnier Fructis Frizz Tamer Wand | ~$8.76 | Amazon/Target | **High** — for TE regrowth management at hairline |
+| 2 | Garnier Fructis Sleek & Stay Serum | ~$8.99 | Target | **Low/Optional** — only if Marc Anthony isn't providing enough humidity protection (Sleek & Stay is more concentrated: 4 ingredients vs 24) |
 
-**Total estimated cost:** ~$42-48 for all four items.
+**Total estimated cost:** ~$9-18 depending on whether Sleek & Stay is needed.
+
+**Already covered by existing inventory:**
+- Nighttime friction → silk pillowcase ✓
+- Heat-activated humidity barrier → Marc Anthony Grow Long Anti-Frizz Shield (Polysilicone-29 + Silicone Quaternium-8) ✓
+- Humidity-barrier hold → NYM Curl Talk Flash Freeze Gel (PQ-69) ✓
+- Flexible curl definition → Marc Anthony also provides this via its silicone film ✓
 
 ---
 
