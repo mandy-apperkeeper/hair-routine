@@ -75,7 +75,7 @@
 |---|-----------|------|-------|------|--------|-------|
 | 7 | everpure-bond-shampoo | Bond Repair Shampoo | L'Oréal EverPure | primary | ✅ DONE | `research/products/everpure-bond-shampoo.md` — tier confirmed |
 | 8 | everpure-bond-conditioner | Bond Repair Conditioner | L'Oréal EverPure | primary | ✅ DONE | `research/products/everpure-bond-conditioner.md` — tier confirmed |
-| 9 | everpure-clarifying | Clarifying Shampoo | L'Oréal EverPure | primary | 📋 PLANNED | |
+| 9 | everpure-clarifying | Clarifying Shampoo | L'Oréal EverPure | primary | ✅ DONE | `research/products/everpure-clarifying.md` — tier confirmed (periodic use) |
 | 10 | everpure-bond-pre | Bond Repair Pre-Shampoo Treatment | L'Oréal EverPure | supporting | 📋 PLANNED | |
 | 11 | everpure-glossing-mask | Glossing 5-Min Lamination Mask | L'Oréal EverPure | supporting | 📋 PLANNED | |
 
@@ -140,9 +140,9 @@
 ## Progress
 
 - **Total products:** 30
-- **Completed:** 9 (Dove deep dive conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + EverPure conditioner + 21-in-1 leave-in)
-- **Remaining:** 21
-- **Estimated sessions:** ~7-10 (2-3 products per session)
+- **Completed:** 10 (Dove conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + conditioner + 21-in-1 + clarifying)
+- **Remaining:** 20
+- **Estimated sessions:** ~7-9 (2-3 products per session)
 
 ## Next Session Starts With
 
