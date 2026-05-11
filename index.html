@@ -1627,6 +1627,16 @@
                 <span class="tracker-inline"><span class="tracker-label">Wash</span> <span class="tracker-value" id="status-wash">—</span></span>
                 <span class="tracker-inline"><span class="tracker-label">Clarify</span> <span class="tracker-value" id="status-clarify">—</span></span>
                 <span class="tracker-inline"><span class="tracker-label">Bond Repair</span> <span class="tracker-value" id="status-protein">—</span></span>
+                <span class="tracker-inline" id="status-seal-container" style="display:none;"><span class="tracker-label">Seal</span> <span class="tracker-value" id="status-seal">—</span></span>
+            </div>
+
+            <!-- Export reminder (shown when 30+ days since last export) -->
+            <div class="compensation-card" id="export-reminder-card" aria-label="Data backup reminder" style="display:none;">
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin:0 0 0.5rem;">💾 It's been a while since you backed up your data. Export keeps your history safe if anything happens to this device.</p>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <button class="btn-secondary" id="export-reminder-export" style="font-size:0.8rem;">Export now</button>
+                    <button class="comp-dismiss" id="export-reminder-dismiss" style="background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;min-height:44px;">Dismiss</button>
+                </div>
             </div>
 
             <!-- Daily Plan (generated dynamically) -->
@@ -5452,6 +5462,30 @@
             document.getElementById('status-clarify').textContent = clarifyDays !== null ? (clarifyDays === 0 ? 'today' : clarifyDays + 'd') : '—';
             document.getElementById('status-protein').textContent = proteinDays !== null ? (proteinDays === 0 ? 'today' : proteinDays + 'd') : '—';
 
+            // Seal state indicator
+            var sealContainer = document.getElementById('status-seal-container');
+            var sealValue = document.getElementById('status-seal');
+            if (sealState.active) {
+                var washesRemaining = 4 - (sealState.washesSinceApplied || 0);
+                sealContainer.style.display = '';
+                sealValue.textContent = '🔒 ' + washesRemaining + ' wash' + (washesRemaining !== 1 ? 'es' : '') + ' left';
+                sealValue.style.color = 'var(--blue)';
+            } else {
+                sealContainer.style.display = 'none';
+            }
+
+            // Export reminder (30+ days since last backup)
+            var exportCard = document.getElementById('export-reminder-card');
+            var lastExportDate = state.lastExport;
+            var daysSinceExport = lastExportDate ? daysSince(lastExportDate) : null;
+            var exportDismissed = false;
+            try { exportDismissed = localStorage.getItem('hair_export_reminder_dismissed') === new Date().toISOString().slice(0, 7); } catch(e) {}
+            if (!exportDismissed && events.length >= 5 && (daysSinceExport === null || daysSinceExport >= 30)) {
+                exportCard.style.display = '';
+            } else {
+                exportCard.style.display = 'none';
+            }
+
             // Empty state vs status summary
             var statusSummary = document.getElementById('status-summary');
             if (events.length === 0) {
@@ -8327,6 +8361,29 @@
             document.getElementById('btn-quick-log').addEventListener('click', function() {
                 showQuickLog();
             });
+
+            // Wire export reminder
+            var exportReminderExport = document.getElementById('export-reminder-export');
+            if (exportReminderExport) {
+                exportReminderExport.addEventListener('click', function() {
+                    var data = StateManager.exportData();
+                    var blob = new Blob([data], { type: 'application/json' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'hair-routine-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    document.getElementById('export-reminder-card').style.display = 'none';
+                });
+            }
+            var exportReminderDismiss = document.getElementById('export-reminder-dismiss');
+            if (exportReminderDismiss) {
+                exportReminderDismiss.addEventListener('click', function() {
+                    document.getElementById('export-reminder-card').style.display = 'none';
+                    try { localStorage.setItem('hair_export_reminder_dismissed', new Date().toISOString().slice(0, 7)); } catch(e) {}
+                });
+            }
         }
 
         // Initialize when DOM is ready
