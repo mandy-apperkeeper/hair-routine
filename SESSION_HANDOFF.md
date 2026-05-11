@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 27)
+**Last updated:** May 10, 2026 (Session 28)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -9,64 +9,80 @@
 ## Current State
 
 ### What's Live & Working
-- Everything from Session 26 remains working
-- No code changes this session (research-only)
+- Everything from Session 27 remains working
+- Garnier Diamond Sleek added to inventory (primary tier, blowout context)
+- Marc Anthony ingredient list corrected (was wrong — now verified from INCI)
+- Seal state logic updated to trigger on either Marc Anthony OR Diamond Sleek
+- Scoring logic updated for Diamond Sleek
+- NYM gel interaction list updated to include Diamond Sleek blocking note
 
-### What Was Done This Session (27)
+### What Was Done This Session (28)
 
-1. **Product Deep Dive: EverPure Bond Repair Shampoo** (`research/products/everpure-bond-shampoo.md`)
-   - 5-surfactant sulfate-free system analyzed (SCI, sulfosuccinate, sarcosinate, coco-betaine, SLSA)
-   - Amodimethicone delivery via coacervation mechanism confirmed
-   - Citric acid "bond repair" claim assessed: legitimate for pH/cuticle closure, overstated for cortical crosslinking in rinse-off format
-   - Two formulation versions identified (34-ingredient current vs 41-ingredient reformulated)
-   - **Tier confirmed: Primary Rotation**
+1. **Product Recommendations Research** (`research/PRODUCT_RECOMMENDATIONS_FOR_HAIR_PROFILE.md`)
+   - Full gap analysis of Mandy's product collection vs. stated concerns
+   - 4 gaps identified, 4 products recommended
+   - After discussion: 3 of 4 gaps already covered by existing inventory (silk pillowcase, Marc Anthony, Diamond Sleek)
+   - Only remaining gap: Garnier Frizz Tamer Wand for TE regrowth flyaways (~$9)
+   - Scored 90% (Excellent)
 
-2. **Product Deep Dive: EverPure Bond Repair Conditioner** (`research/products/everpure-bond-conditioner.md`)
-   - Current formula (May 2026) is remarkably clean: only 21 ingredients, amodimethicone-only (no dimethicone)
-   - Older formula (INCIDecoder Feb 2026) has dimethicone + bis-cetearyl amodimethicone — L'Oréal improved it
-   - Behentrimonium chloride (C22) at position 3 = premium detangling for coarse hair
-   - Amodimethicone at position 4 = optimal delivery in conditioner format
-   - **Tier confirmed: Primary Rotation**
+2. **Marc Anthony vs Diamond Sleek Comparison**
+   - Both contain Polysilicone-29 (same heat-activated humidity barrier)
+   - Marc Anthony: + Silicone Quaternium-8 (stronger film), spray, 6.7oz
+   - Diamond Sleek: + hydrolyzed proteins + argan oil (lighter, more shine), spray, 4.6oz
+   - Interchangeable — use whichever is open, finish one before starting the other
+   - OR: alternate for A/B comparison (Mandy's preference)
 
-3. **Product Deep Dive: L'Oréal 21-in-1 Leave-In Spray** (`research/products/loreal-21in1.md`)
-   - Coconut oil at position 2 = cortex-penetrating oil in leave-on format (optimal delivery)
-   - Amodimethicone at position 3 = selective conditioning in leave-on format (optimal delivery)
-   - Ethylhexyl salicylate = UV protection (rare in leave-ins, genuine differentiator)
-   - PQ-37 = film-forming polymer for curl definition support
-   - Minor concern: dimethicone (pos 10) + dimethiconol (pos 19) present but at lower concentrations
-   - **Tier confirmed: Primary Rotation**
+3. **Inventory Update** (code changes to `index.html`)
+   - Added `garnier-diamond-sleek` product entry
+   - Fixed `marc-anthony-shield` ingredients (removed incorrect dimethicone/cyclopentasiloxane, added verified INCI)
+   - Updated seal state activation: `products.includes('marc-anthony-shield') || products.includes('garnier-diamond-sleek')`
+   - Updated scoring logic for both products
+   - Added Diamond Sleek to step mapping and PRODUCTS constants
+   - Added Diamond Sleek to NYM gel interaction array
 
-4. **Updated PRODUCT_DEEP_DIVE_QUEUE.md** — 9/30 complete, next batch: EverPure Clarifying + Pre-Shampoo + Garnier Color Repair Conditioner
+4. **Research Scores Updated**
+   - `research/RESEARCH_SCORES.md` — new row for Product Recommendations (90%)
+   - `RESEARCH_SCORES.md` (global) — same
+
+5. **Product Deep Dive Queue Updated**
+   - Diamond Sleek added as #31 in Batch 5
+   - Total products: 31
 
 ### Decisions Made This Session
 
-- **EverPure conditioner has been reformulated** — current production (May 2026) removes dimethicone entirely. If Mandy's bottle is the older version, she'll get the improved formula on next purchase.
-- **21-in-1 and Pantene Miracle Rescue are complementary, not competing** — 21-in-1 is daily protection/conditioning, Pantene is strategic bond repair.
-- **All three EverPure daily drivers confirmed as Primary tier** — no changes needed.
+- **Marc Anthony and Diamond Sleek are interchangeable** — same active (Polysilicone-29), same role. Don't use both on same wash day.
+- **Mandy wants to alternate them for A/B comparison** — not rotation for its own sake, but to gather per-product rating data and determine which performs better. This needs a small code change to the blowout walkthrough (next session).
+- **Silk pillowcase is sufficient** — no bonnet needed.
+- **Only remaining product gap is Garnier Frizz Tamer Wand** (~$9) for TE regrowth flyaway management at hairline.
+- **Virtue Frizz Block ($44) is not worth it** — INCI shows no identifiable humidity-barrier mechanism despite marketing claims.
+- **Garnier Sleek & Stay is NOT owned** — was discussed but Mandy doesn't have it. Not needed since Marc Anthony + Diamond Sleek cover the same gap.
 
 ### Known Issues (carry to next session)
 
 - **iOS silent mode mutes Web Audio** — expected platform behavior. Vibration still works as fallback.
-- If the app is fully backgrounded when timer expires, the chime plays when you return to the app.
+- **Blowout walkthrough hardcodes Marc Anthony** — needs update to alternate between Marc Anthony and Diamond Sleek for A/B comparison.
 - Session 25 commit still needs push (timer alert fix).
 
 ### What's NOT Done (carry forward)
 
-#### PRODUCT DEEP DIVE PIPELINE (next priority — research)
-**Next batch:** EverPure Clarifying + Pre-Shampoo Treatment, then Garnier Color Repair Conditioner
+#### IMMEDIATE NEXT: Blowout Walkthrough A/B Alternation
+- The blowout walkthrough step currently hardcodes `productId: 'marc-anthony-shield'`
+- Needs logic to alternate between Marc Anthony and Diamond Sleek on successive blowout days
+- Per-product ratings already exist — this just needs the walkthrough to suggest the other product next time
+- Small change: track which was used last, suggest the other
 
-**Queue file:** `research/PRODUCT_DEEP_DIVE_QUEUE.md` has full tracking.
+#### PRODUCT DEEP DIVE PIPELINE (research)
+**Next batch:** EverPure Pre-Shampoo + Garnier Color Repair Conditioner
+**Queue file:** `research/PRODUCT_DEEP_DIVE_QUEUE.md` has full tracking (10/31 complete).
 
 #### FOLD DATA ADHERENCE INTO GLOBAL PROTOCOL
 - Add "Data Adherence" section to `~/.kiro/steering/deep-dive-auto.md`
-- Keep hair-routine's `research-data-adherence.md` as domain-specific extension
 
 #### USE-UP PRODUCT ROTATION (code — after research pipeline progresses)
-Design approach scoped in Session 22. Needs research docs to inform compensation logic.
+Design approach scoped in Session 22.
 
 #### PRODUCT INTELLIGENCE (next code build)
 - Task 1.1: IngredientKB module (~40-60KB ingredient data)
-- Everything else in the intelligence spec depends on it
 
 #### Other carry-forward items
 - Daily Plan polish
@@ -79,7 +95,7 @@ Design approach scoped in Session 22. Needs research docs to inform compensation
 - **Daily Plan view** — auto-generated plan, scrollable steps, multi-select adjust overlay, frizzy=Got2b swap, "no wash needed" screen, offline indicator, condensed checklist, end-of-plan rating, lane override
 - **PWA support** — service worker v8 (network-first HTML, stale-while-revalidate API), manifest, install capability, update banner, one-time SW migration
 - **7-group step-based quick-log** with sub-menus + heat cap badges + multi-group products
-- **Product inventory** (30 products) with full intelligence metadata + per-product ratings
+- **Product inventory** (31 products) with full intelligence metadata + per-product ratings
 - **Post-wash attribution card**
 - **Walkthrough engine**, history, status bar, dew point auto-detection (permission-gated), recommendations, compensation logic, gel gap
 - **Learn section** with science cards, frizz diagnostic
@@ -97,15 +113,11 @@ Design approach scoped in Session 22. Needs research docs to inform compensation
 ## Cumulative Decisions (Do Not Revisit)
 
 All previous decisions remain, plus:
-- **Product deep dives are 1:1** — one product per document, no batching output
-- **Same research depth for all tiers** — use-up products get full analysis too
-- **Educational content tone:** science-literate plain language for Mandy as user
-- **Practical Education section answers:** why using it, how to know it works, how to know it doesn't, why this over alternatives, when to use something else, what to look for in replacements
-- **Adjust overlay is multi-select** — all three layers use toggle behavior. No auto-close on Layer 1.
-- **Texture/softness is NOT a plan adjustment** — it's a long-term tracking concern for post-wash feedback.
-- **Geolocation never prompts** — only uses if permission already granted via Permissions API check.
-- **Use-up rotation should be automatic** — the plan cycles use-up products in with compensation, not manual swapping.
-- **Mandy's core hair concerns:** frizz, dryness, reduced curl retention/styling hold. Hairstylist attributed to dryness.
+- **Marc Anthony and Diamond Sleek are interchangeable** — same Polysilicone-29 mechanism, same tier, same step. Alternate for A/B comparison.
+- **Garnier Sleek & Stay is NOT owned** — don't recommend purchasing (existing products cover the gap).
+- **Virtue Frizz Block is overpriced** — no identifiable humidity-barrier mechanism in INCI despite $44 price.
+- **Only remaining product gap: Garnier Frizz Tamer Wand** (~$9) for TE regrowth flyaways.
+- **Silk pillowcase is sufficient nighttime protection** — no bonnet needed.
 
 ---
 
@@ -113,14 +125,14 @@ All previous decisions remain, plus:
 
 | File | Role |
 |------|------|
-| `index.html` | Live app (~8300+ lines) |
+| `index.html` | Live app (~8400+ lines) |
 | `hair-sw.js` | Service worker v8 |
 | `manifest.json` | PWA manifest |
 | `icon-192.svg`, `icon-512.svg` | App icons |
 | `research/` | 5-phase product relationship research |
-| `research/PRODUCT_DEEP_DIVE_QUEUE.md` | **NEW** — pipeline tracking for all 30 product deep dives |
-| `research/DOVE_DEEP_DIVE.md` | Dove conditioner/mask deep dive (complete) |
-| `research/products/` | **NEW** — individual product deep dive documents (to be created) |
+| `research/PRODUCT_DEEP_DIVE_QUEUE.md` | Pipeline tracking for all 31 product deep dives |
+| `research/PRODUCT_RECOMMENDATIONS_FOR_HAIR_PROFILE.md` | **NEW** — gap analysis + product recs for hair profile |
+| `research/products/` | Individual product deep dive documents |
 | `HAIR_CONSULTATION_HANDOFF.md` | Hair science + product reference |
 | `HAIR_SCIENCE_VERIFICATION_REPORT.md` | Verified science claims |
 | `.kiro/specs/daily-plan/` | Daily Plan spec (design + tasks) |
@@ -145,25 +157,25 @@ All previous decisions remain, plus:
 | 22 | Nav fix, geolocation fix, multi-select adjust, use-up rotation scoped | Complete |
 | 23 | Dove placement discussion, research-data-adherence steering, deep-dive scoped | Complete |
 | 24 | Product deep dive pipeline: queue, template, execution plan | Complete |
-| 25 | **Timer alert sound fix — Web Audio chime + Audible compatibility** | Complete |
+| 25 | Timer alert sound fix — Web Audio chime + Audible compatibility | Complete |
 | 26 | Orientation, seal state commit, next-build assessment | Complete |
-| 27 | **Product deep dives: EverPure shampoo + conditioner + 21-in-1 leave-in** | Complete |
-| 26 | **Orientation — seal indicator + export reminder committed, next-build assessed** | Complete |
+| 27 | Product deep dives: EverPure shampoo + conditioner + 21-in-1 leave-in | Complete |
+| 28 | **Product recs research + Diamond Sleek added to inventory + A/B comparison scoped** | Complete |
 
 ---
 
 ## Repo State
 
 - **Branch:** main
-- **Latest commit:** chore: auto-commit uncommitted changes (seal indicator + export reminder)
-- **Pushed:** Yes
+- **Latest commit:** chore: auto-commit uncommitted changes (Diamond Sleek inventory + research doc)
+- **Pushed:** Needs push
 
 ---
 
 ## Next Session: Start Here
 
-**Code build:** Product Intelligence Task 1.1 — IngredientKB module. This is the foundation for the entire intelligence system. ~100 ingredients as a JS object literal embedded in `index.html`. Sources: `HAIR_CONSULTATION_HANDOFF.md`, `research/PHASE1_INGREDIENT_FUNCTION_MAP.md`, INCIDecoder.
+**Quick code fix (15 min):** Update blowout walkthrough to alternate between Marc Anthony and Diamond Sleek. Track which was used last in state, suggest the other next blowout day. Per-product ratings will accumulate data for comparison.
 
-**Research (if preferred over code):** Product Deep Dive Pipeline — 3 Dove products next (INCI already pulled). Protocol in `deep-dive-auto.md` + `research-data-adherence.md`.
+**Research (if preferred):** Product Deep Dive Pipeline — EverPure Pre-Shampoo + Garnier Color Repair Conditioner next.
 
-**Quick alternative:** Hair photo upload spec (high priority in CHANGE_LOG, needs its own spec before building).
+**Or:** IngredientKB module (Product Intelligence Task 1.1) — the foundation for the intelligence system.
