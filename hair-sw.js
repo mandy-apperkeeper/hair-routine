@@ -12,7 +12,7 @@
  * - Posts 'SW_UPDATED' message to all clients so UI can show "Updated" indicator
  */
 
-var CACHE_VERSION = 'v8';
+var CACHE_VERSION = 'v9';
 var CACHE_NAME = 'hair-routine-cache-' + CACHE_VERSION;
 
 var PRECACHE_URLS = [

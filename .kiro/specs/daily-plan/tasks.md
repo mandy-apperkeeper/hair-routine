@@ -183,31 +183,31 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
       - `deferredRatingDate: string|null`
     - Existing events unchanged (new fields absent = null behavior)
 
-- [ ] 8. Navigation and Integration
-  - [ ] 8.1 Replace landing page with daily plan
+- [x] 8. Navigation and Integration
+  - [x] 8.1 Replace landing page with daily plan
     - On app open: auto-generate today's plan (PlanGenerator.suggestLane + buildPlan)
     - Plan view IS the landing page (no navigation required to see it)
     - Preserve "Something else?" toggle for manual lane override
     - Preserve nav links: History, Products, Settings
 
-  - [ ] 8.2 Wire plan completion into existing systems
+  - [x] 8.2 Wire plan completion into existing systems
     - On rate/skip: call StateManager.saveWashEvent() with full plan data
     - Update seal state based on products in plan
     - Update cooldown timers
     - Trigger existing FeedbackEngine analysis
     - Show existing post-wash attribution card (mechanism-based)
 
-  - [ ] 8.3 Preserve existing quick-log as fallback
+  - [x] 8.3 Preserve existing quick-log as fallback
     - Quick-log remains accessible (for logging past washes, not today's plan)
     - Accessible from History view or a "Log a past wash" link
     - No changes to quick-log functionality
 
-  - [ ] 8.4 Connect science content
+  - [x] 8.4 Connect science content
     - [ℹ] popups link to existing Learn section content where available
     - Science badges on steps use existing badge data from walkthrough engine
     - "Learn more" link in info popup navigates to full science card
 
-- [ ] 9. Checkpoint — verify integration
+- [x] 9. Checkpoint — verify integration
   - Test full flow: open app → plan shows → follow plan → rate → event saved
   - Test deferred rating: skip → reopen next day → prompt appears → rate → saved
   - Test quick-log still works for past washes
@@ -215,19 +215,19 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
   - Test compensation engine still fires on landing
   - Test on iPad viewport (primary target device)
 
-- [ ] 10. Polish and Edge Cases
-  - [ ] 10.1 Handle "no wash needed" state
+- [x] 10. Polish and Edge Cases
+  - [x] 10.1 Handle "no wash needed" state
     - When days since wash < preferred interval AND no observations suggest washing:
     - Show minimal screen: "Your hair is doing fine. Next wash suggested: [date]"
     - "Wash anyway" button generates a plan if user overrides
     - Refresh plan available as lighter alternative
 
-  - [ ] 10.2 Handle offline/API failure gracefully
+  - [x] 10.2 Handle offline/API failure gracefully
     - If dew point unavailable: generate plan with "moderate" default
     - Show subtle indicator: "☁️ Weather unavailable — using moderate defaults"
     - Plan still fully functional without weather data
 
-  - [ ] 10.3 Accessibility pass
+  - [x] 10.3 Accessibility pass
     - Plan steps: semantic list with aria-labels
     - Phase headers: proper heading hierarchy
     - Timer: aria-live region for countdown announcements
@@ -236,13 +236,13 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
     - Condensed checkboxes: proper label associations
     - Rating emojis: aria-labels with text descriptions
 
-  - [ ] 10.4 Transition from old UI
+  - [x] 10.4 Transition from old UI
     - Remove old 3-button lane selection from landing
     - Remove old step-by-step walkthrough navigation
     - Keep walkthrough engine module (PlanGenerator uses its step data)
     - Ensure no dead code left behind
 
-- [ ] 11. Final checkpoint
+- [x] 11. Final checkpoint
   - Full end-to-end test on iPad viewport
   - Verify all existing features still work (history, products, settings, export/import)
   - Verify schema v9 migration from v8 state

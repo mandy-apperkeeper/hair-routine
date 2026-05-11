@@ -1830,10 +1830,10 @@
             <div class="adjust-layer visible" id="adjust-layer-1">
                 <div class="adjust-options" id="adjust-quick-options">
                     <button class="adjust-option" data-value="frizzy">🌊 Frizzy / poofy</button>
-                    <button class="adjust-option" data-value="flat">🪨 Flat / no volume</button>
-                    <button class="adjust-option" data-value="holding_well">✨ Holding well</button>
-                    <button class="adjust-option" data-value="oily">🧴 Oily / heavy</button>
                     <button class="adjust-option" data-value="dry_rough">🌿 Dry / rough</button>
+                    <button class="adjust-option" data-value="holding_well">✨ Holding well</button>
+                    <button class="adjust-option" data-value="curl_not_holding">🔄 Curl not holding</button>
+                    <button class="adjust-option" data-value="buildup">🧱 Heavy / buildup</button>
                 </div>
                 <button class="adjust-more-link" id="adjust-show-layer-2">More →</button>
             </div>
@@ -3937,6 +3937,237 @@
                 size: size,
                 analyzeIngredientList: analyzeIngredientList,
                 _levenshtein: levenshtein  // exposed for testing
+            };
+        })();
+
+        // ===== DiscoveryParser =====
+        // Parses ingredient lists from product labels, matches against IngredientKB,
+        // determines phase placement, and checks interactions with existing inventory.
+        const DiscoveryParser = (function() {
+
+            // Role → suggested step mapping
+            var ROLE_TO_STEP = {
+                clarifying: 'shampoo',
+                cleansing: 'shampoo',
+                bond_repair: 'bond_repair',
+                protein_fill: 'bond_repair',
+                conditioning: 'conditioner',
+                cuticle_smoothing: 'conditioner',
+                penetrating_oil: 'pre_wash',
+                heat_protection: 'heat_protection',
+                humidity_barrier: 'styling',
+                hold: 'styling',
+                humectant: 'leave_in',
+                film_forming: 'finishing',
+                uv_protection: 'finishing'
+            };
+
+            // Delivery type inference from step
+            var STEP_TO_DELIVERY = {
+                shampoo: 'rinse_off',
+                bond_repair: 'rinse_off',
+                conditioner: 'rinse_off',
+                deep_condition: 'rinse_off',
+                gloss: 'rinse_off',
+                pre_wash: 'rinse_off',
+                leave_in: 'leave_on',
+                heat_protection: 'leave_on',
+                styling: 'leave_on',
+                finishing: 'leave_on'
+            };
+
+            /**
+             * Parse a comma-separated ingredient list text into individual ingredient names.
+             * Handles common label formatting: parentheticals, CI numbers, "and" connectors.
+             * @param {string} text - Raw ingredient list from a product label
+             * @returns {Array<string>} Cleaned ingredient names
+             */
+            function parseIngredientText(text) {
+                if (!text || !text.trim()) return [];
+
+                // Split on commas (primary separator on ingredient labels)
+                var raw = text.split(',');
+
+                var cleaned = [];
+                for (var i = 0; i < raw.length; i++) {
+                    var ingredient = raw[i].trim()
+                        .replace(/^\d+\.\s*/, '')           // Remove leading numbers "1. "
+                        .replace(/\s*\(.*?\)\s*/g, ' ')     // Remove parentheticals
+                        .replace(/\s*\[.*?\]\s*/g, ' ')     // Remove brackets
+                        .replace(/\bCI\s*\d+\b/gi, '')      // Remove CI numbers
+                        .replace(/\band\b/gi, '')           // Remove "and" connectors
+                        .replace(/\s+/g, ' ')               // Collapse whitespace
+                        .trim();
+
+                    // Skip empty, very short (likely artifacts), or purely numeric entries
+                    if (ingredient.length >= 3 && !/^\d+$/.test(ingredient)) {
+                        cleaned.push(ingredient);
+                    }
+                }
+
+                return cleaned;
+            }
+
+            /**
+             * Full discovery parse: text → analysis → phase suggestion → interaction check.
+             * @param {string} ingredientListText - Raw comma-separated ingredient list
+             * @returns {object} { matched, unmatched, detectedRoles, suggestedStep, suggestedDelivery, outcomeProfile, interactions, flags }
+             */
+            function parse(ingredientListText) {
+                var ingredientNames = parseIngredientText(ingredientListText);
+                if (ingredientNames.length === 0) {
+                    return {
+                        matched: [],
+                        unmatched: [],
+                        detectedRoles: [],
+                        suggestedStep: 'leave_in',
+                        suggestedDelivery: 'leave_on',
+                        outcomeProfile: {},
+                        interactions: [],
+                        flags: []
+                    };
+                }
+
+                // Use IngredientKB's analyzeIngredientList for matching
+                var analysis = IngredientKB.analyzeIngredientList(ingredientNames);
+
+                // Determine suggested step from detected roles
+                var suggestedStep = determineSuggestedStep(analysis.detectedRoles);
+                var suggestedDelivery = STEP_TO_DELIVERY[suggestedStep] || 'leave_on';
+
+                // Check interactions against existing inventory
+                var interactions = checkInventoryInteractions(analysis);
+
+                return {
+                    matched: analysis.matched,
+                    unmatched: analysis.unmatched,
+                    detectedRoles: analysis.detectedRoles,
+                    suggestedStep: suggestedStep,
+                    suggestedDelivery: suggestedDelivery,
+                    outcomeProfile: analysis.outcomeProfile,
+                    interactions: interactions,
+                    flags: analysis.flags
+                };
+            }
+
+            /**
+             * Determine the most likely step placement from detected roles.
+             * Priority: clarifying > bond_repair > conditioning > styling > leave_in > finishing
+             */
+            function determineSuggestedStep(roles) {
+                // Priority order for step determination
+                var priority = ['clarifying', 'cleansing', 'bond_repair', 'protein_fill',
+                                'conditioning', 'cuticle_smoothing', 'penetrating_oil',
+                                'heat_protection', 'humidity_barrier', 'hold',
+                                'humectant', 'film_forming'];
+
+                for (var i = 0; i < priority.length; i++) {
+                    if (roles.indexOf(priority[i]) !== -1) {
+                        return ROLE_TO_STEP[priority[i]] || 'leave_in';
+                    }
+                }
+                return 'leave_in'; // default
+            }
+
+            /**
+             * Check if the parsed product has interactions with existing inventory products.
+             * @param {object} analysis - Result from IngredientKB.analyzeIngredientList
+             * @returns {Array} interactions: { type, note, withProductId, withProductName }
+             */
+            function checkInventoryInteractions(analysis) {
+                var state = StateManager.getState();
+                var inventory = state.inventory || [];
+                var interactions = [];
+
+                var newFlags = analysis.interactionFlags || [];
+                if (newFlags.length === 0) return interactions;
+
+                // Check each existing product for flag conflicts
+                inventory.forEach(function(product) {
+                    if (!product.intelligence || !product.intelligence.ingredients) return;
+
+                    // Check if any of the new product's interaction flags match existing product's ingredients
+                    var existingIngredients = product.intelligence.ingredients || [];
+                    existingIngredients.forEach(function(ingName) {
+                        var existingFlags = IngredientKB.getInteractionFlags(ingName);
+                        // Cross-check: new product flags vs existing product flags
+                        newFlags.forEach(function(newFlag) {
+                            if (existingFlags.indexOf(newFlag) !== -1) {
+                                interactions.push({
+                                    type: 'shared_flag',
+                                    note: 'Shares interaction flag "' + newFlag + '" with ' + product.name,
+                                    withProductId: product.id,
+                                    withProductName: product.brand + ' ' + product.name
+                                });
+                            }
+                        });
+                    });
+                });
+
+                // Deduplicate by product
+                var seen = {};
+                return interactions.filter(function(i) {
+                    if (seen[i.withProductId]) return false;
+                    seen[i.withProductId] = true;
+                    return true;
+                });
+            }
+
+            /**
+             * Build a full intelligence object for a newly discovered product.
+             * @param {object} parseResult - Result from parse()
+             * @param {object} overrides - User overrides { step, mechanisms }
+             * @returns {object} intelligence object matching the product schema
+             */
+            function buildIntelligence(parseResult, overrides) {
+                var step = (overrides && overrides.step) || parseResult.suggestedStep;
+                var delivery = STEP_TO_DELIVERY[step] || parseResult.suggestedDelivery;
+                var mechanisms = (overrides && overrides.mechanisms) || parseResult.detectedRoles.slice(0, 3);
+
+                // Build outcomes from outcomeProfile (normalize to 0-1)
+                var outcomes = {};
+                var profile = parseResult.outcomeProfile || {};
+                Object.keys(profile).forEach(function(key) {
+                    var val = profile[key];
+                    if (val > 0) {
+                        outcomes[key] = Math.min(1.0, Math.round(val * 100) / 100);
+                    }
+                });
+
+                // If no outcomes detected, assign generic ones based on step
+                if (Object.keys(outcomes).length === 0) {
+                    var STEP_DEFAULT_OUTCOMES = {
+                        shampoo: { cleanliness: 0.7 },
+                        conditioner: { smoothness: 0.5, shine: 0.4 },
+                        bond_repair: { strength: 0.5 },
+                        deep_condition: { smoothness: 0.6, shine: 0.5 },
+                        leave_in: { smoothness: 0.4 },
+                        heat_protection: { strength: 0.4, frizz_control: 0.4 },
+                        styling: { definition: 0.5, frizz_control: 0.5 },
+                        finishing: { shine: 0.4 },
+                        pre_wash: { strength: 0.4 }
+                    };
+                    outcomes = STEP_DEFAULT_OUTCOMES[step] || { smoothness: 0.3 };
+                }
+
+                // Build ingredients array from matched ingredients
+                var ingredients = parseResult.matched.map(function(m) { return m.key; });
+
+                return {
+                    mechanisms: mechanisms,
+                    delivery: delivery,
+                    step: step,
+                    outcomes: outcomes,
+                    cumulative: delivery === 'leave_on' && mechanisms.indexOf('cuticle_smoothing') !== -1,
+                    interactions: [],
+                    ingredients: ingredients
+                };
+            }
+
+            return {
+                parse: parse,
+                parseIngredientText: parseIngredientText,
+                buildIntelligence: buildIntelligence
             };
         })();
 
@@ -7394,11 +7625,11 @@
                 if (quick.indexOf('frizzy') !== -1) {
                     applyFrizzyAdjustments(plan);
                 }
-                if (quick.indexOf('flat') !== -1) {
-                    applyFlatAdjustments(plan);
+                if (quick.indexOf('buildup') !== -1) {
+                    applyBuildupAdjustments(plan);
                 }
-                if (quick.indexOf('oily') !== -1) {
-                    applyOilyAdjustments(plan);
+                if (quick.indexOf('curl_not_holding') !== -1) {
+                    applyCurlNotHoldingAdjustments(plan);
                 }
                 if (quick.indexOf('dry_rough') !== -1) {
                     applyDryRoughAdjustments(plan);
@@ -7433,86 +7664,228 @@
             }
 
             function applyFrizzyAdjustments(plan) {
-                // Ensure Wonder Water / gloss step is present
-                var hasGloss = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
-                if (!hasGloss) {
-                    // Add gloss after conditioner
-                    var condIdx = -1;
+                // Dew-point-aware frizz response:
+                // Low dew point (<35°F): frizz from dry air lifting cuticle → needs moisture + sealing
+                // High dew point (>60°F): frizz from humidity swelling cortex → needs stronger hold + barrier
+                // Moderate: general frizz → Wonder Water + standard hold upgrade
+                var dewPoint = plan.dewPoint;
+                var isLowDewPoint = dewPoint !== null && dewPoint !== undefined && dewPoint < 35;
+                var isHighDewPoint = dewPoint !== null && dewPoint !== undefined && dewPoint > 60;
+
+                if (isLowDewPoint) {
+                    // Dry air frizz — cuticle is lifting because air is pulling moisture out.
+                    // Solution: more conditioning + sealing, not stronger hold.
                     for (var i = 0; i < plan.steps.length; i++) {
-                        if (plan.steps[i].stepType === 'conditioner') { condIdx = i; break; }
+                        if (plan.steps[i].stepType === 'conditioner') {
+                            plan.steps[i].timer = { duration: 420, label: 'Conditioner + heat cap (dry air frizz)' };
+                            plan.steps[i].instruction = 'Section into 4+ parts. Apply generously. Heat cap on — dry air is lifting the cuticle.';
+                            plan.steps[i].tip = '💧 Frizz from dry air = cuticle lifting. Extra conditioning + heat cap seals it down.';
+                            plan.steps[i].stepLabel = (plan.steps[i].stepLabel || 'Conditioner') + ' 🧢';
+                        }
                     }
-                    if (condIdx !== -1) {
-                        plan.steps.splice(condIdx + 1, 0, {
-                            id: 'step-added-gloss',
-                            number: 0,
-                            stepType: 'gloss',
-                            productId: 'loreal-wonder-water',
-                            productName: 'Gloss',
-                            instruction: 'Spray onto freshly rinsed hair. Lamellar conditioning — deposits uniformly on wet cuticle.',
-                            scienceBadge: 'LAMELLAR CONDITIONING',
-                            timer: null,
-                            tip: 'Added for frizz control',
-                            phase: 'PREP & WASH',
-                            alternatives: []
-                        });
+                    // Ensure Wonder Water for cuticle sealing
+                    var hasGloss = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
+                    if (!hasGloss) {
+                        var condIdx = -1;
+                        for (var g = 0; g < plan.steps.length; g++) {
+                            if (plan.steps[g].stepType === 'conditioner') { condIdx = g; break; }
+                        }
+                        if (condIdx !== -1) {
+                            plan.steps.splice(condIdx + 1, 0, {
+                                id: 'step-added-gloss',
+                                number: 0,
+                                stepType: 'gloss',
+                                productId: 'loreal-wonder-water',
+                                productName: 'Gloss',
+                                instruction: 'Spray onto freshly rinsed hair. Lamellar conditioning seals cuticle flat — counteracts dry-air lifting.',
+                                scienceBadge: 'LAMELLAR CONDITIONING',
+                                timer: null,
+                                tip: 'Added — seals cuticle against dry air frizz',
+                                phase: 'PREP & WASH',
+                                alternatives: []
+                            });
+                        }
                     }
-                }
-
-                // Upgrade gel to Got2b for stronger humidity hold
-                for (var j = 0; j < plan.steps.length; j++) {
-                    if (plan.steps[j].stepType === 'styling' && plan.steps[j].productId === 'nym-curl-talk-gel') {
-                        plan.steps[j].productId = 'got2b-ultra-glued';
-                        plan.steps[j].productName = 'Glued Blasting Freeze Spray/Gel';
-                        plan.steps[j].inventoryName = 'Glued Blasting Freeze Spray/Gel';
-                        plan.steps[j].instruction = 'Apply generously to soaking wet hair. Scrunch upward. Stronger hold — PQ-69 without glycerin for frizz control.';
-                        plan.steps[j].tip = 'Upgraded from NYM — stronger hold for frizzy conditions';
-                        plan.steps[j].scienceBadge = 'PQ-69 HUMIDITY BARRIER';
+                } else if (isHighDewPoint) {
+                    // Humid frizz — moisture swelling the cortex, overwhelming hold.
+                    // Solution: stronger hold gel (Got2b, no glycerin) + Wonder Water barrier.
+                    for (var j = 0; j < plan.steps.length; j++) {
+                        if (plan.steps[j].stepType === 'styling' && plan.steps[j].productId === 'nym-curl-talk-gel') {
+                            plan.steps[j].productId = 'got2b-ultra-glued';
+                            plan.steps[j].productName = 'Glued Blasting Freeze Spray/Gel';
+                            plan.steps[j].inventoryName = 'Glued Blasting Freeze Spray/Gel';
+                            plan.steps[j].instruction = 'Apply generously to soaking wet hair. Scrunch upward. PQ-69 without glycerin — glycerin pulls moisture in humid air.';
+                            plan.steps[j].tip = 'Upgraded from NYM — glycerin-free hold for humid conditions';
+                            plan.steps[j].scienceBadge = 'PQ-69 HUMIDITY BARRIER';
+                        }
+                    }
+                    // Ensure Wonder Water for additional barrier
+                    var hasGlossH = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
+                    if (!hasGlossH) {
+                        var condIdxH = -1;
+                        for (var h = 0; h < plan.steps.length; h++) {
+                            if (plan.steps[h].stepType === 'conditioner') { condIdxH = h; break; }
+                        }
+                        if (condIdxH !== -1) {
+                            plan.steps.splice(condIdxH + 1, 0, {
+                                id: 'step-added-gloss',
+                                number: 0,
+                                stepType: 'gloss',
+                                productId: 'loreal-wonder-water',
+                                productName: 'Gloss',
+                                instruction: 'Spray onto freshly rinsed hair. Lamellar layer adds humidity barrier before styling.',
+                                scienceBadge: 'LAMELLAR CONDITIONING',
+                                timer: null,
+                                tip: 'Added — extra barrier layer against humidity',
+                                phase: 'PREP & WASH',
+                                alternatives: []
+                            });
+                        }
+                    }
+                } else {
+                    // Moderate or unknown dew point — general frizz response.
+                    // Add Wonder Water + upgrade gel as a balanced approach.
+                    var hasGlossM = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
+                    if (!hasGlossM) {
+                        var condIdxM = -1;
+                        for (var m = 0; m < plan.steps.length; m++) {
+                            if (plan.steps[m].stepType === 'conditioner') { condIdxM = m; break; }
+                        }
+                        if (condIdxM !== -1) {
+                            plan.steps.splice(condIdxM + 1, 0, {
+                                id: 'step-added-gloss',
+                                number: 0,
+                                stepType: 'gloss',
+                                productId: 'loreal-wonder-water',
+                                productName: 'Gloss',
+                                instruction: 'Spray onto freshly rinsed hair. Lamellar conditioning — deposits uniformly on wet cuticle.',
+                                scienceBadge: 'LAMELLAR CONDITIONING',
+                                timer: null,
+                                tip: 'Added for frizz control',
+                                phase: 'PREP & WASH',
+                                alternatives: []
+                            });
+                        }
+                    }
+                    // Upgrade gel to Got2b for stronger hold
+                    for (var k = 0; k < plan.steps.length; k++) {
+                        if (plan.steps[k].stepType === 'styling' && plan.steps[k].productId === 'nym-curl-talk-gel') {
+                            plan.steps[k].productId = 'got2b-ultra-glued';
+                            plan.steps[k].productName = 'Glued Blasting Freeze Spray/Gel';
+                            plan.steps[k].inventoryName = 'Glued Blasting Freeze Spray/Gel';
+                            plan.steps[k].instruction = 'Apply generously to soaking wet hair. Scrunch upward. Stronger hold — PQ-69 without glycerin for frizz control.';
+                            plan.steps[k].tip = 'Upgraded from NYM — stronger hold for frizzy conditions';
+                            plan.steps[k].scienceBadge = 'PQ-69 HUMIDITY BARRIER';
+                        }
                     }
                 }
             }
 
-            function applyFlatAdjustments(plan) {
-                // Suggest lighter conditioner application
-                for (var i = 0; i < plan.steps.length; i++) {
-                    if (plan.steps[i].stepType === 'conditioner') {
-                        plan.steps[i].instruction = 'Light application — ends only. Skip roots entirely. Rinse thoroughly.';
-                        plan.steps[i].tip = 'Lighter application for flat hair';
-                    }
-                    // Remove heavy leave-ins
-                    if (plan.steps[i].stepType === 'leave_in') {
-                        plan.steps[i].tip = 'Use sparingly — ends only. Skip if hair feels weighed down.';
+            function applyBuildupAdjustments(plan) {
+                // Hair feels heavy/coated — product buildup is the likely cause.
+                // Check days since last clarify to determine response.
+                var state = StateManager.getState();
+                var events = state.events || [];
+                var daysSinceClarify = null;
+                for (var i = events.length - 1; i >= 0; i--) {
+                    var treats = events[i].treatments || [];
+                    var prods = events[i].products || [];
+                    if (treats.indexOf('clarify') !== -1 ||
+                        prods.indexOf('everpure-clarifying') !== -1 ||
+                        prods.indexOf('kinky-curly-come-clean') !== -1) {
+                        var clarDate = new Date(events[i].date);
+                        var now = new Date();
+                        daysSinceClarify = Math.floor((now - clarDate) / (1000 * 60 * 60 * 24));
+                        break;
                     }
                 }
-            }
 
-            function applyOilyAdjustments(plan) {
-                // Suggest clarifying if overdue
-                for (var i = 0; i < plan.steps.length; i++) {
-                    if (plan.steps[i].stepType === 'shampoo') {
-                        plan.steps[i].tip = 'Consider clarifying shampoo if buildup is noticeable.';
+                if (daysSinceClarify !== null && daysSinceClarify >= 7) {
+                    // Overdue for clarify — suggest clarifying shampoo
+                    for (var s = 0; s < plan.steps.length; s++) {
+                        if (plan.steps[s].stepType === 'shampoo') {
+                            plan.steps[s].productId = 'everpure-clarifying';
+                            plan.steps[s].productName = 'EverPure Sulfate-Free Clarifying Shampoo';
+                            plan.steps[s].inventoryName = 'EverPure Sulfate-Free Clarifying Shampoo';
+                            plan.steps[s].instruction = 'Lather thoroughly, focusing on roots and scalp. Removes silicone and product buildup.';
+                            plan.steps[s].tip = '🧱 Last clarified ' + daysSinceClarify + ' days ago — buildup is likely. Clarifying will reset.';
+                            break;
+                        }
                     }
-                    // Reduce leave-in
-                    if (plan.steps[i].stepType === 'leave_in') {
-                        plan.steps[i].instruction = 'Minimal amount — ends only. Skip mid-lengths.';
-                        plan.steps[i].tip = 'Less is more when hair feels oily';
+                } else {
+                    // Recently clarified — buildup feeling may be from heavy product application
+                    for (var t = 0; t < plan.steps.length; t++) {
+                        if (plan.steps[t].stepType === 'shampoo') {
+                            plan.steps[t].tip = '🧱 Feeling heavy but clarified recently — try lighter product application today.';
+                            break;
+                        }
+                        if (plan.steps[t].stepType === 'leave_in') {
+                            plan.steps[t].instruction = 'Use sparingly — ends only. Hair is feeling heavy.';
+                            plan.steps[t].tip = 'Less product today — hair feels built up';
+                        }
                     }
                 }
-                // Remove finishing oils from plan
+                // Remove finishing oils when hair feels heavy
                 plan.steps = plan.steps.filter(function(s) {
                     return s.stepType !== 'finishing';
                 });
             }
 
-            function applyDryRoughAdjustments(plan) {
-                // Longer conditioner time
+            function applyCurlNotHoldingAdjustments(plan) {
+                // Curl not holding has multiple possible causes:
+                // 1. Insufficient hold product → upgrade gel
+                // 2. Humidity overwhelming barrier → Got2b (no glycerin)
+                // 3. Too much conditioner underneath → lighter application
+                // 4. Buildup preventing gel adhesion → suggest clarify
+                //
+                // For now, apply the most common fix: stronger hold + ensure proper technique.
+                // The full diagnostic engine (future spec) will disambiguate causes.
+                var dewPoint = plan.dewPoint;
+                var isHumid = dewPoint !== null && dewPoint !== undefined && dewPoint > 60;
+
+                // Upgrade to Got2b for stronger hold
                 for (var i = 0; i < plan.steps.length; i++) {
-                    if (plan.steps[i].stepType === 'conditioner' && plan.steps[i].timer) {
-                        plan.steps[i].timer.duration = 600; // 10 min instead of 5
-                        plan.steps[i].timer.label = 'Conditioner (extra time for dry hair)';
-                        plan.steps[i].tip = 'Extra conditioning time — hair needs moisture.';
+                    if (plan.steps[i].stepType === 'styling' && plan.steps[i].productId === 'nym-curl-talk-gel') {
+                        plan.steps[i].productId = 'got2b-ultra-glued';
+                        plan.steps[i].productName = 'Glued Blasting Freeze Spray/Gel';
+                        plan.steps[i].inventoryName = 'Glued Blasting Freeze Spray/Gel';
+                        if (isHumid) {
+                            plan.steps[i].instruction = 'Apply generously to soaking wet hair. Scrunch upward. PQ-69 without glycerin — humidity is likely pulling curls apart.';
+                            plan.steps[i].tip = 'Upgraded — humid conditions + curl dropping = need glycerin-free hold';
+                        } else {
+                            plan.steps[i].instruction = 'Apply generously to soaking wet hair. Scrunch upward. More product than usual — curls need stronger cast.';
+                            plan.steps[i].tip = 'Upgraded — stronger hold to maintain curl pattern';
+                        }
+                        plan.steps[i].scienceBadge = 'PQ-69 HUMIDITY BARRIER';
                     }
                 }
-                // Ensure pre-wash is present
+
+                // Ensure leave-in isn't too heavy (can weigh curls down)
+                for (var j = 0; j < plan.steps.length; j++) {
+                    if (plan.steps[j].stepType === 'leave_in') {
+                        plan.steps[j].tip = (plan.steps[j].tip || '') + ' Use lighter application — heavy leave-in can weigh curls down.';
+                    }
+                }
+            }
+
+            function applyDryRoughAdjustments(plan) {
+                // Hair is dry/rough — needs deep conditioning.
+                // Upgrade conditioner to Elvive Total Repair 5 Balm + heat cap.
+                // This mirrors PlanGenerator's tiered conditioning for post-clarify days.
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'conditioner') {
+                        plan.steps[i].productId = 'elvive-total-repair-5-balm';
+                        plan.steps[i].productName = 'Total Repair 5 Damage Erasing Balm';
+                        plan.steps[i].inventoryName = 'Total Repair 5 Damage Erasing Balm';
+                        plan.steps[i].instruction = 'Section into 4+ parts. Apply generously mid-lengths to ends. Heat cap on — hair is dry and needs deep repair.';
+                        plan.steps[i].timer = { duration: 600, label: 'Deep condition — Elvive balm + heat cap' };
+                        plan.steps[i].tip = '🌿 Hair is dry — upgraded to Elvive balm (protein + ceramide) with heat cap for deeper penetration.';
+                        plan.steps[i].scienceBadge = 'DEEP CONDITIONING';
+                        plan.steps[i].stepLabel = (plan.steps[i].stepLabel || 'Conditioner') + ' 🧢';
+                        break;
+                    }
+                }
+                // Ensure pre-wash coconut oil is present (cortex protection)
                 var hasPreWash = plan.steps.some(function(s) { return s.stepType === 'pre_wash'; });
                 if (!hasPreWash) {
                     plan.steps.unshift({
@@ -7521,13 +7894,36 @@
                         stepType: 'pre_wash',
                         productId: 'pure-coconut-oil',
                         productName: 'Coconut oil pre-wash',
-                        instruction: 'Apply to dry hair, mid-lengths to ends. Penetrates cortex to prevent protein loss.',
+                        instruction: 'Apply to dry hair, mid-lengths to ends. Penetrates cortex to prevent protein loss during wash.',
                         scienceBadge: 'CORTEX PENETRATION',
                         timer: { duration: 1200, label: 'Coconut oil pre-wash (20 min)' },
-                        tip: 'Added — hair is dry and needs cortex protection',
+                        tip: 'Added — hair is dry, coconut oil protects cortex from further damage',
                         phase: 'PREP & WASH',
                         alternatives: []
                     });
+                }
+                // Add Wonder Water for cuticle sealing if not present
+                var hasGloss = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
+                if (!hasGloss) {
+                    var condIdx = -1;
+                    for (var g = 0; g < plan.steps.length; g++) {
+                        if (plan.steps[g].stepType === 'conditioner') { condIdx = g; break; }
+                    }
+                    if (condIdx !== -1) {
+                        plan.steps.splice(condIdx + 1, 0, {
+                            id: 'step-added-gloss',
+                            number: 0,
+                            stepType: 'gloss',
+                            productId: 'loreal-wonder-water',
+                            productName: 'Gloss',
+                            instruction: 'Spray onto freshly rinsed hair. Seals cuticle flat — locks in the deep conditioning.',
+                            scienceBadge: 'LAMELLAR CONDITIONING',
+                            timer: null,
+                            tip: 'Added — seals in moisture from deep conditioning',
+                            phase: 'PREP & WASH',
+                            alternatives: []
+                        });
+                    }
                 }
             }
 
@@ -7566,12 +7962,21 @@
                 plan.steps = plan.steps.filter(function(s) {
                     return s.stepType !== 'pre_wash' && s.stepType !== 'gloss';
                 });
-                // Reduce conditioner time
+                // Reduce conditioner time — but don't downgrade if another adjustment
+                // explicitly upgraded to deep conditioning (Elvive balm + heat cap).
                 for (var i = 0; i < plan.steps.length; i++) {
                     if (plan.steps[i].stepType === 'conditioner' && plan.steps[i].timer) {
-                        plan.steps[i].timer.duration = 180; // 3 min
-                        plan.steps[i].timer.label = 'Conditioner (quick)';
-                        plan.steps[i].tip = 'Shortened — you\'re short on time';
+                        var isDeepCondition = plan.steps[i].productId === 'elvive-total-repair-5-balm';
+                        if (isDeepCondition) {
+                            // Don't reduce deep conditioning — hair needs it. But note the time pressure.
+                            plan.steps[i].tip = (plan.steps[i].tip || '') + ' ⏰ Short on time — 5 min minimum for deep conditioning to work.';
+                            plan.steps[i].timer.duration = Math.min(plan.steps[i].timer.duration, 300); // Cap at 5 min, not 10
+                            plan.steps[i].timer.label = 'Deep condition (shortened)';
+                        } else {
+                            plan.steps[i].timer.duration = 180; // 3 min
+                            plan.steps[i].timer.label = 'Conditioner (quick)';
+                            plan.steps[i].tip = 'Shortened — you\'re short on time';
+                        }
                     }
                 }
             }
@@ -7649,18 +8054,25 @@
             }
 
             function applyStiffAdjustments(plan) {
-                // Extra conditioning, note about protein
+                // Stiff/straw-like hair = needs more moisture.
+                // For coarse, thick, damaged hair, this is almost always a moisture deficit,
+                // NOT protein overload (which is a fine/low-porosity hair problem).
+                // Response: deeper conditioning + extra leave-in.
                 for (var i = 0; i < plan.steps.length; i++) {
                     if (plan.steps[i].stepType === 'conditioner') {
-                        plan.steps[i].tip = 'Extra generous — stiff hair may indicate protein overload. Focus on moisture.';
+                        plan.steps[i].productId = 'elvive-total-repair-5-balm';
+                        plan.steps[i].productName = 'Total Repair 5 Damage Erasing Balm';
+                        plan.steps[i].inventoryName = 'Total Repair 5 Damage Erasing Balm';
+                        plan.steps[i].instruction = 'Section into 4+ parts. Apply generously. Heat cap on — stiff hair needs deep moisture.';
+                        plan.steps[i].tip = '🌿 Stiff = needs moisture. Elvive balm + heat cap for deep hydration.';
+                        plan.steps[i].stepLabel = (plan.steps[i].stepLabel || 'Conditioner') + ' 🧢';
                         if (plan.steps[i].timer) {
-                            plan.steps[i].timer.duration = Math.max(plan.steps[i].timer.duration, 600);
-                            plan.steps[i].timer.label = 'Conditioner (extra time)';
+                            plan.steps[i].timer.duration = 600;
+                            plan.steps[i].timer.label = 'Deep condition — stiff hair needs moisture';
                         }
                     }
-                    // Remove protein/bond repair step
-                    if (plan.steps[i].stepType === 'bond_repair') {
-                        plan.steps[i].tip = 'Consider skipping — stiff hair may not need protein right now.';
+                    if (plan.steps[i].stepType === 'leave_in') {
+                        plan.steps[i].tip = 'Extra generous today — stiff hair is moisture-starved.';
                     }
                 }
             }
@@ -8090,7 +8502,43 @@
             var insightCard = document.getElementById('insight-card');
             var insightMessage = document.getElementById('insight-message');
             var insights = FeedbackEngine.getInsights();
-            if (events.length >= 10 && insights.length > 0) {
+
+            // Check for "contradicts domain" divergences (12.2)
+            var divergenceInsights = [];
+            if (events.length >= 5) {
+                var inventory = state.inventory || [];
+                inventory.forEach(function(product) {
+                    if (!product.intelligence || !product.intelligence.outcomes) return;
+                    Object.keys(product.intelligence.outcomes).forEach(function(outcome) {
+                        var div = BeliefTracker.checkDivergence(product.id, outcome);
+                        if (div) {
+                            var direction = div.direction === 'better_than_expected' ? 'outperforms' : 'underperforms';
+                            divergenceInsights.push({
+                                message: product.name + ' ' + direction + ' expectations for ' + outcome.replace(/_/g, ' ') + ' (n=' + div.n + ')',
+                                type: 'divergence',
+                                severity: div.divergence
+                            });
+                        }
+                    });
+                });
+                // Sort by divergence strength
+                divergenceInsights.sort(function(a, b) { return b.severity - a.severity; });
+            }
+
+            // Show strongest insight (divergence takes priority if strong enough)
+            var displayInsight = null;
+            if (divergenceInsights.length > 0 && divergenceInsights[0].severity > 2.0) {
+                displayInsight = '\uD83E\uDD14 ' + divergenceInsights[0].message;
+            } else if (insights.length > 0) {
+                displayInsight = insights[0].message;
+            } else if (divergenceInsights.length > 0) {
+                displayInsight = '\uD83D\uDCCA ' + divergenceInsights[0].message;
+            }
+
+            if (events.length >= 5 && displayInsight) {
+                insightCard.classList.add('active');
+                insightMessage.textContent = displayInsight;
+            } else if (events.length >= 10 && insights.length > 0) {
                 insightCard.classList.add('active');
                 insightMessage.textContent = insights[0].message;
             } else {
@@ -8186,76 +8634,6 @@
             checkDeferredRating();
         }
 
-        // ===== Smart Recommendation Logic =====
-        function getSmartRecommendation(washDays, lastWashLane, sealState, clarifyDays) {
-            // Determine the user's typical interval from feedback engine
-            var state = StateManager.getState();
-            var thresholds = state.thresholds || { washMinDays: 2 };
-
-            // Logic:
-            // - If washed today → suggest Refresh tomorrow context
-            // - If 0-1 days since wash → suggest Refresh
-            // - If at or past typical interval (default 3 days) → suggest wash day
-            //   - If last was curly → suggest curly (or blowout if seal is degraded/inactive)
-            //   - If last was blowout → suggest curly (alternating) or blowout
-            //   - Default to curly
-            // - If between min and typical → suggest Refresh
-
-            var typicalInterval = 3; // default
-            // Try to get optimal interval from feedback engine
-            var intervalRatings = FeedbackEngine.getIntervalRatings();
-            if (intervalRatings && Object.keys(intervalRatings).length > 0) {
-                var bestBucket = null;
-                var bestRating = 0;
-                for (var bucket in intervalRatings) {
-                    if (intervalRatings[bucket].average > bestRating && intervalRatings[bucket].count >= 3) {
-                        bestRating = intervalRatings[bucket].average;
-                        bestBucket = parseInt(bucket);
-                    }
-                }
-                if (bestBucket) typicalInterval = bestBucket;
-            }
-
-            if (washDays === null) {
-                // No history at all (shouldn't reach here, but safety)
-                return { lane: 'curly', context: 'Ready for your first wash day?', buttonLabel: 'Start Curly Day' };
-            }
-
-            if (washDays === 0) {
-                return { lane: 'refresh', context: 'You washed today. Tomorrow you might want a refresh.', buttonLabel: 'Start Refresh' };
-            }
-
-            if (washDays <= 1) {
-                return { lane: 'refresh', context: 'Day ' + washDays + ' since your wash. A refresh can revive your style.', buttonLabel: 'Start Refresh' };
-            }
-
-            if (washDays >= typicalInterval) {
-                // Time for a wash day
-                var suggestedLane = 'curly'; // default
-                if (lastWashLane === 'blowout') {
-                    suggestedLane = 'curly'; // alternate
-                } else if (lastWashLane === 'curly' && sealState.active === false) {
-                    suggestedLane = 'curly'; // stay curly unless user switches
-                }
-                // If clarify is overdue, mention it
-                var clarifyNote = '';
-                if (clarifyDays !== null && clarifyDays >= (state.thresholds.clarifyMinDays || 5) * 2) {
-                    clarifyNote = ' Consider a clarifying wash.';
-                }
-                return {
-                    lane: suggestedLane,
-                    context: 'Day ' + washDays + ' — ready for a wash day.' + clarifyNote,
-                    buttonLabel: 'Start ' + suggestedLane.charAt(0).toUpperCase() + suggestedLane.slice(1) + ' Day'
-                };
-            }
-
-            // Between min and typical — suggest refresh
-            return {
-                lane: 'refresh',
-                context: 'Day ' + washDays + ' of ' + typicalInterval + '. Your ' + (lastWashLane || 'curly') + ' style might need a refresh.',
-                buttonLabel: 'Start Refresh'
-            };
-        }
 
         // ===== Recommendation Card Rendering =====
         function renderRecommendationCard() {
@@ -8736,12 +9114,19 @@
                 } catch(e) {}
             }
 
+            // Trigger feedback engine analysis
+            FeedbackEngine.analyze();
+
+            // Get inventory for attribution card
+            var state2 = StateManager.getState();
+            var inventory = state2.inventory || [];
+
             // Reset plan state
             currentPlan = null;
             currentObservations = { quick: [], context: [], detailed: [] };
 
-            // Re-render landing
-            renderLanding();
+            // Show post-wash attribution card (navigates to walkthrough view, returns to landing on dismiss)
+            showPostWashAttribution(event, inventory);
         }
 
         function openAdjustOverlay() {
@@ -8847,9 +9232,26 @@
                     overlay.classList.remove('visible');
                     applyAdjustments();
                     document.removeEventListener('keydown', escHandler);
+                    document.removeEventListener('keydown', trapHandler);
                 }
             };
             document.addEventListener('keydown', escHandler);
+
+            // Focus trap — keep Tab cycling within the overlay
+            var trapHandler = function(e) {
+                if (e.key !== 'Tab') return;
+                if (!overlay.classList.contains('visible')) return;
+                var focusable = overlay.querySelectorAll('button:not([disabled])');
+                if (focusable.length === 0) return;
+                var first = focusable[0];
+                var last = focusable[focusable.length - 1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                } else {
+                    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
+            };
+            document.addEventListener('keydown', trapHandler);
 
             // Focus the first option for keyboard accessibility
             var firstOption = overlay.querySelector('.adjust-option');
@@ -8859,10 +9261,10 @@
         function getAdjustLabel(value) {
             var labels = {
                 'frizzy': '🌊 Frizz',
-                'flat': '🪨 Flat',
                 'holding_well': '✨ Holding well',
-                'oily': '🧴 Oily',
                 'dry_rough': '🌿 Dry',
+                'curl_not_holding': '🔄 Curl not holding',
+                'buildup': '🧱 Buildup',
                 'exercised': '🏃 Exercised',
                 'short_on_time': '⏰ Short on time',
                 'heat_styling': '🔥 Heat styling',
@@ -8978,6 +9380,14 @@
 
             document.getElementById('info-close').onclick = function() { popup.classList.remove('visible'); };
             popup.onclick = function(e) { if (e.target === popup) popup.classList.remove('visible'); };
+            // Escape key to dismiss
+            var infoEscHandler = function(e) {
+                if (e.key === 'Escape' && popup.classList.contains('visible')) {
+                    popup.classList.remove('visible');
+                    document.removeEventListener('keydown', infoEscHandler);
+                }
+            };
+            document.addEventListener('keydown', infoEscHandler);
         }
 
         function openAlternativesPopup(stepId) {
@@ -9022,6 +9432,14 @@
 
             document.getElementById('alternatives-close').onclick = function() { popup.classList.remove('visible'); };
             popup.onclick = function(e) { if (e.target === popup) popup.classList.remove('visible'); };
+            // Escape key to dismiss
+            var altEscHandler = function(e) {
+                if (e.key === 'Escape' && popup.classList.contains('visible')) {
+                    popup.classList.remove('visible');
+                    document.removeEventListener('keydown', altEscHandler);
+                }
+            };
+            document.addEventListener('keydown', altEscHandler);
         }
 
         function startPlanTimer(stepId, duration, btn) {
@@ -9230,483 +9648,6 @@
             );
         }
 
-        // ===== Humidity Prompt =====
-        var selectedLane = null;
-        var selectedHumidity = null;
-
-        // detectedDewPoint is declared earlier (before Daily Plan code) for plan generation access
-
-        function showHumidityPrompt(lane) {
-            selectedLane = lane;
-            detectedDewPoint = null;
-            CooldownSystem.resetSessionOverrides();
-
-            showView('walkthrough');
-            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
-
-            // Try auto-detection via geolocation + Open-Meteo
-            // Only attempt if permission is already granted (never show the browser prompt)
-            if (navigator.geolocation && navigator.onLine && navigator.permissions) {
-                navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
-                    if (result.state === 'granted') {
-                        attemptGeolocation();
-                    } else {
-                        // Permission not granted — skip silently, default to moderate
-                        showManualHumiditySelector();
-                    }
-                }).catch(function() {
-                    // Permissions API not supported — skip geolocation
-                    showManualHumiditySelector();
-                });
-            } else if (navigator.geolocation && navigator.onLine) {
-                // No Permissions API available — skip geolocation to avoid prompt
-                showManualHumiditySelector();
-            } else {
-                showManualHumiditySelector();
-            }
-        }
-
-        function attemptGeolocation() {
-            var walkSection = document.getElementById('walkthrough');
-            walkSection.innerHTML = '<div class="card" style="text-align:center;padding:2rem 1.25rem;">' +
-                '<p style="color:var(--text-secondary);">Detecting conditions…</p></div>';
-
-            var timedOut = false;
-            var timeoutId = setTimeout(function() {
-                timedOut = true;
-                showManualHumiditySelector();
-            }, 3000);
-
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    if (timedOut) return;
-                    var lat = position.coords.latitude;
-                    var lon = position.coords.longitude;
-                    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=dew_point_2m&temperature_unit=fahrenheit';
-
-                    fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined })
-                        .then(function(resp) {
-                            if (timedOut) return;
-                            if (!resp.ok) throw new Error('API error');
-                            return resp.json();
-                        })
-                        .then(function(data) {
-                            if (timedOut) return;
-                            clearTimeout(timeoutId);
-                            var dewPoint = data && data.current && data.current.dew_point_2m;
-                            if (dewPoint === undefined || dewPoint === null) {
-                                showManualHumiditySelector();
-                                return;
-                            }
-                            detectedDewPoint = Math.round(dewPoint);
-                            if (dewPoint < 35) {
-                                selectedHumidity = 'dry';
-                            } else if (dewPoint <= 60) {
-                                selectedHumidity = 'moderate';
-                            } else {
-                                selectedHumidity = 'humid';
-                            }
-                            // Skip the humidity prompt — go straight to walkthrough
-                            checkWarningsAndStart();
-                        })
-                        .catch(function() {
-                            if (timedOut) return;
-                            clearTimeout(timeoutId);
-                            showManualHumiditySelector();
-                        });
-                },
-                function() {
-                    // Geolocation denied or failed
-                    if (timedOut) return;
-                    clearTimeout(timeoutId);
-                    showManualHumiditySelector();
-                },
-                    { timeout: 3000 }
-                );
-        }
-
-        function showManualHumiditySelector() {
-            // Auto-detection failed — default to moderate and proceed silently.
-            // The app informs, doesn't ask. (Established decision: dew point auto-detect, no manual prompt.)
-            selectedHumidity = 'moderate';
-            detectedDewPoint = null;
-            checkWarningsAndStart();
-        }
-
-        function checkWarningsAndStart() {
-            var warnings = CooldownSystem.checkWarnings(selectedLane, selectedHumidity);
-            if (warnings.length > 0) {
-                showWarningOverlay(warnings[0]);
-            } else {
-                startWalkthrough();
-            }
-        }
-
-        function showWarningOverlay(warning) {
-            var overlay = document.getElementById('warning-overlay');
-            var msg = document.getElementById('warning-overlay-message');
-            var dismissBtn = document.getElementById('warning-overlay-dismiss');
-
-            msg.textContent = warning.message;
-            overlay.classList.add('active');
-
-            var handler = function() {
-                CooldownSystem.recordOverride(warning.type);
-                overlay.classList.remove('active');
-                dismissBtn.removeEventListener('click', handler);
-                startWalkthrough();
-            };
-            dismissBtn.addEventListener('click', handler);
-        }
-
-        // ===== Walkthrough UI =====
-        var currentTimerId = null;
-        var timerUpdateInterval = null;
-
-        function startWalkthrough() {
-            WalkthroughEngine.start(selectedLane, selectedHumidity);
-            renderWalkthroughStep();
-        }
-
-        function renderWalkthroughStep() {
-            var steps = WalkthroughEngine.getStepsForLane(selectedLane, selectedHumidity);
-            if (!steps || steps.length === 0) {
-                renderCompletion();
-                return;
-            }
-
-            var walkSection = document.getElementById('walkthrough');
-            var inv = StateManager.getState().inventory || [];
-
-            // Stop any existing timer update interval
-            if (timerUpdateInterval) {
-                clearInterval(timerUpdateInterval);
-                timerUpdateInterval = null;
-            }
-
-            var html = '';
-
-            // Header bar
-            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;position:sticky;top:0;background:var(--bg);padding:0.5rem 0;z-index:10;">';
-            html += '<button class="btn-secondary" id="wt-back-home" aria-label="Back to Home">← Home</button>';
-            html += '<button class="btn-secondary" id="wt-wake-lock" aria-label="Keep screen on" style="font-size:0.75rem;padding:0.4rem 0.6rem;">☀️ Screen on</button>';
-            html += '</div>';
-
-            // Conditions indicator
-            if (detectedDewPoint !== null) {
-                var condIcon = selectedHumidity === 'dry' ? '☀️' : (selectedHumidity === 'humid' ? '💧' : '🌤️');
-                html += '<p style="color:var(--muted);font-size:0.75rem;text-align:center;margin-bottom:0.75rem;">' + condIcon + ' ' + detectedDewPoint + '°F dew point · ' + selectedHumidity + '</p>';
-            }
-
-            // Render all steps
-            var currentPhase = '';
-            for (var i = 0; i < steps.length; i++) {
-                var step = steps[i];
-
-                // Phase header
-                if (step.phase && step.phase !== currentPhase) {
-                    currentPhase = step.phase;
-                    html += '<p class="phase-label">' + escapeHtml(currentPhase) + '</p>';
-                }
-
-                // Step card
-                html += '<div class="card" style="margin-bottom:0.75rem;">';
-                html += '<div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:0.3rem;">';
-                html += '<span style="color:var(--muted);font-size:0.75rem;font-weight:600;">' + step.number + '</span>';
-                html += '<h3 style="color:var(--text);font-size:1rem;margin:0;">' + escapeHtml(step.title) + '</h3>';
-                html += '</div>';
-
-                // Product name
-                if (step.productId) {
-                    var matchedProduct = inv.find(function(p) { return p.id === step.productId; });
-                    if (matchedProduct) {
-                        html += '<p style="color:var(--gold);font-size:0.85rem;margin-bottom:0.3rem;font-weight:600;">' + escapeHtml(matchedProduct.brand + ' ' + matchedProduct.name) + '</p>';
-                    }
-                }
-
-                html += '<p style="font-size:0.85rem;margin-bottom:0.5rem;">' + escapeHtml(step.instruction) + '</p>';
-
-                if (step.scienceBadge) {
-                    html += '<span class="badge badge-green badge-verified" style="font-size:0.65rem;">' + escapeHtml(step.scienceBadge) + '</span>';
-                }
-                if (step.tip) {
-                    html += '<div class="tip" style="margin-top:0.5rem;font-size:0.8rem;"><strong>Tip:</strong> ' + escapeHtml(step.tip) + '</div>';
-                }
-
-                // Inline timer
-                if (step.timer) {
-                    var mins = Math.floor(step.timer.duration / 60);
-                    var secs = step.timer.duration % 60;
-                    var timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
-                    html += '<div class="timer-box" id="timer-box-' + i + '" style="margin-top:0.5rem;padding:0.5rem;">';
-                    html += '<div style="display:flex;align-items:center;gap:0.75rem;justify-content:center;">';
-                    html += '<span class="timer-display" id="timer-display-' + i + '" style="font-size:1.1rem;">' + timeStr + '</span>';
-                    html += '<button class="timer-btn timer-btn-start" data-timer-idx="' + i + '" data-duration="' + step.timer.duration + '" style="padding:0.3rem 0.6rem;font-size:0.8rem;">Start</button>';
-                    html += '<button class="timer-btn timer-btn-stop" id="timer-pause-' + i + '" style="display:none;padding:0.3rem 0.6rem;font-size:0.8rem;">Pause</button>';
-                    html += '<button class="timer-btn timer-btn-reset" data-timer-idx="' + i + '" data-duration="' + step.timer.duration + '" style="padding:0.3rem 0.6rem;font-size:0.8rem;">Reset</button>';
-                    html += '</div>';
-                    html += '</div>';
-                }
-
-                html += '</div>';
-            }
-
-            // Done button at bottom
-            html += '<div style="margin-top:1.5rem;">';
-            html += '<button class="btn-primary" id="wt-done" style="width:100%;" aria-label="Finish walkthrough">Done ✓</button>';
-            html += '</div>';
-
-            walkSection.innerHTML = html;
-
-            // Wire back-home button
-            document.getElementById('wt-back-home').addEventListener('click', function() {
-                if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                releaseWakeLock();
-                showView('landing');
-                document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
-                renderLanding();
-            });
-
-            // Wire done button
-            document.getElementById('wt-done').addEventListener('click', function() {
-                if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                releaseWakeLock();
-                renderCompletion();
-            });
-
-            // Wire wake lock button
-            var wakeLockBtn = document.getElementById('wt-wake-lock');
-            wakeLockBtn.addEventListener('click', function() {
-                toggleWakeLock(wakeLockBtn);
-            });
-
-            // Wire all timer start/pause/reset buttons
-            walkSection.querySelectorAll('.timer-btn-start').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var idx = parseInt(btn.getAttribute('data-timer-idx'));
-                    var duration = parseInt(btn.getAttribute('data-duration'));
-                    var display = document.getElementById('timer-display-' + idx);
-                    var pauseBtn = document.getElementById('timer-pause-' + idx);
-
-                    var state = currentTimerId !== null ? TimerManager.getState(currentTimerId) : 'idle';
-                    if (state === 'paused') {
-                        TimerManager.resume(currentTimerId);
-                        btn.style.display = 'none';
-                        pauseBtn.style.display = '';
-                    } else {
-                        resumeAudioCtx(); // Unlock iOS audio from user gesture
-                        currentTimerId = TimerManager.start(duration, function() {
-                            display.style.color = 'var(--green)';
-                            display.textContent = '0:00 ✓';
-                            btn.style.display = 'none';
-                            pauseBtn.style.display = 'none';
-                            playTimerAlert();
-                            var settings = StateManager.getState().settings || {};
-                            if (settings.vibrationEnabled !== false && navigator.vibrate) {
-                                navigator.vibrate([200, 100, 200]);
-                            }
-                        });
-                        btn.style.display = 'none';
-                        pauseBtn.style.display = '';
-                    }
-
-                    if (timerUpdateInterval) clearInterval(timerUpdateInterval);
-                    timerUpdateInterval = setInterval(function() {
-                        if (currentTimerId === null) return;
-                        var remaining = TimerManager.getRemaining(currentTimerId);
-                        display.textContent = Math.floor(remaining / 60) + ':' + (remaining % 60 < 10 ? '0' : '') + Math.floor(remaining % 60);
-                        if (TimerManager.getState(currentTimerId) === 'completed') {
-                            if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                        }
-                    }, 250);
-                });
-            });
-
-            walkSection.querySelectorAll('.timer-btn-stop').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var idx = btn.id.replace('timer-pause-', '');
-                    var startBtn = walkSection.querySelector('.timer-btn-start[data-timer-idx="' + idx + '"]');
-                    if (currentTimerId !== null) {
-                        TimerManager.pause(currentTimerId);
-                        startBtn.textContent = 'Resume';
-                        startBtn.style.display = '';
-                        btn.style.display = 'none';
-                        if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                    }
-                });
-            });
-
-            walkSection.querySelectorAll('.timer-btn-reset').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var idx = parseInt(btn.getAttribute('data-timer-idx'));
-                    var duration = parseInt(btn.getAttribute('data-duration'));
-                    var display = document.getElementById('timer-display-' + idx);
-                    var startBtn = walkSection.querySelector('.timer-btn-start[data-timer-idx="' + idx + '"]');
-                    var pauseBtn = document.getElementById('timer-pause-' + idx);
-                    if (currentTimerId !== null) {
-                        TimerManager.reset(currentTimerId, duration);
-                    }
-                    display.textContent = Math.floor(duration / 60) + ':' + (duration % 60 < 10 ? '0' : '') + Math.floor(duration % 60);
-                    display.style.color = '';
-                    startBtn.textContent = 'Start';
-                    startBtn.style.display = '';
-                    pauseBtn.style.display = 'none';
-                    if (timerUpdateInterval) { clearInterval(timerUpdateInterval); timerUpdateInterval = null; }
-                });
-            });
-        }
-
-        // Wake Lock API
-        var wakeLock = null;
-
-        function toggleWakeLock(btn) {
-            if (wakeLock !== null) {
-                releaseWakeLock();
-                btn.textContent = '☀️ Screen on';
-                btn.style.background = '';
-            } else {
-                requestWakeLock(btn);
-            }
-        }
-
-        function requestWakeLock(btn) {
-            if ('wakeLock' in navigator) {
-                navigator.wakeLock.request('screen').then(function(lock) {
-                    wakeLock = lock;
-                    if (btn) {
-                        btn.textContent = '🔒 Screen locked on';
-                        btn.style.background = 'rgba(122, 184, 168, 0.2)';
-                    }
-                    wakeLock.addEventListener('release', function() {
-                        wakeLock = null;
-                        if (btn) {
-                            btn.textContent = '☀️ Screen on';
-                            btn.style.background = '';
-                        }
-                    });
-                }).catch(function(err) {
-                    console.warn('Wake Lock failed:', err);
-                });
-            }
-        }
-
-        function releaseWakeLock() {
-            if (wakeLock !== null) {
-                wakeLock.release();
-                wakeLock = null;
-            }
-        }
-
-        // ===== Completion Screen =====
-        function renderCompletion() {
-            var walkSection = document.getElementById('walkthrough');
-            var html = '';
-            html += '<div class="card" style="text-align:center;padding:2rem 1.25rem;">';
-            html += '<h2 style="margin-bottom:1rem;">How does your hair feel?</h2>';
-            html += '<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem;">';
-            var emojis = [
-                { emoji: '😫', rating: 1 },
-                { emoji: '😕', rating: 2 },
-                { emoji: '😐', rating: 3 },
-                { emoji: '😊', rating: 4 },
-                { emoji: '🤩', rating: 5 }
-            ];
-            emojis.forEach(function(e) {
-                html += '<button class="btn-secondary rating-btn" data-rating="' + e.rating + '" style="font-size:1.5rem;padding:0.75rem 1rem;" aria-label="Rate ' + e.rating + ' out of 5">' + e.emoji + '</button>';
-            });
-            html += '</div>';
-            html += '<button class="btn-secondary" id="rating-skip" style="width:auto;margin:0 auto;">Skip</button>';
-            html += '</div>';
-
-            walkSection.innerHTML = html;
-
-            walkSection.querySelectorAll('.rating-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var rating = parseInt(btn.getAttribute('data-rating'));
-                    saveWashEventAndReturn(rating);
-                });
-            });
-
-            var skipBtn = document.getElementById('rating-skip');
-            if (skipBtn) {
-                skipBtn.addEventListener('click', function() {
-                    saveWashEventAndReturn(null);
-                });
-            }
-        }
-
-        function saveWashEventAndReturn(rating) {
-            var state = StateManager.getState();
-            var events = state.events || [];
-
-            // Calculate interval days
-            var intervalDays = 0;
-            if (events.length > 0) {
-                var lastDate = events[events.length - 1].date;
-                intervalDays = daysSince(lastDate) || 0;
-            }
-
-            // Collect product IDs from walkthrough steps
-            var steps = WalkthroughEngine.getStepsForLane(selectedLane, selectedHumidity);
-            var products = [];
-            steps.forEach(function(s) {
-                if (s.productId && !products.includes(s.productId)) {
-                    products.push(s.productId);
-                }
-            });
-
-            // Infer treatments from products used
-            var treatments = [];
-            if (products.includes('everpure-clarifying')) {
-                treatments.push('clarify');
-            }
-            if (products.includes('garnier-pre-shampoo') || products.includes('olaplex-3')) {
-                treatments.push('protein');
-            }
-
-            var washEvent = {
-                id: generateUUID(),
-                date: new Date().toISOString(),
-                lane: selectedLane,
-                treatments: treatments,
-                products: products,
-                humidity: selectedHumidity,
-                dewPoint: detectedDewPoint,
-                rating: rating,
-                intervalDays: intervalDays,
-                overrides: CooldownSystem.getSessionOverrides(),
-                notes: ''
-            };
-
-            StateManager.saveWashEvent(washEvent);
-            updateSealState(washEvent);
-            BeliefTracker.updateBeliefs(washEvent);
-            FeedbackEngine.analyze();
-
-            // Track which heat protectant was used for A/B alternation
-            if (selectedLane === 'blowout') {
-                var heatProd2 = null;
-                for (var hp2 = 0; hp2 < products.length; hp2++) {
-                    if (products[hp2] === 'marc-anthony-shield' || products[hp2] === 'garnier-diamond-sleek') {
-                        heatProd2 = products[hp2];
-                        break;
-                    }
-                }
-                if (heatProd2) {
-                    var st2 = StateManager.getState();
-                    st2.settings = st2.settings || {};
-                    st2.settings.lastHeatProtectant = heatProd2;
-                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st2)); } catch(e) {}
-                }
-            }
-
-            // Navigate back to landing
-            showView('landing');
-            document.querySelectorAll('nav button[data-view]').forEach(function(b) { b.setAttribute('aria-current', 'false'); });
-            document.querySelector('nav button[data-view="landing"]').setAttribute('aria-current', 'true');
-            renderLanding();
-        }
-
         // ===== Inventory View =====
         function renderInventory() {
             var section = document.getElementById('inventory');
@@ -9734,10 +9675,26 @@
             // Add product button
             html += '<button class="btn-secondary" id="inv-add-btn" style="margin-bottom:1rem;">+ Add product</button>';
 
-            // Add form (hidden by default)
+            // Add form (hidden by default) — enhanced with ingredient discovery
             html += '<div class="inventory-add-form" id="inv-add-form">';
+            html += '<div id="inv-add-step1">';
             html += '<input type="text" id="inv-new-name" placeholder="Product name" aria-label="Product name">';
             html += '<input type="text" id="inv-new-brand" placeholder="Brand" aria-label="Brand">';
+            html += '<textarea id="inv-new-ingredients" placeholder="Paste ingredient list (optional \u2014 enables auto-detection)" aria-label="Ingredient list" rows="3" style="width:100%;resize:vertical;font-size:0.82rem;padding:0.5rem;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;margin-top:0.25rem;"></textarea>';
+            html += '<div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap;">';
+            html += '<button class="btn-primary" id="inv-analyze-btn" style="height:44px;font-size:0.82rem;">Analyze ingredients</button>';
+            html += '<button class="btn-secondary" id="inv-skip-ingredients" style="font-size:0.78rem;">Skip \u2014 manual entry</button>';
+            html += '<button class="btn-secondary" id="inv-lookup-btn" style="font-size:0.78rem;" title="Look up on Open Beauty Facts">\uD83D\uDD0D Look up online</button>';
+            html += '</div>';
+            html += '</div>';
+
+            // Step 2: Analysis results (hidden until analyze is clicked)
+            html += '<div id="inv-add-step2" style="display:none;">';
+            html += '<div id="inv-analysis-results"></div>';
+            html += '</div>';
+
+            // Step 3: Manual/confirmation fields
+            html += '<div id="inv-add-step3" style="display:none;">';
             html += '<select id="inv-new-tier" aria-label="Tier">';
             html += '<option value="primary">Primary Rotation</option>';
             html += '<option value="supporting" selected>Supporting Cast</option>';
@@ -9750,10 +9707,23 @@
             html += '<option value="weekly">Weekly</option>';
             html += '<option value="as-needed" selected>As Needed</option>';
             html += '</select>';
+            html += '<select id="inv-new-step" aria-label="Routine step">';
+            html += '<option value="pre_wash">Pre-wash</option>';
+            html += '<option value="shampoo">Shampoo</option>';
+            html += '<option value="bond_repair">Bond Repair</option>';
+            html += '<option value="conditioner">Conditioner</option>';
+            html += '<option value="deep_condition">Deep Condition</option>';
+            html += '<option value="gloss">Gloss/Rinse</option>';
+            html += '<option value="leave_in" selected>Leave-in</option>';
+            html += '<option value="heat_protection">Heat Protection</option>';
+            html += '<option value="styling">Styling</option>';
+            html += '<option value="finishing">Finishing</option>';
+            html += '</select>';
             html += '<input type="text" id="inv-new-notes" placeholder="Notes (optional)" aria-label="Notes">';
             html += '<div style="display:flex;gap:0.5rem;margin-top:0.25rem;">';
-            html += '<button class="btn-primary" id="inv-save-btn" style="height:48px;font-size:0.85rem;">Save</button>';
+            html += '<button class="btn-primary" id="inv-save-btn" style="height:48px;font-size:0.85rem;">Save to inventory</button>';
             html += '<button class="btn-secondary" id="inv-cancel-btn">Cancel</button>';
+            html += '</div>';
             html += '</div>';
             html += '</div>';
 
@@ -10024,12 +9994,94 @@
             // Add button
             var addBtn = document.getElementById('inv-add-btn');
             var addForm = document.getElementById('inv-add-form');
+            var addStep1 = document.getElementById('inv-add-step1');
+            var addStep2 = document.getElementById('inv-add-step2');
+            var addStep3 = document.getElementById('inv-add-step3');
+            var discoveryParseResult = null; // stored between steps
+
             if (addBtn && addForm) {
                 addBtn.addEventListener('click', function() {
                     addForm.classList.toggle('active');
                     if (addForm.classList.contains('active')) {
+                        addStep1.style.display = '';
+                        addStep2.style.display = 'none';
+                        addStep3.style.display = 'none';
+                        discoveryParseResult = null;
                         document.getElementById('inv-new-name').focus();
                     }
+                });
+            }
+
+            // Analyze ingredients button
+            var analyzeBtn = document.getElementById('inv-analyze-btn');
+            if (analyzeBtn) {
+                analyzeBtn.addEventListener('click', function() {
+                    var ingredientText = document.getElementById('inv-new-ingredients').value.trim();
+                    if (!ingredientText) {
+                        // No ingredients — go straight to manual
+                        addStep1.style.display = 'none';
+                        addStep3.style.display = '';
+                        return;
+                    }
+
+                    discoveryParseResult = DiscoveryParser.parse(ingredientText);
+                    renderAnalysisResults(discoveryParseResult);
+                    addStep1.style.display = 'none';
+                    addStep2.style.display = '';
+                });
+            }
+
+            // Skip ingredients button
+            var skipBtn = document.getElementById('inv-skip-ingredients');
+            if (skipBtn) {
+                skipBtn.addEventListener('click', function() {
+                    discoveryParseResult = null;
+                    addStep1.style.display = 'none';
+                    addStep2.style.display = 'none';
+                    addStep3.style.display = '';
+                });
+            }
+
+            // Open Beauty Facts lookup
+            var lookupBtn = document.getElementById('inv-lookup-btn');
+            if (lookupBtn) {
+                lookupBtn.addEventListener('click', function() {
+                    var name = document.getElementById('inv-new-name').value.trim();
+                    var brand = document.getElementById('inv-new-brand').value.trim();
+                    var query = (brand + ' ' + name).trim();
+                    if (!query) {
+                        document.getElementById('inv-new-name').focus();
+                        return;
+                    }
+                    lookupBtn.textContent = '\u23F3 Looking up...';
+                    lookupBtn.disabled = true;
+
+                    var url = 'https://world.openbeautyfacts.org/cgi/search.pl?search_terms=' + encodeURIComponent(query) + '&json=1&page_size=3';
+                    fetch(url)
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.products && data.products.length > 0) {
+                                var product = data.products[0];
+                                var ingredients = product.ingredients_text || product.ingredients_text_en || '';
+                                if (ingredients) {
+                                    document.getElementById('inv-new-ingredients').value = ingredients;
+                                    lookupBtn.textContent = '\u2705 Found! Review ingredients below.';
+                                } else {
+                                    lookupBtn.textContent = '\u274C Found product but no ingredient list available';
+                                }
+                            } else {
+                                lookupBtn.textContent = '\u274C Not found \u2014 paste ingredients manually';
+                            }
+                        })
+                        .catch(function() {
+                            lookupBtn.textContent = '\u274C Offline or lookup failed';
+                        })
+                        .finally(function() {
+                            lookupBtn.disabled = false;
+                            setTimeout(function() {
+                                lookupBtn.textContent = '\uD83D\uDD0D Look up online';
+                            }, 4000);
+                        });
                 });
             }
 
@@ -10040,7 +10092,9 @@
                     addForm.classList.remove('active');
                     document.getElementById('inv-new-name').value = '';
                     document.getElementById('inv-new-brand').value = '';
+                    document.getElementById('inv-new-ingredients').value = '';
                     document.getElementById('inv-new-notes').value = '';
+                    discoveryParseResult = null;
                 });
             }
 
@@ -10052,11 +10106,31 @@
                     var brand = document.getElementById('inv-new-brand').value.trim();
                     var tier = document.getElementById('inv-new-tier').value;
                     var context = document.getElementById('inv-new-context').value;
+                    var step = document.getElementById('inv-new-step').value;
                     var notes = document.getElementById('inv-new-notes').value.trim();
 
                     if (!name) {
+                        addStep1.style.display = '';
+                        addStep2.style.display = 'none';
+                        addStep3.style.display = 'none';
                         document.getElementById('inv-new-name').focus();
                         return;
+                    }
+
+                    // Build intelligence from discovery or manual
+                    var intelligence;
+                    if (discoveryParseResult && discoveryParseResult.matched.length > 0) {
+                        intelligence = DiscoveryParser.buildIntelligence(discoveryParseResult, { step: step });
+                    } else {
+                        intelligence = {
+                            mechanisms: [],
+                            delivery: step === 'shampoo' || step === 'conditioner' || step === 'bond_repair' || step === 'deep_condition' || step === 'gloss' || step === 'pre_wash' ? 'rinse_off' : 'leave_on',
+                            step: step,
+                            outcomes: {},
+                            cumulative: false,
+                            interactions: [],
+                            ingredients: []
+                        };
                     }
 
                     InventoryManager.addProduct({
@@ -10065,16 +10139,95 @@
                         tier: tier,
                         context: context,
                         usingUp: tier === 'use-up',
-                        notes: notes
+                        notes: notes,
+                        intelligence: intelligence
                     });
 
                     // Clear form and re-render
                     document.getElementById('inv-new-name').value = '';
                     document.getElementById('inv-new-brand').value = '';
+                    document.getElementById('inv-new-ingredients').value = '';
                     document.getElementById('inv-new-notes').value = '';
                     addForm.classList.remove('active');
+                    discoveryParseResult = null;
                     renderInventory();
                 });
+            }
+
+            // Render analysis results helper
+            function renderAnalysisResults(result) {
+                var container = document.getElementById('inv-analysis-results');
+                var html = '';
+
+                html += '<h4 style="color:var(--green);font-size:0.85rem;margin-bottom:0.5rem;">\uD83E\uDDEA Analysis Results</h4>';
+
+                // Matched ingredients
+                if (result.matched.length > 0) {
+                    html += '<div style="margin-bottom:0.5rem;">';
+                    html += '<div style="font-size:0.78rem;color:var(--text-secondary);font-weight:600;">Recognized (' + result.matched.length + ')</div>';
+                    result.matched.forEach(function(m) {
+                        var roles = m.entry.roles.join(', ');
+                        html += '<div style="font-size:0.72rem;color:var(--text);padding:0.15rem 0;">';
+                        html += '\u2705 <strong>' + escapeHtml(m.input) + '</strong>';
+                        html += ' <span style="color:var(--muted);">\u2014 ' + escapeHtml(roles) + '</span>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+
+                // Unmatched
+                if (result.unmatched.length > 0) {
+                    html += '<div style="margin-bottom:0.5rem;">';
+                    html += '<div style="font-size:0.78rem;color:var(--muted);font-weight:600;">Not in KB (' + result.unmatched.length + ')</div>';
+                    html += '<div style="font-size:0.7rem;color:var(--muted);">' + result.unmatched.slice(0, 8).map(escapeHtml).join(', ');
+                    if (result.unmatched.length > 8) html += ' + ' + (result.unmatched.length - 8) + ' more';
+                    html += '</div>';
+                    html += '</div>';
+                }
+
+                // Detected roles
+                if (result.detectedRoles.length > 0) {
+                    html += '<div style="margin-bottom:0.5rem;">';
+                    html += '<div style="font-size:0.78rem;color:var(--text-secondary);font-weight:600;">Detected functions</div>';
+                    html += '<div style="font-size:0.72rem;color:var(--text);">' + result.detectedRoles.map(function(r) { return r.replace(/_/g, ' '); }).join(', ') + '</div>';
+                    html += '</div>';
+                }
+
+                // Suggested step
+                html += '<div style="margin-bottom:0.5rem;">';
+                html += '<div style="font-size:0.78rem;color:var(--gold);font-weight:600;">Suggested step: ' + result.suggestedStep.replace(/_/g, ' ') + '</div>';
+                html += '</div>';
+
+                // Interactions
+                if (result.interactions.length > 0) {
+                    html += '<div style="margin-bottom:0.5rem;">';
+                    html += '<div style="font-size:0.78rem;color:var(--rose);font-weight:600;">\u26A1 Interactions with your inventory</div>';
+                    result.interactions.forEach(function(i) {
+                        html += '<div style="font-size:0.72rem;color:var(--text-secondary);">' + escapeHtml(i.note) + '</div>';
+                    });
+                    html += '</div>';
+                }
+
+                // Continue button
+                html += '<button class="btn-primary" id="inv-analysis-continue" style="height:44px;font-size:0.82rem;margin-top:0.5rem;">Continue \u2192 confirm details</button>';
+
+                container.innerHTML = html;
+
+                // Wire continue button
+                setTimeout(function() {
+                    var continueBtn = document.getElementById('inv-analysis-continue');
+                    if (continueBtn) {
+                        continueBtn.addEventListener('click', function() {
+                            // Pre-fill step dropdown from analysis
+                            var stepSelect = document.getElementById('inv-new-step');
+                            if (stepSelect && result.suggestedStep) {
+                                stepSelect.value = result.suggestedStep;
+                            }
+                            addStep2.style.display = 'none';
+                            addStep3.style.display = '';
+                        });
+                    }
+                }, 0);
             }
 
             // Reset to defaults
@@ -10196,6 +10349,31 @@
                     html += '<span style="font-size:1.3rem;">' + emoji + '</span>';
                     html += '</div>';
                     html += '<p style="font-size:0.8rem;color:var(--muted);margin-top:0.4rem;">' + interval + '</p>';
+
+                    // Marginal insights for products in this event (if data exists)
+                    if (ev.products && ev.products.length > 0 && ev.rating) {
+                        var eventInsights = [];
+                        ev.products.forEach(function(pid) {
+                            var insight = AttributionEngine.getMarginalInsights(pid);
+                            if (insight && Math.abs(insight.difference) > 0.5) {
+                                eventInsights.push(insight);
+                            }
+                        });
+                        if (eventInsights.length > 0) {
+                            html += '<div style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid var(--border);">';
+                            eventInsights.slice(0, 2).forEach(function(ins) {
+                                var dir = ins.difference > 0 ? '\u2191' : '\u2193';
+                                var col = ins.difference > 0 ? 'var(--green)' : 'var(--rose)';
+                                html += '<div style="font-size:0.7rem;color:var(--text-secondary);">';
+                                html += '<span style="color:' + col + ';">' + dir + '</span> ';
+                                html += escapeHtml(ins.productName) + ': ' + (ins.difference > 0 ? '+' : '') + ins.difference.toFixed(1);
+                                html += ' <span style="color:var(--muted);">(n=' + ins.nWith + '/' + ins.nWithout + ')</span>';
+                                html += '</div>';
+                            });
+                            html += '</div>';
+                        }
+                    }
+
                     html += '</div>';
                 });
             }
