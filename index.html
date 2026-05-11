@@ -8256,7 +8256,8 @@
 
             // Wire events — Layer 1 is now multi-select (same as Layers 2/3)
             document.querySelectorAll('#adjust-quick-options .adjust-option').forEach(function(btn) {
-                btn.onclick = function() {
+                btn.onclick = function(e) {
+                    e.stopPropagation();
                     var val = btn.getAttribute('data-value');
                     var idx = currentObservations.quick.indexOf(val);
                     if (idx !== -1) {
@@ -8271,7 +8272,8 @@
             });
 
             document.querySelectorAll('#adjust-context-options .adjust-option').forEach(function(btn) {
-                btn.onclick = function() {
+                btn.onclick = function(e) {
+                    e.stopPropagation();
                     var val = btn.getAttribute('data-value');
                     var idx = currentObservations.context.indexOf(val);
                     if (idx !== -1) {
@@ -8286,7 +8288,8 @@
             });
 
             document.querySelectorAll('#adjust-detailed-options .adjust-option').forEach(function(btn) {
-                btn.onclick = function() {
+                btn.onclick = function(e) {
+                    e.stopPropagation();
                     var val = btn.getAttribute('data-value');
                     var idx = currentObservations.detailed.indexOf(val);
                     if (idx !== -1) {
@@ -8301,15 +8304,18 @@
             });
 
             // Layer reveal buttons
-            document.getElementById('adjust-show-layer-2').onclick = function() {
+            document.getElementById('adjust-show-layer-2').onclick = function(e) {
+                e.stopPropagation();
                 document.getElementById('adjust-layer-2').classList.add('visible');
             };
-            document.getElementById('adjust-show-layer-3').onclick = function() {
+            document.getElementById('adjust-show-layer-3').onclick = function(e) {
+                e.stopPropagation();
                 document.getElementById('adjust-layer-3').classList.add('visible');
             };
 
             // Close button
-            document.getElementById('adjust-close').onclick = function() {
+            document.getElementById('adjust-close').onclick = function(e) {
+                e.stopPropagation();
                 overlay.classList.remove('visible');
                 // Show toast summarizing selections
                 var allSelections = currentObservations.quick.concat(currentObservations.context, currentObservations.detailed);
@@ -8319,10 +8325,16 @@
                 }
             };
 
-            // Close on backdrop tap
+            // Close on backdrop tap (only if tap is directly on the overlay backdrop, not on sheet or children)
             overlay.onclick = function(e) {
                 if (e.target === overlay) overlay.classList.remove('visible');
             };
+
+            // Prevent any tap inside the sheet from bubbling to the overlay backdrop handler
+            var sheet = overlay.querySelector('.adjust-sheet');
+            if (sheet) {
+                sheet.onclick = function(e) { e.stopPropagation(); };
+            }
 
             // Close on Escape key
             var escHandler = function(e) {
