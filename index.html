@@ -6848,12 +6848,16 @@
 
                 // Determine conditioning context
                 var lastWashTreats = [];
+                var lastWashProds = [];
                 var evts = state.events || [];
                 for (var ei = evts.length - 1; ei >= 0; ei--) {
                     lastWashTreats = evts[ei].treatments || [];
+                    lastWashProds = evts[ei].products || [];
                     break;
                 }
-                var isPostClarify = lastWashTreats.indexOf('clarify') !== -1;
+                var isPostClarify = lastWashTreats.indexOf('clarify') !== -1 ||
+                    lastWashProds.indexOf('everpure-clarifying') !== -1 ||
+                    lastWashProds.indexOf('kinky-curly-come-clean') !== -1;
                 var isDryAir = dewPoint !== null && dewPoint < 35;
                 var isUseUpDay = useUpSwap !== null;
 
