@@ -10,8 +10,8 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
 
 ## Tasks
 
-- [ ] 1. Plan Generation Engine (data layer)
-  - [ ] 1.1 Implement PlanGenerator module — lane suggestion
+- [x] 1. Plan Generation Engine (data layer)
+  - [x] 1.1 Implement PlanGenerator module — lane suggestion
     - `PlanGenerator.suggestLane(state, dewPoint)` — returns suggested lane + reasoning
     - Logic:
       - If seal active AND < 4 washes since seal → suggest blowout or refresh (not curly)
@@ -21,14 +21,14 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
     - Returns: `{ lane: string, reason: string, confidence: 'high'|'medium'|'low' }`
     - Lane is a suggestion, not a gate — user can override via Adjust flow
 
-  - [ ] 1.2 Implement PlanGenerator module — step sequence builder
+  - [x] 1.2 Implement PlanGenerator module — step sequence builder
     - `PlanGenerator.buildPlan(lane, dewPoint, state)` — returns ordered step array
     - Each step: `{ id, stepType, productId, productName, instruction, scienceBadge?, timer?, phase, skipReason? }`
     - Phase grouping: PREP & WASH | STYLE | DRY & FINISH (curly), PREP & WASH | PROTECT | STYLE | FINISH (blowout)
     - Include "SKIP TODAY" items at end with reasons (treatment not due, seal conflict, etc.)
     - Step count: ~8-10 for curly, ~9-10 for blowout, ~4-6 for refresh
 
-  - [ ] 1.3 Implement product ranking per step (domain rules only)
+  - [x] 1.3 Implement product ranking per step (domain rules only)
     - `PlanGenerator.rankProducts(stepType, conditions, inventory)` — returns ranked product list for a step
     - Tier 1 domain rules (always active):
       - Amodimethicone conditioner always #1 (Garnier Color Repair or L'Oréal EverPure Bond Repair)
@@ -40,14 +40,14 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
     - Each ranking includes: productId, rank, reason (human-readable)
     - Stub hook for future Bayesian ranking (Tier 2-3): `// TODO: BeliefTracker integration`
 
-  - [ ] 1.4 Implement skip logic
+  - [x] 1.4 Implement skip logic
     - `PlanGenerator.getSkipReasons(state)` — returns items to skip today with reasons
     - Skip when: protein < 7 days since last, clarify < 7 days, deep condition < 14 days, Olaplex < 7 days
     - Skip when: product conflicts with seal state
     - Each skip: `{ stepType, productName, reason, lastUsed }`
 
-- [ ] 2. Adjustment Engine
-  - [ ] 2.1 Implement AdjustmentEngine module — observation processing
+- [x] 2. Adjustment Engine
+  - [x] 2.1 Implement AdjustmentEngine module — observation processing
     - `AdjustmentEngine.adjust(currentPlan, observations)` — returns modified plan
     - Observation types:
       - Layer 1 (quick, single-select): frizzy, flat, holding_well, oily, dry_rough
@@ -64,26 +64,26 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
       - exercised → prioritize wash over refresh
       - stiff → reduce protein frequency, extra conditioning
 
-  - [ ] 2.2 Implement product swap tracking
+  - [x] 2.2 Implement product swap tracking
     - When user rotates a product via [↻], record the swap
     - `AdjustmentEngine.recordSwap(stepType, fromProductId, toProductId)`
     - Swaps stored on the plan object for logging with the wash event
     - Re-evaluate downstream steps if swap has interaction implications (e.g., swapping conditioner affects what leave-in is optimal)
 
-- [ ] 3. Checkpoint — verify plan generation
+- [x] 3. Checkpoint — verify plan generation
   - Generate plans for all 3 lanes with mock state data
   - Verify product ranking matches domain rules
   - Verify skip logic fires correctly for various timing scenarios
   - Verify adjustment rules modify plans as expected
 
-- [ ] 4. Plan View UI (scrollable single-page)
-  - [ ] 4.1 Implement plan header and metadata bar
+- [x] 4. Plan View UI (scrollable single-page)
+  - [x] 4.1 Implement plan header and metadata bar
     - "Today's Plan" heading
     - Subtitle: lane + dew point + days since wash (e.g., "Curly Day · Dew point 52°F · Day 4")
     - "Adjust — tell me about your hair →" button (opens adjustment overlay)
     - Condensed view toggle (collapses to checklist mode)
 
-  - [ ] 4.2 Implement scrollable step list with phase grouping
+  - [x] 4.2 Implement scrollable step list with phase grouping
     - Phase headers (PREP & WASH, STYLE, DRY & FINISH) as section dividers
     - Each step card: product name, instruction text, [ℹ] info button, [↻] rotate button
     - Timer badge on steps that need timing (e.g., "⏱ 5 min")
@@ -91,20 +91,20 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
     - Science badge (tappable → info popup)
     - SKIP TODAY section at bottom with greyed-out items + reasons
 
-  - [ ] 4.3 Implement [ℹ] info popup (bottom-sheet overlay)
+  - [x] 4.3 Implement [ℹ] info popup (bottom-sheet overlay)
     - Triggered by tapping info icon on any step
     - Shows: why this product is recommended today, what it does (mechanism), science confidence badge, source citation
     - Dismiss: tap outside or X button
     - Does NOT navigate away from plan view
 
-  - [ ] 4.4 Implement [↻] product rotation (ranked alternatives)
+  - [x] 4.4 Implement [↻] product rotation (ranked alternatives)
     - Triggered by tapping rotate icon on any step
     - Shows ranked list of alternatives for that step from inventory
     - Each alternative: name + one-line reason why it's ranked lower
     - Tapping an alternative swaps it into the plan
     - Records swap for wash event logging
 
-  - [ ] 4.5 Implement inline timers
+  - [x] 4.5 Implement inline timers
     - Timer starts on tap of the time badge
     - Visual countdown in-place on the step card
     - Pause/reset controls appear when timer is active
@@ -112,15 +112,15 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
     - Only one timer active at a time
     - Timer persists across scroll (sticky mini-bar at top when timer step scrolls out of view)
 
-  - [ ] 4.6 Implement condensed checklist view
+  - [x] 4.6 Implement condensed checklist view
     - Toggle at top of plan switches between full and condensed
     - Condensed: single line per step (checkbox + product name + time if applicable)
     - Checkboxes optional (for tracking progress mid-shower)
     - Timers still accessible (tap time to start)
     - Remember preference in localStorage
 
-- [ ] 5. Adjustment UI (progressive disclosure overlay)
-  - [ ] 5.1 Implement Layer 1 — quick observation (single-select)
+- [x] 5. Adjustment UI (progressive disclosure overlay)
+  - [x] 5.1 Implement Layer 1 — quick observation (single-select)
     - Bottom-sheet overlay triggered by "Adjust" button
     - 5 large tap targets with emoji + label:
       - 🌊 Frizzy / poofy
@@ -131,7 +131,7 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
     - Selecting one immediately re-generates plan (visible changes)
     - "More →" link to Layer 2
 
-  - [ ] 5.2 Implement Layer 2 — context (optional toggles)
+  - [x] 5.2 Implement Layer 2 — context (optional toggles)
     - Appears below Layer 1 on tap of "More"
     - Toggle buttons (multi-select):
       - 🏃 Exercised / sweaty
@@ -141,7 +141,7 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
     - Each toggle immediately adjusts plan
     - "More detail →" link to Layer 3
 
-  - [ ] 5.3 Implement Layer 3 — specific observations (optional multi-select)
+  - [x] 5.3 Implement Layer 3 — specific observations (optional multi-select)
     - Appears below Layer 2 on tap of "More detail"
     - Checkbox list:
       - Tangles worse than usual
@@ -152,7 +152,7 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
     - Submit adjusts plan
     - Overlay dismisses, plan view shows updated steps
 
-- [ ] 6. Checkpoint — verify plan UI
+- [x] 6. Checkpoint — verify plan UI
   - Test full plan renders correctly for curly/blowout/refresh
   - Test adjustment flow: select observation → plan visibly changes
   - Test product rotation: tap [↻] → alternatives show → swap works
@@ -160,21 +160,21 @@ Built directly into `index.html` (single-file architecture). Replaces the landin
   - Test condensed view toggle
   - Test on mobile viewport (320px width)
 
-- [ ] 7. Outcome Collection
-  - [ ] 7.1 Implement end-of-plan rating
+- [x] 7. Outcome Collection
+  - [x] 7.1 Implement end-of-plan rating
     - "How'd it turn out?" section at bottom of plan (below SKIP TODAY)
     - Emoji rating row: 😫 😕 😐 😊 🤩
     - "Skip for now" option
     - On rate: save wash event with all plan data (products, lane, dew point, observations, swaps)
 
-  - [ ] 7.2 Implement deferred rating (next-day prompt)
+  - [x] 7.2 Implement deferred rating (next-day prompt)
     - If rating skipped, store a pending prompt in localStorage
     - Next app open (after 12+ hours): gentle banner "How did yesterday's wash turn out?"
     - Same emoji scale
     - Disappears after rating OR after 48 hours
     - Stored as `deferredRating` on the wash event
 
-  - [ ] 7.3 Update WashEvent schema for daily plan data
+  - [x] 7.3 Update WashEvent schema for daily plan data
     - Schema v9 migration (additive — new fields default to null/empty):
       - `observations: { quick: string|null, context: string[], detailed: string[] }`
       - `planAdjusted: boolean`

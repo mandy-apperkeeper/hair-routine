@@ -1,72 +1,88 @@
 # Session Handoff — Hair Routine
 
 **Date:** May 11, 2026
-**Session focus:** Diagnostic Adjustment Engine — cleanup and verification
+**Session focus:** Diagnostic Adjustment Engine — deployment + cleanup
 
 ---
 
 ## What Was Done This Session
 
-### 1. Wired outcome tracking into all rating paths
-- Quick-log flow now updates `DiagnosticEngine.OutcomeTracker` when a cause was confirmed
-- Deferred rating flow (12-48h later) checks `event.confirmedCause` and updates outcome tracker
-- Both paths clear `lastConfirmedCause` after recording
+### 1. Verified DiagnosticEngine functionality
+- JS syntax validation: 565K chars, parses clean
+- Functional tests (isolated via vm module): all 5 symptom trees rank correctly, interventions apply, Beta-Binomial tracking works, Normal-Normal outcome tracking works, condition key derivation correct, clarify modifier correct, mixed score blends properly
 
-### 2. Removed old AdjustmentEngine dead code (~18K chars)
-- Removed: `applyFrizzyAdjustments`, `applyBuildupAdjustments`, `applyCurlNotHoldingAdjustments`, `applyDryRoughAdjustments`, `applyStiffAdjustments`
-- Kept: `applyHoldingWellAdjustments`, `applyShortOnTimeAdjustments`, `applyHeatStylingAdjustments`, `applyExercisedAdjustments`, `recordSwap`
-- Updated `adjust()` function to only dispatch context adjustments + holding_well
+### 2. Deployed to GitHub Pages
+- Commit `112c06f`: full DiagnosticEngine implementation
+- Commit `5dcb519`: dead code cleanup
 
-### 3. Structural verification
-- JS syntax valid (591K chars)
-- All 15 causes defined in CAUSE_TREES
-- All 15 interventions defined in INTERVENTIONS
-- DiagnosticEngine exposes: BetaBinomialTracker, OutcomeTracker, mixedScore, getConditionKey, getClarifyModifier, CAUSE_TREES, rankCauses, rankCausesMultiSymptom, getExistingAdjustments, applyIntervention, checkDiscrepancy
-- Schema version 14
-- No dangling references to removed functions
+### 3. Removed dead code (~532 lines / 26K chars)
+- Standalone `BetaBinomialTracker` (superseded by DiagnosticEngine.BetaBinomialTracker)
+- Standalone `OutcomeTracker` (superseded by DiagnosticEngine.OutcomeTracker)
+- `DiagnosticScorer` (superseded by DiagnosticEngine.mixedScore)
+- Outer `CAUSE_TREES` (superseded by DiagnosticEngine.CAUSE_TREES)
+- Old standalone `rankCauses` function (superseded by DiagnosticEngine.rankCauses)
+
+### 4. Updated Daily Plan spec tasks.md
+- Marked all tasks 1-11 as complete (they were implemented in prior sessions but checkboxes weren't updated)
+
+### 5. Removed leftover `_final_check.js`
+- Was from Product Intelligence verification, no longer needed
 
 ---
 
 ## What's Live vs Pending
 
-- **Live:** No deployment yet. All changes local.
-- **Ready to deploy:** Push to main = live on GitHub Pages.
+- **Live:** Everything deployed. App at https://mandy-apperkeeper.github.io/hair-routine/
+- **Schema:** Version 14 (diagnosticState added)
+- **File size:** ~565K chars JS (down from 591K after dead code removal)
 
 ---
 
 ## Known Issues
 
-1. **Verification log blocking gap:** "resolve observation model" — proceeded with Beta-Binomial (correct for binary data). Not a real blocker.
-2. **`stiff` in both Layer 1 and Layer 3 of adjust UI** — minor UX duplication. The routing handles both correctly.
-3. **No in-browser testing yet** — structural verification passes but needs real user testing.
+1. **No real-device testing yet** — structural + functional verification passes but needs iPad testing of the adjust flow (cause cards, intervention application, outcome tracking)
+2. **`stiff` in both Layer 1 and Layer 3 of adjust UI** — minor UX duplication, routing handles both correctly
+
+---
+
+## Architecture Summary
+
+The DiagnosticEngine module (~line 8000 in index.html after cleanup) contains:
+- `BetaBinomialTracker` — tracks cause selection frequency per (symptom, cause, condition)
+- `OutcomeTracker` — Normal-Normal conjugate for intervention effectiveness
+- `mixedScore()` — blends selection probability with outcome expectation
+- `CAUSE_TREES` — 15 causes across 5 symptoms with evidence generation
+- `INTERVENTIONS` — 15 intervention functions with delta-awareness
+- `rankCauses()` / `rankCausesMultiSymptom()` — ranked cause lists
+- `checkDiscrepancy()` — detects selection vs outcome divergence
+- `getExistingAdjustments()` — prevents duplicate interventions
+
+The `AdjustmentEngine` (slimmed) handles only context adjustments:
+- `holding_well` → switch to refresh
+- `short_on_time` → remove optional steps
+- `heat_styling` → add heat protection
+- `exercised` → upgrade to full wash
 
 ---
 
 ## Next Session Priorities
 
 ### Immediate:
-1. **In-browser test** — open app, trigger adjust flow, verify cause cards appear and interventions apply correctly
-2. **Deploy to GitHub Pages** — push to main
+1. **Service worker registration (PWA)** — `hair-sw.js` exists but isn't registered. Wire it up for offline support.
+2. **iPad testing** — verify adjust flow, cause cards, interventions on real device
 
-### After deployment:
-3. Daily Plan spec tasks.md
-4. Service worker registration (PWA)
-
-### Independent:
-5. Product deep dives (everpure-glossing-mask, loreal-wonder-water, nym-curl-talk-gel)
-6. Re-score everpure-bond-shampoo.md
-7. A6 adversarial pass
+### Independent (any order):
+3. Product deep dives (everpure-glossing-mask, loreal-wonder-water, nym-curl-talk-gel)
+4. Re-score everpure-bond-shampoo.md
+5. A6 adversarial pass (stress-test the diagnostic engine with edge cases)
 
 ---
 
-## Context for Next Session
+## Specs Status
 
-The Diagnostic Adjustment Engine is fully implemented and structurally verified. The AdjustmentEngine now only handles:
-- `holding_well` → switch to refresh plan
-- `short_on_time` → remove optional steps
-- `heat_styling` → add heat protection
-- `exercised` → upgrade to full wash
-
-All symptom-based adjustments (frizzy, dry/rough, stiff, curls dropping, buildup) route through DiagnosticEngine cause cards.
-
-The `DiagnosticEngine` module is at ~line 8500 in index.html, right after the slimmed-down AdjustmentEngine.
+| Spec | Status |
+|------|--------|
+| adaptive-hair-routine | Complete (original, partially superseded) |
+| daily-plan | Complete (all tasks done) |
+| product-intelligence | Partially implemented (IngredientKB, BeliefTracker, AttributionEngine live) |
+| diagnostic-adjustment-engine | Complete (all tasks done, deployed) |
