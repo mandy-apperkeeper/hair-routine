@@ -8178,6 +8178,9 @@
                 gelGapCard.innerHTML = '';
             }
 
+            // Render recommendation card (active intelligence)
+            renderRecommendationCard();
+
             // Render daily plan (replaces old lane selection for users with history)
             renderDailyPlan();
             checkDeferredRating();
@@ -8252,6 +8255,99 @@
                 context: 'Day ' + washDays + ' of ' + typicalInterval + '. Your ' + (lastWashLane || 'curly') + ' style might need a refresh.',
                 buttonLabel: 'Start Refresh'
             };
+        }
+
+        // ===== Recommendation Card Rendering =====
+        function renderRecommendationCard() {
+            var card = document.getElementById('recommendation-card');
+            if (!card) return;
+
+            var state = StateManager.getState();
+            var events = state.events || [];
+            var ratedEvents = events.filter(function(e) { return e.rating; });
+
+            // Only show personalized recommendations after 3+ events (domain rules show immediately)
+            // But don't show the card at all if there are 0 events (first-use state)
+            if (events.length === 0) {
+                card.style.display = 'none';
+                return;
+            }
+
+            var conditions = {
+                dewPoint: detectedDewPoint,
+                lane: null // no lane selected yet on landing
+            };
+
+            var recommendations = RecommendationEngine.getRecommendations(conditions);
+
+            // Also get conflict warnings based on seal state
+            var warnings = RecommendationEngine.getConflictWarnings({
+                dewPoint: detectedDewPoint,
+                lane: null,
+                selectedProducts: []
+            });
+
+            // Filter: only show seal-related warnings on landing (others need product selection)
+            warnings = warnings.filter(function(w) {
+                return w.type === 'seal_blocks_curly' || w.type === 'seal_blocks_treatment';
+            });
+
+            // Nothing to show
+            if (recommendations.length === 0 && warnings.length === 0) {
+                card.style.display = 'none';
+                return;
+            }
+
+            card.style.display = '';
+            var html = '';
+
+            // Header with conditions
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">';
+            html += '<h3 style="color:var(--green);font-size:0.9rem;margin:0;">\uD83D\uDCA1 Today\u2019s recommendations</h3>';
+            if (detectedDewPoint !== null) {
+                html += '<span style="font-size:0.72rem;color:var(--muted);">Dew point: ' + detectedDewPoint + '\u00B0F</span>';
+            }
+            html += '</div>';
+
+            // Warnings first (if any)
+            if (warnings.length > 0) {
+                warnings.forEach(function(w) {
+                    html += '<div style="background:rgba(232,168,56,0.1);border:1px solid rgba(232,168,56,0.3);border-radius:8px;padding:0.5rem 0.6rem;margin-bottom:0.5rem;">';
+                    html += '<div style="font-size:0.8rem;color:var(--gold);font-weight:600;">\u26A0\uFE0F ' + escapeHtml(w.message) + '</div>';
+                    html += '<div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.2rem;">' + escapeHtml(w.suggestion) + '</div>';
+                    html += '</div>';
+                });
+            }
+
+            // Recommendations (max 4)
+            var shown = Math.min(recommendations.length, 4);
+            for (var i = 0; i < shown; i++) {
+                var rec = recommendations[i];
+                var tierLabel = rec.tier === 1 ? 'Domain rule' : rec.tier === 2 ? 'From your data' : 'Condition match';
+                var tierColor = rec.tier === 1 ? 'var(--green)' : rec.tier === 2 ? 'var(--blue)' : 'var(--muted)';
+                var confIcon = rec.confidence === 'high' ? '\u2705' : rec.confidence === 'medium' ? '\uD83D\uDFE1' : '\u26AA';
+
+                html += '<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:baseline;">';
+                html += '<span style="font-size:0.82rem;color:var(--text);font-weight:500;">' + confIcon + ' ' + escapeHtml(rec.productName) + '</span>';
+                html += '<span style="font-size:0.65rem;color:' + tierColor + ';">' + tierLabel + '</span>';
+                html += '</div>';
+                html += '<div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.15rem;">' + escapeHtml(rec.reason) + '</div>';
+                html += '</div>';
+            }
+
+            if (recommendations.length > 4) {
+                html += '<div style="font-size:0.72rem;color:var(--muted);padding-top:0.3rem;">+ ' + (recommendations.length - 4) + ' more</div>';
+            }
+
+            // Data threshold note
+            if (ratedEvents.length < 3) {
+                html += '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.5rem;font-style:italic;">Rate ' + (3 - ratedEvents.length) + ' more wash' + ((3 - ratedEvents.length) !== 1 ? 'es' : '') + ' to unlock personalized recommendations</div>';
+            } else if (ratedEvents.length < 10) {
+                html += '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.5rem;font-style:italic;">Condition-based insights unlock at 10 rated washes (' + ratedEvents.length + '/10)</div>';
+            }
+
+            card.innerHTML = html;
         }
 
         // ===== Daily Plan Rendering =====
