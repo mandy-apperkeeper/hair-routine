@@ -68,7 +68,8 @@ The `AdjustmentEngine` (slimmed) handles only context adjustments:
 ## Next Session Priorities
 
 ### Immediate:
-1. **iPad testing** — verify adjust flow, cause cards, interventions on real device
+1. **Diagnostic interventions: product-aware recommendations** — intervention helpers should query PlanGenerator.rankProducts for the best product given current conditions, not hardcode product IDs. Touches ~6 helper functions (swapGelToGot2b, upgradeConditioner, addWonderWater, swapToClarify, addPreWash, addTipToLeaveIn). Evidence text should name the specific product and why.
+2. **iPad testing** — verify adjust flow, cause cards, interventions on real device
 
 ### Independent (any order):
 2. Product deep dives (everpure-glossing-mask, loreal-wonder-water, nym-curl-talk-gel)
