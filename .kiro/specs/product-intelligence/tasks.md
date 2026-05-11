@@ -30,9 +30,9 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
     - [x] Add `subStep` property for wash-phase products (shampoo, conditioner, clarify, glossing, deep_condition)
     - [x] Bump schema version to 5
     - [x] v4→v5 migration code (renames phase→step, adds subStep from lookup)
-    - [ ] Add `state.beliefs` object (initialized from product intelligence priors)
-    - [ ] Add `state.discoveredInteractions` array (empty)
-    - [ ] Add `ingredients` field to existing inventory products
+    - [x] Add `state.beliefs` object (initialized from product intelligence priors)
+    - [x] Add `state.discoveredInteractions` array (empty)
+    - [x] Add `ingredients` field to existing inventory products
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
 - [ ] 2. BeliefTracker Module

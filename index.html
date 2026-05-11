@@ -1772,7 +1772,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 12;
+        const CURRENT_VERSION = 13;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -2257,14 +2257,17 @@
             settings: {
                 defaultHumidity: null,
                 soundEnabled: true,
-                vibrationEnabled: true
+                vibrationEnabled: true,
+                lastHeatProtectant: null
             },
             useUpRotation: {
                 lastAssignedProductId: null,
                 lastAssignedDate: null,
                 washCountSinceLastRotation: 0
             },
-            lastExport: null
+            lastExport: null,
+            beliefs: {},
+            discoveredInteractions: []
         };
 
         const HARD_FLOORS = {
@@ -2648,6 +2651,57 @@
                     };
                 }
                 state.version = 12;
+            }
+
+            // v12 → v13: Add beliefs, discoveredInteractions, and ingredients to products
+            if (state.version < 13) {
+                // Initialize beliefs object from product intelligence priors
+                if (!state.beliefs) {
+                    state.beliefs = {};
+                    if (Array.isArray(state.inventory)) {
+                        state.inventory.forEach(function(product) {
+                            if (product.intelligence && product.intelligence.outcomes) {
+                                var productBeliefs = {};
+                                var outcomes = product.intelligence.outcomes;
+                                Object.keys(outcomes).forEach(function(outcome) {
+                                    productBeliefs[outcome] = {
+                                        mu: outcomes[outcome],  // prior from domain knowledge
+                                        variance: 2.0,          // wide prior — uncertain
+                                        n: 0                    // no observations yet
+                                    };
+                                });
+                                state.beliefs[product.id] = productBeliefs;
+                            }
+                        });
+                    }
+                }
+
+                // Initialize discoveredInteractions array
+                if (!state.discoveredInteractions) {
+                    state.discoveredInteractions = [];
+                }
+
+                // Add ingredients arrays to existing inventory products
+                if (Array.isArray(state.inventory)) {
+                    var ingredientLookup = {};
+                    DEFAULT_INVENTORY.forEach(function(p) {
+                        if (p.intelligence && p.intelligence.ingredients) {
+                            ingredientLookup[p.id] = p.intelligence.ingredients;
+                        }
+                    });
+
+                    state.inventory.forEach(function(product) {
+                        if (product.intelligence && !product.intelligence.ingredients) {
+                            if (ingredientLookup[product.id]) {
+                                product.intelligence.ingredients = ingredientLookup[product.id].slice();
+                            } else {
+                                product.intelligence.ingredients = [];
+                            }
+                        }
+                    });
+                }
+
+                state.version = 13;
             }
         }
 
@@ -5211,6 +5265,21 @@
                 ];
             }
 
+            /**
+             * Returns the heat protectant to suggest for the next blowout.
+             * Alternates between Marc Anthony and Diamond Sleek for A/B comparison.
+             * Returns { id, name } for the product to use.
+             */
+            function getNextHeatProtectant() {
+                var state = StateManager.getState();
+                var last = (state.settings && state.settings.lastHeatProtectant) || null;
+                if (last === 'marc-anthony-shield') {
+                    return { id: 'garnier-diamond-sleek', name: 'Diamond Sleek Spray' };
+                }
+                // Default to Marc Anthony if no history or last was Diamond Sleek
+                return { id: 'marc-anthony-shield', name: 'Heat Protection Spray' };
+            }
+
             function getBlowoutSteps(humidity) {
                 return [
                     {
@@ -5275,9 +5344,9 @@
                     },
                     {
                         number: 7,
-                        title: 'Heat Protection Spray',
+                        title: getNextHeatProtectant().name,
                         instruction: 'Section into 4+ parts. Spray liberally root to tip. Every strand needs coverage.' + (humidity === 'humid' ? ' Extra important today — the Polysilicone-29 seal blocks humidity penetration.' : ''),
-                        productId: 'marc-anthony-shield',
+                        productId: getNextHeatProtectant().id,
                         scienceBadge: 'POLYSILICONE-29 HEAT SEAL',
                         timer: null,
                         tip: null,
@@ -6178,8 +6247,8 @@
                         id: 'step-added-heat',
                         number: 0,
                         stepType: 'heat_protection',
-                        productId: 'marc-anthony-shield',
-                        productName: 'Heat Protection Spray',
+                        productId: getNextHeatProtectant().id,
+                        productName: getNextHeatProtectant().name,
                         instruction: 'Spray liberally root to tip. Every strand needs coverage.',
                         scienceBadge: 'POLYSILICONE-29 HEAT SEAL',
                         timer: null,
