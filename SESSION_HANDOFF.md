@@ -1,6 +1,6 @@
 # Hair Routine — Session Handoff
 
-**Last updated:** May 10, 2026 (Session 24)
+**Last updated:** May 10, 2026 (Session 25)
 **Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
 **Repo:** `mandy-apperkeeper/hair-routine` — main branch
 
@@ -9,31 +9,33 @@
 ## Current State
 
 ### What's Live & Working
-- Everything from Session 22 remains working (nav fix, geolocation fix, multi-select adjust)
-- Garnier Color Repair conditioner note updated to clarify rotation with use-up bottles
+- Everything from Session 24 remains working
+- **Timer alert sound now actually fires** — ascending chime (C5→E5→G5) via Web Audio API on both walkthrough and daily plan timer completion
 
-### What Was Done This Session (24)
+### What Was Done This Session (25)
 
-1. **Product Deep Dive Pipeline designed** — Systematic plan to run deep-dive-auto research on every product in the inventory (30 products). Each product gets its own standalone research document with full formulation analysis + practical education section.
-2. **Queue file created** — `research/PRODUCT_DEEP_DIVE_QUEUE.md` tracks all 30 products with status, priority order, batch groupings, and pre-fetched INCI data for next 3 products.
-3. **Output template finalized** — Each doc includes: INCI analysis, mechanism assessment, delivery validation, efficacy for hair profile, comparison to alternatives, tier validation, AND a "Practical Education" section covering: why you're using it, how to know it's working, how to know it's NOT working, why this over alternatives, when to reach for something else, and what to look for in replacements.
-4. **INCI data pre-fetched** for dove-bond-shampoo, dove-intensive-shampoo, and dove-10in1-serum (saved in queue file).
-5. **Key finding noted:** Dove 10-in-1 serum contains aminopropyl dimethicone (amine-functionalized, same family as amodimethicone) — likely why it earned supporting tier. Full analysis needed.
-6. **Mandy clarified educational intent:** "I want to know why I'm using something, how I can know it's working, why other products are better or worse, when I might want to opt for something else." This drives the Practical Education section structure.
+1. **Fixed timer alerts not firing** — The `soundEnabled` setting and UI checkbox existed, but no audio code was ever wired up. Added Web Audio API chime that plays on timer completion for both walkthrough timers and daily plan timers.
+2. **Added vibration to daily plan timer** — Previously only the walkthrough timer vibrated on completion. Now both do.
+3. **iOS audio unlock handled** — `resumeAudioCtx()` called on timer Start button tap (user gesture) so the AudioContext is unlocked before the timer finishes.
+4. **Background audio compatibility confirmed** — Web Audio API oscillator tones mix/overlay on top of existing audio (Audible, Spotify, podcasts). They don't interrupt or claim exclusive audio session.
+
+### Technical Details
+
+- Timer alert is a 3-note ascending sine wave chime (~0.6s total): C5 (523Hz) → E5 (659Hz) → G5 (784Hz)
+- Respects `settings.soundEnabled` — won't play if user disabled sound in Settings
+- Respects `settings.vibrationEnabled` — vibration independent of sound
+- iOS silent mode (physical switch) will mute Web Audio — vibration still works
+- AudioContext created lazily on first timer start, resumed from user gesture to satisfy iOS Safari autoplay policy
 
 ### Decisions Made This Session
 
-- **1 product = 1 document = 1 scorecard** — no batched documents
-- **Same depth for all tiers** including use-up (understanding WHY something is inferior is educational)
-- **Tone:** science-literate plain language for Mandy as user, not builder-facing jargon
-- **File convention:** `research/products/[product-id].md`
-- **Existing Dove deep dive:** leave as-is, create separate per-product docs for remaining Dove products
-- **Research sessions:** may cover 2-3 related products (shared source lookups) but each gets its own full write-up
-- **Priority:** remaining Dove → primary tier daily drivers → supporting → use-up
+- **Web Audio API over `<audio>` element** — oscillator tones overlay background audio rather than interrupting it. No audio file to cache/load.
+- **Ascending chime over single beep** — more pleasant, less jarring in a bathroom context
 
 ### Known Issues (carry to next session)
 
-None new.
+- **iOS silent mode mutes Web Audio** — this is expected platform behavior, not a bug. Vibration still works as fallback.
+- If the app is fully backgrounded (not just screen-off) when timer expires, the chime plays when you return to the app (via visibilitychange handler). No way to play audio from a backgrounded web app without a native wrapper.
 
 ### What's NOT Done (carry forward)
 
@@ -135,12 +137,13 @@ All previous decisions remain, plus:
 | 21 | iPhone Safari debugging — narrowed to device-level proxy/relay | Complete |
 | 22 | Nav fix, geolocation fix, multi-select adjust, use-up rotation scoped | Complete |
 | 23 | Dove placement discussion, research-data-adherence steering, deep-dive scoped | Complete |
-| 24 | **Product deep dive pipeline: queue, template, execution plan** | Complete |
+| 24 | Product deep dive pipeline: queue, template, execution plan | Complete |
+| 25 | **Timer alert sound fix — Web Audio chime + Audible compatibility** | Complete |
 
 ---
 
 ## Repo State
 
 - **Branch:** main
-- **Latest commit:** Product deep dive queue + updated handoff
+- **Latest commit:** Timer alert sound fix (Web Audio API chime)
 - **Pushed:** Needs push
