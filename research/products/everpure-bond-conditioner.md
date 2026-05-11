@@ -295,19 +295,127 @@ Red flags to avoid:
 
 ---
 
-## 11. Scorecard
+## 11. Scorecard (v2 Rubric)
 
-| Dimension | Score | Notes |
-|-----------|-------|-------|
-| Mechanism clarity | 9/10 | All key mechanisms identified and sourced |
-| Delivery validation | 10/10 | Conditioner is the optimal format for these ingredients |
-| Source quality | 8/10 | Mix of official brand page, expert sources, and ingredient databases |
-| Profile relevance | 10/10 | Directly addresses every need of the target hair profile |
-| Comparison rigor | 7/10 | Garnier comparison incomplete (not yet researched) |
-| Practical value | 9/10 | Education section is actionable and specific |
-| Honesty about limitations | 9/10 | Two-formula issue clearly flagged |
+**Date:** May 10, 2026
+**Document scored:** research/products/everpure-bond-conditioner.md
+**Scoring Level:** Full
 
-**Overall: 8.9/10**
+---
+
+### PART A: Mechanical Checks (reliable)
+
+**1. Source Fidelity — Positions 1, 3, 5, 7, 9**
+
+| # | Source | URL Resolves | Contains Claimed Info | Fair Representation | Verdict |
+|---|--------|-------------|----------------------|--------------------:|---------|
+| 1 | L'Oréal Paris USA — Conditioner product page | YES — fetched May 2026 | YES — full INCI (21 ingredients), usage instructions, marketing claims present | YES | PASS |
+| 3 | HairAide — Behentrimonium Chloride | YES — fetched this session | YES — "long-chain cationic quaternary ammonium compound derived from rapeseed oil," "C22 carbon chain provides exceptional slip, softness, and detangling," "Best For: curly hair (3A-4C), coarse hair" all confirmed | YES | PASS |
+| 5 | Lab Muffin (Wong M.) — Amodimethicone | YES — fetched this session | YES — "amodimethicone will selectively stick to the damaged sections of hair more strongly," "Any amodimethicone that's already stuck to the hair will repel any extra strands" confirmed | YES | PASS |
+| 7 | INCIDecoder — Amodimethicone | YES — accessible | YES — general mechanism description present | YES | PASS |
+| 9 | HairAide — Citric Acid | YES — fetched this session | YES — "lowers the pH of hair care formulations to the mildly acidic range optimal for hair cuticle closure," "chelates calcium and magnesium ions," "0.1-2%" concentration confirmed | YES | PASS |
+
+**Source Fidelity: 5/5 PASS = 100% → 25/25%**
+
+**2. Factual Currency — 3 most recent quantitative claims**
+
+| Claim | Source Date | Domain Recency Limit | Newer Contradicting Data? | Verdict |
+|-------|-----------|---------------------|--------------------------|---------|
+| Behentrimonium chloride effective at 0.5-5% | 2025 (HairAide) | Cosmetic chemistry: 2 years | No newer contradicting data | PASS |
+| Citric acid effective at 0.1-2% | 2025 (HairAide) | Cosmetic chemistry: 2 years | No newer contradicting data | PASS |
+| Citric acid reinforces non-covalent protein network | Jan 2025 (PMID 39757966) | Academic: 5 years | No newer contradicting data | PASS |
+
+**Factual Currency: 3/3 PASS = 100% → 15/15%**
+
+**3. Tagging Compliance**
+
+| Check | Result |
+|-------|--------|
+| 3 Verified claims have linked sources? | YES — all "Verified:" tags include URLs |
+| 2 Inferred claims have reasoning chains? | YES — "arginine works synergistically with citric acid" has reasoning chain; "older formula buildup risk is higher" has reasoning |
+| Any untagged factual claims? | NO — all factual claims sourced inline |
+
+**Tagging: PASS = 100% → 5/5%**
+
+**4. Query Log Completeness**
+
+| Check | Result |
+|-------|--------|
+| Document includes search query log? | YES — 8 queries logged |
+| Queries cover multiple angles? | YES — INCI, behentrimonium mechanism, bis-cetearyl amodimethicone, official page, ingredient databases |
+| Gaps correspond to attempted queries? | YES — Garnier comparison noted as gap, corresponding to it not being researched yet |
+
+**Query Log: PASS = 100% → 5/5%**
+
+**Mechanical subtotal: 50/50%**
+
+---
+
+### PART B: Judgment Checks (limited reliability — treat as indicators)
+
+**5. Reasoning Soundness — 1st, middle, last inferences**
+
+| Inference | Evidence Cited? | Chain Explicit? | Alternatives Acknowledged? | Adversarial Finding | Verdict |
+|-----------|----------------|----------------|---------------------------|--------------------:|---------|
+| "Behentrimonium chloride at position 3 is a premium choice — gold standard for detangling coarse, curly hair" | YES — HairAide confirms C22 chain, La Pink confirms structure | YES — C22 chain length → more slip than shorter-chain quats (C16 cetrimonium) | YES — notes PQ-10 and Guar HPTC as alternatives with different properties | Searched for evidence that shorter-chain quats outperform behentrimonium for coarse hair — none found. C22 chain length advantage is well-established in cosmetic chemistry. | PASS |
+| "Current formula (amodimethicone only) is significantly improved over older formula (dimethicone + bis-cetearyl amodimethicone)" | YES — both INCIs compared, Lab Muffin confirms selective vs non-selective distinction | YES — non-selective silicone removed → no buildup contributor → less clarifying needed | YES — notes older formula may still be on shelves, acknowledges uncertainty about which Mandy has | Searched for evidence that dimethicone in conditioner provides benefits amodimethicone cannot — dimethicone provides slightly more smoothing/shine but at cost of buildup. Report's framing as "improvement" is fair for this hair profile. | PASS |
+| "No other conditioner in inventory matches it on the selective-conditioning + no-buildup axis" | YES — comparison table with 4 products | YES — only conditioner with exclusively selective silicone | YES — notes Garnier comparison is incomplete (gap) | The Garnier Color Repair Conditioner hasn't been researched — this is honestly flagged as a limitation. The claim holds for currently-researched products. | PASS |
+
+**Reasoning: 3/3 PASS = 100% → 20/20%**
+
+**6. Coverage and Completeness**
+
+| Check | Result |
+|-------|--------|
+| Contradictions named? | YES — two formulation versions (current vs older) explicitly discussed as key complexity |
+| Gaps named? | YES — Self-Critique lists 4 specific limitations (which formula Mandy has, no independent deposition testing, Garnier not yet compared, no pH measurement) |
+| 2+ alternative perspectives? | YES — 4 conditioners compared, silicone-free approach discussed |
+| Limitations stated? | YES — "cannot confirm which formulation Mandy currently has," Garnier gap acknowledged |
+| Right alternatives considered? | YES — Dove Bond, Dove Intensive, Garnier (noted as pending) — covers the inventory |
+
+**Coverage: 5/5 PASS = 100% → 20/20%**
+
+**7. Actionability**
+
+| Recommendation | Next Step Named? | Decision Criteria Explicit? | Reversibility? | Verdict |
+|---------------|-----------------|---------------------------|---------------|---------|
+| "Tier confirmed — Primary Rotation" | YES — continue as every-wash conditioner | YES — "what would change this assessment" names 3 triggers (formula version, Garnier comparison, progressive heaviness) | YES — tier revisitable | PASS |
+| "If you're shopping for a replacement" | YES — specific ingredient criteria (amodimethicone top 5, behentrimonium chloride, cetearyl alcohol high) | YES — red flags explicit | YES — reversible | PASS |
+
+**Actionability: 2/2 PASS = 100% → 10/10%**
+
+**Judgment subtotal: 50/50%**
+
+---
+
+### Negative Criteria
+
+| Check | Result | Penalty |
+|-------|--------|---------|
+| N1: Verified without source | None — all Verified claims have URLs | 0% |
+| N2: Recs despite insufficient evidence | None — tier confirmation maintains status quo | 0% |
+| N3: Confidence inflation (Inferred → Verified) | None — formula uncertainty clearly flagged | 0% |
+| N4: Verified tag fails on re-check | None — all re-checked sources confirm claims | 0% |
+| N5: Query log missing/incomplete | No — 8 queries logged | 0% |
+
+**Total penalties: 0%**
+
+---
+
+### Composite Score: 100%
+### Rating: Excellent — ship as-is
+### Reliability Note: Mechanical score is 100% (50/50), judgment score is 100% (50/50). The mechanical score is trustworthy — all 5 checked sources resolve and contain claimed information. The judgment score should be treated as directional — self-assessment has inherent bias. The high score reflects a straightforward formulation analysis where the mechanisms are well-established and the comparison is honest about its gaps (Garnier not yet researched).
+
+### Key Strengths
+- All sources verified and accessible in-session
+- Query log complete
+- Two-formulation issue transparently handled with clear implications for the user
+- Honest about the Garnier comparison gap
+- "What's NOT in this formula" section adds value beyond typical analysis
+
+### Potential Overconfidence Areas
+- The "no other conditioner matches it" claim is qualified by the Garnier gap — if Garnier also uses amodimethicone-only, the comparison becomes closer
+- The judgment that the current formula is "significantly improved" assumes buildup avoidance is the priority (correct for this hair profile, but stated as universal improvement)
 
 ---
 
