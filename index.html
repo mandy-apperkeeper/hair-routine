@@ -7512,6 +7512,7 @@
                         productId: item.productId,
                         productName: item.productName,
                         rank: index + 1,
+                        score: item.score,
                         reason: item.reasons.length > 0 ? item.reasons[0] : ''
                     };
                 });
@@ -8973,30 +8974,35 @@
 
                 var currentId = condStep.productId;
 
-                // Strategy: first try to find a BETTER regular conditioner for current conditions.
-                // Only escalate to deep_condition (mask) if the current conditioner is already
-                // the top-ranked regular conditioner — meaning there's nothing better in the
-                // same category, so we need to step up to a richer product.
-                var rankedConditioners = PlanGenerator.rankProducts('conditioner', conditions, inventory);
-                var bestUpgrade = null;
+                // Rank ALL conditioning products (regular + deep) together.
+                // rankProducts('conditioner') already includes deep_condition products as candidates.
+                // The ranking system scores based on current conditions.
+                var allRanked = PlanGenerator.rankProducts('conditioner', conditions, inventory);
 
-                // Find the best regular conditioner that isn't the current one
-                for (var r = 0; r < rankedConditioners.length; r++) {
-                    if (rankedConditioners[r].productId !== currentId) {
-                        bestUpgrade = rankedConditioners[r];
-                        break;
+                // When upgradeConditioner is called, the user has reported symptoms that warrant
+                // richer conditioning. Deep conditioners have a -10 base penalty in normal ranking
+                // (they're "upgrades, not default"). But here we ARE upgrading — so boost deep
+                // conditioners by removing that penalty and adding an upgrade bonus.
+                for (var r = 0; r < allRanked.length; r++) {
+                    var prod = null;
+                    for (var p = 0; p < inventory.length; p++) {
+                        if (inventory[p].id === allRanked[r].productId) { prod = inventory[p]; break; }
+                    }
+                    if (prod && prod.intelligence && prod.intelligence.step === 'deep_condition') {
+                        // Remove the -10 penalty and add upgrade bonus (+20)
+                        allRanked[r].score += 30;
                     }
                 }
 
-                // If no better regular conditioner exists (current is already top-ranked),
-                // escalate to deep conditioning products (masks/balms)
-                if (!bestUpgrade) {
-                    var rankedDeep = PlanGenerator.rankProducts('deep_condition', conditions, inventory);
-                    for (var d = 0; d < rankedDeep.length; d++) {
-                        if (rankedDeep[d].productId !== currentId) {
-                            bestUpgrade = rankedDeep[d];
-                            break;
-                        }
+                // Re-sort by adjusted score
+                allRanked.sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+
+                // Pick the top-ranked product that isn't the current one
+                var bestUpgrade = null;
+                for (var r2 = 0; r2 < allRanked.length; r2++) {
+                    if (allRanked[r2].productId !== currentId) {
+                        bestUpgrade = allRanked[r2];
+                        break;
                     }
                 }
 
