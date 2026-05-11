@@ -120,11 +120,11 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
     - Auto-dismisses after 10s
     - _Requirements: 4.1, 4.2, 7.1, 7.2, 7.3_
 
-- [ ] 7. Checkpoint — verify passive intelligence
-  - Test attribution with a mock wash event (mechanism-based)
-  - Test marginal contribution with mock history (5+ events with variation)
-  - Verify attribution card renders correctly
-  - Verify no performance regression on quick-log or landing page
+- [x] 7. Checkpoint — verify passive intelligence
+  - Test attribution with a mock wash event (mechanism-based) ✓
+  - Test marginal contribution with mock history (5+ events with variation) ✓
+  - Verify attribution card renders correctly ✓
+  - Verify no performance regression on quick-log or landing page ✓
 
 - [ ] 8. Recommendation Engine (Active Intelligence)
   - [ ] 8.1 Implement domain rule recommendations
