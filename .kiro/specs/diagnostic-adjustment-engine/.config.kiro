@@ -1,0 +1,2 @@
+name: Diagnostic Adjustment Engine
+description: Replace the current AdjustmentEngine with a cause-based diagnostic system using mixed Bayesian model (Beta-Binomial + Normal-Normal) for cause ranking

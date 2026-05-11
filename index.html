@@ -1052,6 +1052,44 @@
             opacity: 1;
         }
 
+        /* Cause card styles */
+        .cause-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            min-height: 48px;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .cause-card:active {
+            border-color: var(--gold);
+            background: rgba(212, 165, 116, 0.08);
+        }
+
+        .cause-card-rank {
+            font-size: 0.7rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.3rem;
+        }
+
+        .cause-card-name {
+            font-family: 'Georgia', serif;
+            font-size: 1rem;
+            color: var(--text);
+            margin-bottom: 0.3rem;
+        }
+
+        .cause-card-evidence {
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
         /* Adjusted step highlight (pulse then fade) */
         .plan-step.adjusted {
             border-color: var(--gold);
@@ -1774,6 +1812,12 @@
                 <p id="insight-message"></p>
             </div>
 
+            <!-- Discrepancy insight card (hidden until discrepancy detected) -->
+            <div class="insight-card" id="discrepancy-card" aria-label="Diagnostic insight" style="display:none;">
+                <p id="discrepancy-message"></p>
+                <button class="btn-secondary" id="discrepancy-dismiss" style="margin-top:0.5rem;min-height:36px;font-size:0.8rem;">Got it</button>
+            </div>
+
             <!-- Compensation card (contextual product statements) -->
             <div class="compensation-card" id="compensation-card" aria-label="Product compensation info">
             </div>
@@ -1878,6 +1922,16 @@
     <!-- Adjustment confirmation toast -->
     <div class="adjust-toast" id="adjust-toast" aria-live="polite"></div>
 
+    <!-- Diagnostic cause card overlay -->
+    <div class="adjust-overlay" id="cause-card-overlay" role="dialog" aria-label="What's causing this?" aria-modal="true">
+        <div class="adjust-backdrop" id="cause-card-backdrop"></div>
+        <div class="adjust-sheet">
+            <h3 id="cause-card-title">What's causing this?</h3>
+            <div id="cause-card-list"></div>
+            <button class="btn-secondary" id="cause-card-not-sure" style="width:100%;margin-top:1rem;min-height:48px;">Not sure — generally off</button>
+        </div>
+    </div>
+
     <!-- Info popup -->
     <div class="info-popup" id="info-popup" role="dialog" aria-label="Product information" aria-modal="true">
         <div class="info-sheet" style="position:relative;">
@@ -1900,7 +1954,7 @@
 
         // ===== StateManager =====
         const STORAGE_KEY = 'hair-routine-data';
-        const CURRENT_VERSION = 13;
+        const CURRENT_VERSION = 14;
 
         /**
          * Default product inventory — pre-populated from consultation.
@@ -2395,7 +2449,13 @@
             },
             lastExport: null,
             beliefs: {},
-            discoveredInteractions: []
+            discoveredInteractions: [],
+            diagnosticState: {
+                version: 1,
+                betaBinomials: [],
+                normalNormals: [],
+                discrepancies: []
+            }
         };
 
         const HARD_FLOORS = {
@@ -2830,6 +2890,19 @@
                 }
 
                 state.version = 13;
+            }
+
+            // v13 → v14: Add diagnosticState for cause-based diagnostic engine
+            if (state.version < 14) {
+                if (!state.diagnosticState) {
+                    state.diagnosticState = {
+                        version: 1,
+                        betaBinomials: [],
+                        normalNormals: [],
+                        discrepancies: []
+                    };
+                }
+                state.version = 14;
             }
         }
 
@@ -4341,6 +4414,76 @@
                     } catch (e) {
                         return { success: false, error: 'Invalid JSON: ' + e.message };
                     }
+                },
+
+                // ===== Diagnostic State CRUD =====
+
+                getDiagnosticState() {
+                    const state = readFromStorage();
+                    if (!state.diagnosticState) {
+                        return { version: 1, betaBinomials: [], normalNormals: [], discrepancies: [] };
+                    }
+                    return state.diagnosticState;
+                },
+
+                saveBetaBinomial(entry) {
+                    const state = readFromStorage();
+                    if (!state.diagnosticState) {
+                        state.diagnosticState = { version: 1, betaBinomials: [], normalNormals: [], discrepancies: [] };
+                    }
+                    // Find existing entry by composite key (symptomId + causeId + conditionKey)
+                    const idx = state.diagnosticState.betaBinomials.findIndex(function(e) {
+                        return e.symptomId === entry.symptomId &&
+                               e.causeId === entry.causeId &&
+                               e.conditionKey === entry.conditionKey;
+                    });
+                    if (idx !== -1) {
+                        state.diagnosticState.betaBinomials[idx] = entry;
+                    } else {
+                        state.diagnosticState.betaBinomials.push(entry);
+                    }
+                    return writeToStorage(state);
+                },
+
+                saveNormalNormal(entry) {
+                    const state = readFromStorage();
+                    if (!state.diagnosticState) {
+                        state.diagnosticState = { version: 1, betaBinomials: [], normalNormals: [], discrepancies: [] };
+                    }
+                    // Find existing entry by causeId
+                    const idx = state.diagnosticState.normalNormals.findIndex(function(e) {
+                        return e.causeId === entry.causeId;
+                    });
+                    if (idx !== -1) {
+                        state.diagnosticState.normalNormals[idx] = entry;
+                    } else {
+                        state.diagnosticState.normalNormals.push(entry);
+                    }
+                    return writeToStorage(state);
+                },
+
+                saveDiscrepancy(entry) {
+                    const state = readFromStorage();
+                    if (!state.diagnosticState) {
+                        state.diagnosticState = { version: 1, betaBinomials: [], normalNormals: [], discrepancies: [] };
+                    }
+                    // Find existing discrepancy by symptomId + conditionKey
+                    const idx = state.diagnosticState.discrepancies.findIndex(function(e) {
+                        return e.symptomId === entry.symptomId &&
+                               e.conditionKey === entry.conditionKey;
+                    });
+                    if (idx !== -1) {
+                        state.diagnosticState.discrepancies[idx] = entry;
+                    } else {
+                        state.diagnosticState.discrepancies.push(entry);
+                    }
+                    return writeToStorage(state);
+                },
+
+                resetDiagnosticState() {
+                    const state = readFromStorage();
+                    state.diagnosticState = { version: 1, betaBinomials: [], normalNormals: [], discrepancies: [] };
+                    return writeToStorage(state);
                 }
             };
         })();
@@ -4393,6 +4536,538 @@
                     console.warn('Failed to update seal state:', e);
                 }
             }
+        }
+
+        // ===== BetaBinomialTracker =====
+        // Tracks cause selection frequency per (symptom, cause, conditionKey) tuple.
+        // Beta-Binomial conjugate: alpha = selections, beta = non-selections.
+        const BetaBinomialTracker = (function() {
+
+            function getEntry(symptomId, causeId, conditionKey) {
+                var diagState = StateManager.getDiagnosticState();
+                var entries = diagState.betaBinomials;
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].symptomId === symptomId &&
+                        entries[i].causeId === causeId &&
+                        entries[i].conditionKey === conditionKey) {
+                        return { alpha: entries[i].alpha, beta: entries[i].beta };
+                    }
+                }
+                return null;
+            }
+
+            function getObservationCount(symptomId, causeId, conditionKey) {
+                var entry = getEntry(symptomId, causeId, conditionKey);
+                if (!entry) return 0;
+                // Subtract the prior (initial alpha + beta) to get actual observations
+                // Since we don't store the prior separately, use alpha + beta - initial sum
+                // For simplicity, total observations = alpha + beta - 2 (minimum prior is 1,1)
+                return Math.max(0, entry.alpha + entry.beta - 2);
+            }
+
+            return {
+                /**
+                 * Get alpha/beta for a (symptom, cause, conditionKey) tuple.
+                 * Returns domain prior if no data exists, or falls back to global
+                 * when condition-specific data has < 3 observations.
+                 */
+                get: function(symptomId, causeId, conditionKey, domainPrior) {
+                    var entry = getEntry(symptomId, causeId, conditionKey);
+                    if (entry && getObservationCount(symptomId, causeId, conditionKey) >= 3) {
+                        return entry;
+                    }
+                    // Fall back to global (all-conditions) aggregate
+                    var globalEntry = getEntry(symptomId, causeId, 'global');
+                    if (globalEntry && getObservationCount(symptomId, causeId, 'global') >= 3) {
+                        return globalEntry;
+                    }
+                    // No data — return domain prior
+                    if (domainPrior) {
+                        return { alpha: domainPrior.alpha, beta: domainPrior.beta };
+                    }
+                    // Ultimate fallback: uninformative prior
+                    return { alpha: 1, beta: 1 };
+                },
+
+                /**
+                 * Record that the user selected this cause.
+                 * Increments alpha for the selected cause.
+                 */
+                recordSelection: function(symptomId, causeId, conditionKey) {
+                    var diagState = StateManager.getDiagnosticState();
+                    var found = false;
+                    for (var i = 0; i < diagState.betaBinomials.length; i++) {
+                        var e = diagState.betaBinomials[i];
+                        if (e.symptomId === symptomId && e.causeId === causeId && e.conditionKey === conditionKey) {
+                            e.alpha += 1;
+                            e.lastUpdated = new Date().toISOString();
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        diagState.betaBinomials.push({
+                            symptomId: symptomId,
+                            causeId: causeId,
+                            conditionKey: conditionKey,
+                            alpha: 2, // 1 (prior) + 1 (this selection)
+                            beta: 1,
+                            lastUpdated: new Date().toISOString()
+                        });
+                    }
+                    StateManager.saveBetaBinomial(found ?
+                        diagState.betaBinomials.find(function(e) {
+                            return e.symptomId === symptomId && e.causeId === causeId && e.conditionKey === conditionKey;
+                        }) :
+                        diagState.betaBinomials[diagState.betaBinomials.length - 1]
+                    );
+                },
+
+                /**
+                 * Record that the user selected a DIFFERENT cause (this one was not chosen).
+                 * Increments beta for the non-selected cause.
+                 */
+                recordNonSelection: function(symptomId, causeId, conditionKey) {
+                    var diagState = StateManager.getDiagnosticState();
+                    var found = false;
+                    for (var i = 0; i < diagState.betaBinomials.length; i++) {
+                        var e = diagState.betaBinomials[i];
+                        if (e.symptomId === symptomId && e.causeId === causeId && e.conditionKey === conditionKey) {
+                            e.beta += 1;
+                            e.lastUpdated = new Date().toISOString();
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        diagState.betaBinomials.push({
+                            symptomId: symptomId,
+                            causeId: causeId,
+                            conditionKey: conditionKey,
+                            alpha: 1,
+                            beta: 2, // 1 (prior) + 1 (this non-selection)
+                            lastUpdated: new Date().toISOString()
+                        });
+                    }
+                    StateManager.saveBetaBinomial(found ?
+                        diagState.betaBinomials.find(function(e) {
+                            return e.symptomId === symptomId && e.causeId === causeId && e.conditionKey === conditionKey;
+                        }) :
+                        diagState.betaBinomials[diagState.betaBinomials.length - 1]
+                    );
+                },
+
+                /**
+                 * Get selection probability: alpha / (alpha + beta)
+                 */
+                getSelectionProbability: function(symptomId, causeId, conditionKey, domainPrior) {
+                    var params = this.get(symptomId, causeId, conditionKey, domainPrior);
+                    return params.alpha / (params.alpha + params.beta);
+                }
+            };
+        })();
+
+        // ===== OutcomeTracker =====
+        // Normal-Normal conjugate for intervention effectiveness (continuous 1-5 rating).
+        // Shared across condition keys — a good rating is good regardless of humidity.
+        const OutcomeTracker = (function() {
+
+            function getEntry(causeId) {
+                var diagState = StateManager.getDiagnosticState();
+                var entries = diagState.normalNormals;
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].causeId === causeId) {
+                        return entries[i];
+                    }
+                }
+                return null;
+            }
+
+            return {
+                /**
+                 * Get posterior parameters for a cause.
+                 * Returns { mu, variance, n } or default prior if no data.
+                 */
+                get: function(causeId) {
+                    var entry = getEntry(causeId);
+                    if (entry) {
+                        return { mu: entry.mu, variance: entry.variance, n: entry.n };
+                    }
+                    // Default prior: neutral mean, wide variance, no observations
+                    return { mu: 3.0, variance: 2.0, n: 0 };
+                },
+
+                /**
+                 * Record a wash rating outcome for a confirmed cause.
+                 * Normal-Normal conjugate update:
+                 *   mu_new = (mu_prior/var_prior + rating/var_obs) / (1/var_prior + 1/var_obs)
+                 *   var_new = 1 / (1/var_prior + 1/var_obs)
+                 * Observation variance fixed at 1.0 (ratings are noisy).
+                 */
+                recordOutcome: function(causeId, rating) {
+                    var entry = getEntry(causeId);
+                    var mu, variance, n;
+
+                    if (entry) {
+                        mu = entry.mu;
+                        variance = entry.variance;
+                        n = entry.n;
+                    } else {
+                        mu = 3.0;
+                        variance = 2.0;
+                        n = 0;
+                    }
+
+                    var observationVariance = 1.0;
+                    var newVariance = 1.0 / (1.0 / variance + 1.0 / observationVariance);
+                    var newMu = newVariance * (mu / variance + rating / observationVariance);
+                    n += 1;
+
+                    var updated = {
+                        causeId: causeId,
+                        mu: newMu,
+                        variance: newVariance,
+                        n: n,
+                        lastUpdated: new Date().toISOString()
+                    };
+
+                    StateManager.saveNormalNormal(updated);
+                    return updated;
+                },
+
+                /**
+                 * Get expected outcome (posterior mean), or 0.5 (neutral) if < 3 observations.
+                 * Returns value normalized to 0-1 scale (rating/5).
+                 */
+                getExpectation: function(causeId) {
+                    var params = this.get(causeId);
+                    if (params.n < 3) {
+                        return 0.5; // Neutral — not enough data to influence ranking
+                    }
+                    return params.mu / 5.0; // Normalize 1-5 rating to 0-1
+                }
+            };
+        })();
+
+        // ===== DiagnosticEngine (mixed score) =====
+        // Combines Beta-Binomial selection probability with Normal-Normal outcome expectation.
+        // Selection dominates early; outcome gains weight as data accumulates.
+        const DiagnosticScorer = (function() {
+            return {
+                /**
+                 * Calculate mixed score for a cause.
+                 * w2 = min(0.5, n/20) — outcome weight grows with data, caps at 50%
+                 * w1 = 1 - w2 — selection weight
+                 * score = w1 * selectionProb + w2 * outcomeExpectation
+                 */
+                mixedScore: function(symptomId, causeId, conditionKey, domainPrior) {
+                    var selectionProb = BetaBinomialTracker.getSelectionProbability(
+                        symptomId, causeId, conditionKey, domainPrior
+                    );
+                    var outcome = OutcomeTracker.get(causeId);
+                    var outcomeExpectation = outcome.n >= 3 ? outcome.mu / 5.0 : 0.5;
+
+                    // Outcome weight grows with data, caps at 0.5
+                    var w2 = Math.min(0.5, outcome.n / 20);
+                    var w1 = 1 - w2;
+
+                    return w1 * selectionProb + w2 * outcomeExpectation;
+                }
+            };
+        })();
+
+        // ===== Cause Decision Trees =====
+        // Data-driven cause definitions for each symptom.
+        // Each cause: { id, symptomId, name, mechanism, getEvidence, getDomainPrior, intervention }
+        const CAUSE_TREES = {
+            frizzy: [
+                {
+                    id: 'frizz-humidity',
+                    symptomId: 'frizzy',
+                    name: 'Humidity swelling cortex',
+                    mechanism: 'Water molecules penetrate cortex via open cuticle, swell hair shaft',
+                    getEvidence: function(ctx) {
+                        if (ctx.dewPoint > 60) return 'Dew point is ' + Math.round(ctx.dewPoint) + '\u00B0F \u2014 moisture is penetrating the cuticle';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey) {
+                        if (conditionKey === 'humid') return { alpha: 3, beta: 1 };
+                        if (conditionKey === 'dry') return { alpha: 1, beta: 3 };
+                        return { alpha: 2, beta: 2 };
+                    }
+                },
+                {
+                    id: 'frizz-dry-air',
+                    symptomId: 'frizzy',
+                    name: 'Dry air lifting cuticle',
+                    mechanism: 'Low moisture air pulls water from cortex, cuticle lifts to compensate',
+                    getEvidence: function(ctx) {
+                        if (ctx.dewPoint < 35) return 'Dew point is ' + Math.round(ctx.dewPoint) + '\u00B0F \u2014 dry air is pulling moisture from hair';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey) {
+                        if (conditionKey === 'dry') return { alpha: 3, beta: 1 };
+                        if (conditionKey === 'humid') return { alpha: 1, beta: 3 };
+                        return { alpha: 1, beta: 2 };
+                    }
+                },
+                {
+                    id: 'frizz-buildup',
+                    symptomId: 'frizzy',
+                    name: 'Product buildup blocking seal',
+                    mechanism: 'Silicone/product layers prevent conditioner from depositing properly',
+                    getEvidence: function(ctx) {
+                        if (ctx.daysSinceClarify > 7) return 'Last clarified ' + ctx.daysSinceClarify + ' days ago \u2014 layers may be blocking seal';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey, ctx) {
+                        var base = { alpha: 2, beta: 2 };
+                        if (ctx && ctx.daysSinceClarify > 7) {
+                            // Clarify modifier: multiply alpha by min(2.0, daysSinceClarify / 7)
+                            var modifier = Math.min(2.0, ctx.daysSinceClarify / 7);
+                            base.alpha = Math.round(base.alpha * modifier);
+                        }
+                        return base;
+                    }
+                },
+                {
+                    id: 'frizz-friction',
+                    symptomId: 'frizzy',
+                    name: 'Overnight friction damage',
+                    mechanism: 'Pillow friction roughens cuticle, especially on regrowth hairs',
+                    getEvidence: function(ctx) {
+                        return 'Pillow friction roughens cuticle on regrowth hairs';
+                    },
+                    getDomainPrior: function() {
+                        return { alpha: 1, beta: 2 }; // Low static prior
+                    }
+                }
+            ],
+
+            'dry-rough': [
+                {
+                    id: 'dry-moisture-deficit',
+                    symptomId: 'dry-rough',
+                    name: 'Moisture deficit (cuticle damage)',
+                    mechanism: 'Weathered cuticle can\'t retain moisture, needs deep conditioning',
+                    getEvidence: function(ctx) {
+                        var parts = [];
+                        if (ctx.lastRating !== null && ctx.lastRating < 3) parts.push('Last wash rated ' + ctx.lastRating + '/5');
+                        if (ctx.daysSinceDeepCondition > 14) parts.push('No deep condition in ' + ctx.daysSinceDeepCondition + '+ days');
+                        return parts.length > 0 ? parts.join('; ') : 'Weathered cuticle needs regular deep conditioning';
+                    },
+                    getDomainPrior: function() {
+                        return { alpha: 3, beta: 1 }; // High — default for this hair profile
+                    }
+                },
+                {
+                    id: 'dry-overwash',
+                    symptomId: 'dry-rough',
+                    name: 'Over-washing stripping lipids',
+                    mechanism: 'Too-frequent sulfate exposure removes protective lipid layer',
+                    getEvidence: function(ctx) {
+                        if (ctx.daysSinceWash < 2) return 'Last washed ' + ctx.daysSinceWash + ' day(s) ago \u2014 frequent washing strips lipids';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey, ctx) {
+                        if (ctx && ctx.daysSinceWash < 2) return { alpha: 2, beta: 1 };
+                        return { alpha: 1, beta: 2 };
+                    }
+                },
+                {
+                    id: 'dry-clarify-aftermath',
+                    symptomId: 'dry-rough',
+                    name: 'Post-clarify dryness',
+                    mechanism: 'Clarifying removed protective silicone layers, hair feels exposed',
+                    getEvidence: function(ctx) {
+                        if (ctx.daysSinceClarify <= 2) return 'Clarified ' + ctx.daysSinceClarify + ' day(s) ago \u2014 protective layers stripped';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey, ctx) {
+                        if (ctx && ctx.daysSinceClarify <= 2) return { alpha: 3, beta: 1 };
+                        return { alpha: 1, beta: 3 };
+                    }
+                }
+            ],
+
+            stiff: [
+                {
+                    id: 'stiff-moisture',
+                    symptomId: 'stiff',
+                    name: 'Moisture deficit',
+                    mechanism: 'Coarse hair without adequate moisture feels rigid',
+                    getEvidence: function() {
+                        return 'Coarse hair needs consistent deep moisture to stay flexible';
+                    },
+                    getDomainPrior: function() {
+                        return { alpha: 3, beta: 1 }; // High — most common for this profile
+                    }
+                },
+                {
+                    id: 'stiff-gel-cast',
+                    symptomId: 'stiff',
+                    name: 'Residual gel cast',
+                    mechanism: 'Didn\'t fully scrunch out the crunch from last wash',
+                    getEvidence: function(ctx) {
+                        if (ctx.lastWashUsedGel) return 'Last wash used gel \u2014 cast may not be fully scrunched out';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey, ctx) {
+                        if (ctx && ctx.lastWashUsedGel) return { alpha: 2, beta: 1 };
+                        return { alpha: 1, beta: 2 };
+                    }
+                }
+            ],
+
+            'curls-dropping': [
+                {
+                    id: 'curl-hold-weak',
+                    symptomId: 'curls-dropping',
+                    name: 'Insufficient hold strength',
+                    mechanism: 'Current gel can\'t maintain curl pattern through the day',
+                    getEvidence: function(ctx) {
+                        if (ctx.currentGel === 'nym-curl-talk-gel') return 'NYM gel may not provide enough hold \u2014 Got2b is stronger';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey) {
+                        if (conditionKey === 'moderate') return { alpha: 2, beta: 1 };
+                        return { alpha: 2, beta: 2 };
+                    }
+                },
+                {
+                    id: 'curl-humidity',
+                    symptomId: 'curls-dropping',
+                    name: 'Humidity overwhelming barrier',
+                    mechanism: 'Moisture swelling cortex faster than gel can resist',
+                    getEvidence: function(ctx) {
+                        if (ctx.dewPoint > 60) return 'Dew point ' + Math.round(ctx.dewPoint) + '\u00B0F \u2014 humidity overwhelming gel barrier';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey) {
+                        if (conditionKey === 'humid') return { alpha: 3, beta: 1 };
+                        return { alpha: 1, beta: 2 };
+                    }
+                },
+                {
+                    id: 'curl-weight',
+                    symptomId: 'curls-dropping',
+                    name: 'Product weight pulling curls down',
+                    mechanism: 'Too much leave-in or conditioner weighing hair down',
+                    getEvidence: function() {
+                        return 'Heavy product application can weigh down curl pattern';
+                    },
+                    getDomainPrior: function() {
+                        return { alpha: 1, beta: 2 }; // Low prior
+                    }
+                },
+                {
+                    id: 'curl-buildup',
+                    symptomId: 'curls-dropping',
+                    name: 'Buildup preventing gel adhesion',
+                    mechanism: 'Product layers between hair and gel reduce grip',
+                    getEvidence: function(ctx) {
+                        if (ctx.daysSinceClarify > 7) return 'Last clarified ' + ctx.daysSinceClarify + ' days ago \u2014 buildup may block gel adhesion';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey, ctx) {
+                        var base = { alpha: 2, beta: 2 };
+                        if (ctx && ctx.daysSinceClarify > 7) {
+                            var modifier = Math.min(2.0, ctx.daysSinceClarify / 7);
+                            base.alpha = Math.round(base.alpha * modifier);
+                        }
+                        return base;
+                    }
+                }
+            ],
+
+            buildup: [
+                {
+                    id: 'buildup-overdue',
+                    symptomId: 'buildup',
+                    name: 'Overdue for clarify',
+                    mechanism: 'Silicone and product accumulation from multiple washes',
+                    getEvidence: function(ctx) {
+                        if (ctx.daysSinceClarify > 7) return 'Last clarified ' + ctx.daysSinceClarify + ' days ago \u2014 product accumulation likely';
+                        return 'Regular clarifying prevents silicone buildup';
+                    },
+                    getDomainPrior: function(conditionKey, ctx) {
+                        if (ctx && ctx.daysSinceClarify > 7) return { alpha: 3, beta: 1 };
+                        return { alpha: 2, beta: 2 };
+                    }
+                },
+                {
+                    id: 'buildup-heavy-application',
+                    symptomId: 'buildup',
+                    name: 'Over-application last wash',
+                    mechanism: 'Too much product applied, not buildup over time',
+                    getEvidence: function(ctx) {
+                        if (ctx.daysSinceClarify <= 5) return 'Recently clarified (' + ctx.daysSinceClarify + ' days) \u2014 buildup is from application, not accumulation';
+                        return null;
+                    },
+                    getDomainPrior: function(conditionKey, ctx) {
+                        if (ctx && ctx.daysSinceClarify <= 5) return { alpha: 2, beta: 1 };
+                        return { alpha: 1, beta: 2 };
+                    }
+                }
+            ]
+        };
+
+        // ===== Condition Key Derivation =====
+        function getConditionKey(dewPoint) {
+            if (dewPoint === null || dewPoint === undefined) return 'moderate';
+            if (dewPoint < 35) return 'dry';
+            if (dewPoint > 60) return 'humid';
+            return 'moderate';
+        }
+
+        function getClarifyModifier(daysSinceClarify) {
+            if (daysSinceClarify === null || daysSinceClarify === undefined) return 1.0;
+            return Math.min(2.0, daysSinceClarify / 7);
+        }
+
+        // ===== Cause Ranking =====
+        // Ranks causes for a symptom using mixed score, generates evidence text from context.
+        function rankCauses(symptomId, context) {
+            var causes = CAUSE_TREES[symptomId];
+            if (!causes) return [];
+
+            var conditionKey = getConditionKey(context.dewPoint);
+            var scored = [];
+
+            for (var i = 0; i < causes.length; i++) {
+                var cause = causes[i];
+                var domainPrior = cause.getDomainPrior(conditionKey, context);
+                var score = DiagnosticScorer.mixedScore(
+                    symptomId, cause.id, conditionKey, domainPrior
+                );
+                var evidence = cause.getEvidence(context);
+
+                scored.push({
+                    cause: cause,
+                    score: score,
+                    evidence: evidence,
+                    conditionKey: conditionKey
+                });
+            }
+
+            // Sort descending by score
+            scored.sort(function(a, b) { return b.score - a.score; });
+
+            // Return top 3 (or all if fewer), filtering out those with no evidence and very low score
+            var results = [];
+            for (var j = 0; j < scored.length && results.length < 3; j++) {
+                // Include if has evidence OR score is above minimum threshold (0.25)
+                if (scored[j].evidence || scored[j].score >= 0.25) {
+                    results.push(scored[j]);
+                }
+            }
+
+            // Never return empty — if all filtered out, return top cause regardless
+            if (results.length === 0 && scored.length > 0) {
+                results.push(scored[0]);
+            }
+
+            return results;
         }
 
         // ===== CooldownSystem =====
@@ -7619,26 +8294,13 @@
                 var plan = JSON.parse(JSON.stringify(currentPlan));
                 var quick = observations.quick || [];
                 var context = observations.context || [];
-                var detailed = observations.detailed || [];
 
-                // Layer 1: Quick observation adjustments (multi-select)
-                if (quick.indexOf('frizzy') !== -1) {
-                    applyFrizzyAdjustments(plan);
-                }
-                if (quick.indexOf('buildup') !== -1) {
-                    applyBuildupAdjustments(plan);
-                }
-                if (quick.indexOf('curl_not_holding') !== -1) {
-                    applyCurlNotHoldingAdjustments(plan);
-                }
-                if (quick.indexOf('dry_rough') !== -1) {
-                    applyDryRoughAdjustments(plan);
-                }
+                // Holding well — positive signal, switches to refresh (not diagnostic)
                 if (quick.indexOf('holding_well') !== -1) {
                     applyHoldingWellAdjustments(plan);
                 }
 
-                // Layer 2: Context adjustments
+                // Context adjustments (direct, no cause cards)
                 if (context.indexOf('short_on_time') !== -1) {
                     applyShortOnTimeAdjustments(plan);
                 }
@@ -7649,11 +8311,6 @@
                     applyExercisedAdjustments(plan);
                 }
 
-                // Layer 3: Detailed adjustments
-                if (detailed.indexOf('stiff') !== -1) {
-                    applyStiffAdjustments(plan);
-                }
-
                 // Re-number steps after any additions/removals
                 for (var i = 0; i < plan.steps.length; i++) {
                     plan.steps[i].number = i + 1;
@@ -7661,270 +8318,6 @@
                 }
 
                 return plan;
-            }
-
-            function applyFrizzyAdjustments(plan) {
-                // Dew-point-aware frizz response:
-                // Low dew point (<35°F): frizz from dry air lifting cuticle → needs moisture + sealing
-                // High dew point (>60°F): frizz from humidity swelling cortex → needs stronger hold + barrier
-                // Moderate: general frizz → Wonder Water + standard hold upgrade
-                var dewPoint = plan.dewPoint;
-                var isLowDewPoint = dewPoint !== null && dewPoint !== undefined && dewPoint < 35;
-                var isHighDewPoint = dewPoint !== null && dewPoint !== undefined && dewPoint > 60;
-
-                if (isLowDewPoint) {
-                    // Dry air frizz — cuticle is lifting because air is pulling moisture out.
-                    // Solution: more conditioning + sealing, not stronger hold.
-                    for (var i = 0; i < plan.steps.length; i++) {
-                        if (plan.steps[i].stepType === 'conditioner') {
-                            plan.steps[i].timer = { duration: 420, label: 'Conditioner + heat cap (dry air frizz)' };
-                            plan.steps[i].instruction = 'Section into 4+ parts. Apply generously. Heat cap on — dry air is lifting the cuticle.';
-                            plan.steps[i].tip = '💧 Frizz from dry air = cuticle lifting. Extra conditioning + heat cap seals it down.';
-                            plan.steps[i].stepLabel = (plan.steps[i].stepLabel || 'Conditioner') + ' 🧢';
-                        }
-                    }
-                    // Ensure Wonder Water for cuticle sealing
-                    var hasGloss = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
-                    if (!hasGloss) {
-                        var condIdx = -1;
-                        for (var g = 0; g < plan.steps.length; g++) {
-                            if (plan.steps[g].stepType === 'conditioner') { condIdx = g; break; }
-                        }
-                        if (condIdx !== -1) {
-                            plan.steps.splice(condIdx + 1, 0, {
-                                id: 'step-added-gloss',
-                                number: 0,
-                                stepType: 'gloss',
-                                productId: 'loreal-wonder-water',
-                                productName: 'Gloss',
-                                instruction: 'Spray onto freshly rinsed hair. Lamellar conditioning seals cuticle flat — counteracts dry-air lifting.',
-                                scienceBadge: 'LAMELLAR CONDITIONING',
-                                timer: null,
-                                tip: 'Added — seals cuticle against dry air frizz',
-                                phase: 'PREP & WASH',
-                                alternatives: []
-                            });
-                        }
-                    }
-                } else if (isHighDewPoint) {
-                    // Humid frizz — moisture swelling the cortex, overwhelming hold.
-                    // Solution: stronger hold gel (Got2b, no glycerin) + Wonder Water barrier.
-                    for (var j = 0; j < plan.steps.length; j++) {
-                        if (plan.steps[j].stepType === 'styling' && plan.steps[j].productId === 'nym-curl-talk-gel') {
-                            plan.steps[j].productId = 'got2b-ultra-glued';
-                            plan.steps[j].productName = 'Glued Blasting Freeze Spray/Gel';
-                            plan.steps[j].inventoryName = 'Glued Blasting Freeze Spray/Gel';
-                            plan.steps[j].instruction = 'Apply generously to soaking wet hair. Scrunch upward. PQ-69 without glycerin — glycerin pulls moisture in humid air.';
-                            plan.steps[j].tip = 'Upgraded from NYM — glycerin-free hold for humid conditions';
-                            plan.steps[j].scienceBadge = 'PQ-69 HUMIDITY BARRIER';
-                        }
-                    }
-                    // Ensure Wonder Water for additional barrier
-                    var hasGlossH = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
-                    if (!hasGlossH) {
-                        var condIdxH = -1;
-                        for (var h = 0; h < plan.steps.length; h++) {
-                            if (plan.steps[h].stepType === 'conditioner') { condIdxH = h; break; }
-                        }
-                        if (condIdxH !== -1) {
-                            plan.steps.splice(condIdxH + 1, 0, {
-                                id: 'step-added-gloss',
-                                number: 0,
-                                stepType: 'gloss',
-                                productId: 'loreal-wonder-water',
-                                productName: 'Gloss',
-                                instruction: 'Spray onto freshly rinsed hair. Lamellar layer adds humidity barrier before styling.',
-                                scienceBadge: 'LAMELLAR CONDITIONING',
-                                timer: null,
-                                tip: 'Added — extra barrier layer against humidity',
-                                phase: 'PREP & WASH',
-                                alternatives: []
-                            });
-                        }
-                    }
-                } else {
-                    // Moderate or unknown dew point — general frizz response.
-                    // Add Wonder Water + upgrade gel as a balanced approach.
-                    var hasGlossM = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
-                    if (!hasGlossM) {
-                        var condIdxM = -1;
-                        for (var m = 0; m < plan.steps.length; m++) {
-                            if (plan.steps[m].stepType === 'conditioner') { condIdxM = m; break; }
-                        }
-                        if (condIdxM !== -1) {
-                            plan.steps.splice(condIdxM + 1, 0, {
-                                id: 'step-added-gloss',
-                                number: 0,
-                                stepType: 'gloss',
-                                productId: 'loreal-wonder-water',
-                                productName: 'Gloss',
-                                instruction: 'Spray onto freshly rinsed hair. Lamellar conditioning — deposits uniformly on wet cuticle.',
-                                scienceBadge: 'LAMELLAR CONDITIONING',
-                                timer: null,
-                                tip: 'Added for frizz control',
-                                phase: 'PREP & WASH',
-                                alternatives: []
-                            });
-                        }
-                    }
-                    // Upgrade gel to Got2b for stronger hold
-                    for (var k = 0; k < plan.steps.length; k++) {
-                        if (plan.steps[k].stepType === 'styling' && plan.steps[k].productId === 'nym-curl-talk-gel') {
-                            plan.steps[k].productId = 'got2b-ultra-glued';
-                            plan.steps[k].productName = 'Glued Blasting Freeze Spray/Gel';
-                            plan.steps[k].inventoryName = 'Glued Blasting Freeze Spray/Gel';
-                            plan.steps[k].instruction = 'Apply generously to soaking wet hair. Scrunch upward. Stronger hold — PQ-69 without glycerin for frizz control.';
-                            plan.steps[k].tip = 'Upgraded from NYM — stronger hold for frizzy conditions';
-                            plan.steps[k].scienceBadge = 'PQ-69 HUMIDITY BARRIER';
-                        }
-                    }
-                }
-            }
-
-            function applyBuildupAdjustments(plan) {
-                // Hair feels heavy/coated — product buildup is the likely cause.
-                // Check days since last clarify to determine response.
-                var state = StateManager.getState();
-                var events = state.events || [];
-                var daysSinceClarify = null;
-                for (var i = events.length - 1; i >= 0; i--) {
-                    var treats = events[i].treatments || [];
-                    var prods = events[i].products || [];
-                    if (treats.indexOf('clarify') !== -1 ||
-                        prods.indexOf('everpure-clarifying') !== -1 ||
-                        prods.indexOf('kinky-curly-come-clean') !== -1) {
-                        var clarDate = new Date(events[i].date);
-                        var now = new Date();
-                        daysSinceClarify = Math.floor((now - clarDate) / (1000 * 60 * 60 * 24));
-                        break;
-                    }
-                }
-
-                if (daysSinceClarify !== null && daysSinceClarify >= 7) {
-                    // Overdue for clarify — suggest clarifying shampoo
-                    for (var s = 0; s < plan.steps.length; s++) {
-                        if (plan.steps[s].stepType === 'shampoo') {
-                            plan.steps[s].productId = 'everpure-clarifying';
-                            plan.steps[s].productName = 'EverPure Sulfate-Free Clarifying Shampoo';
-                            plan.steps[s].inventoryName = 'EverPure Sulfate-Free Clarifying Shampoo';
-                            plan.steps[s].instruction = 'Lather thoroughly, focusing on roots and scalp. Removes silicone and product buildup.';
-                            plan.steps[s].tip = '🧱 Last clarified ' + daysSinceClarify + ' days ago — buildup is likely. Clarifying will reset.';
-                            break;
-                        }
-                    }
-                } else {
-                    // Recently clarified — buildup feeling may be from heavy product application
-                    for (var t = 0; t < plan.steps.length; t++) {
-                        if (plan.steps[t].stepType === 'shampoo') {
-                            plan.steps[t].tip = '🧱 Feeling heavy but clarified recently — try lighter product application today.';
-                            break;
-                        }
-                        if (plan.steps[t].stepType === 'leave_in') {
-                            plan.steps[t].instruction = 'Use sparingly — ends only. Hair is feeling heavy.';
-                            plan.steps[t].tip = 'Less product today — hair feels built up';
-                        }
-                    }
-                }
-                // Remove finishing oils when hair feels heavy
-                plan.steps = plan.steps.filter(function(s) {
-                    return s.stepType !== 'finishing';
-                });
-            }
-
-            function applyCurlNotHoldingAdjustments(plan) {
-                // Curl not holding has multiple possible causes:
-                // 1. Insufficient hold product → upgrade gel
-                // 2. Humidity overwhelming barrier → Got2b (no glycerin)
-                // 3. Too much conditioner underneath → lighter application
-                // 4. Buildup preventing gel adhesion → suggest clarify
-                //
-                // For now, apply the most common fix: stronger hold + ensure proper technique.
-                // The full diagnostic engine (future spec) will disambiguate causes.
-                var dewPoint = plan.dewPoint;
-                var isHumid = dewPoint !== null && dewPoint !== undefined && dewPoint > 60;
-
-                // Upgrade to Got2b for stronger hold
-                for (var i = 0; i < plan.steps.length; i++) {
-                    if (plan.steps[i].stepType === 'styling' && plan.steps[i].productId === 'nym-curl-talk-gel') {
-                        plan.steps[i].productId = 'got2b-ultra-glued';
-                        plan.steps[i].productName = 'Glued Blasting Freeze Spray/Gel';
-                        plan.steps[i].inventoryName = 'Glued Blasting Freeze Spray/Gel';
-                        if (isHumid) {
-                            plan.steps[i].instruction = 'Apply generously to soaking wet hair. Scrunch upward. PQ-69 without glycerin — humidity is likely pulling curls apart.';
-                            plan.steps[i].tip = 'Upgraded — humid conditions + curl dropping = need glycerin-free hold';
-                        } else {
-                            plan.steps[i].instruction = 'Apply generously to soaking wet hair. Scrunch upward. More product than usual — curls need stronger cast.';
-                            plan.steps[i].tip = 'Upgraded — stronger hold to maintain curl pattern';
-                        }
-                        plan.steps[i].scienceBadge = 'PQ-69 HUMIDITY BARRIER';
-                    }
-                }
-
-                // Ensure leave-in isn't too heavy (can weigh curls down)
-                for (var j = 0; j < plan.steps.length; j++) {
-                    if (plan.steps[j].stepType === 'leave_in') {
-                        plan.steps[j].tip = (plan.steps[j].tip || '') + ' Use lighter application — heavy leave-in can weigh curls down.';
-                    }
-                }
-            }
-
-            function applyDryRoughAdjustments(plan) {
-                // Hair is dry/rough — needs deep conditioning.
-                // Upgrade conditioner to Elvive Total Repair 5 Balm + heat cap.
-                // This mirrors PlanGenerator's tiered conditioning for post-clarify days.
-                for (var i = 0; i < plan.steps.length; i++) {
-                    if (plan.steps[i].stepType === 'conditioner') {
-                        plan.steps[i].productId = 'elvive-total-repair-5-balm';
-                        plan.steps[i].productName = 'Total Repair 5 Damage Erasing Balm';
-                        plan.steps[i].inventoryName = 'Total Repair 5 Damage Erasing Balm';
-                        plan.steps[i].instruction = 'Section into 4+ parts. Apply generously mid-lengths to ends. Heat cap on — hair is dry and needs deep repair.';
-                        plan.steps[i].timer = { duration: 600, label: 'Deep condition — Elvive balm + heat cap' };
-                        plan.steps[i].tip = '🌿 Hair is dry — upgraded to Elvive balm (protein + ceramide) with heat cap for deeper penetration.';
-                        plan.steps[i].scienceBadge = 'DEEP CONDITIONING';
-                        plan.steps[i].stepLabel = (plan.steps[i].stepLabel || 'Conditioner') + ' 🧢';
-                        break;
-                    }
-                }
-                // Ensure pre-wash coconut oil is present (cortex protection)
-                var hasPreWash = plan.steps.some(function(s) { return s.stepType === 'pre_wash'; });
-                if (!hasPreWash) {
-                    plan.steps.unshift({
-                        id: 'step-added-prewash',
-                        number: 0,
-                        stepType: 'pre_wash',
-                        productId: 'pure-coconut-oil',
-                        productName: 'Coconut oil pre-wash',
-                        instruction: 'Apply to dry hair, mid-lengths to ends. Penetrates cortex to prevent protein loss during wash.',
-                        scienceBadge: 'CORTEX PENETRATION',
-                        timer: { duration: 1200, label: 'Coconut oil pre-wash (20 min)' },
-                        tip: 'Added — hair is dry, coconut oil protects cortex from further damage',
-                        phase: 'PREP & WASH',
-                        alternatives: []
-                    });
-                }
-                // Add Wonder Water for cuticle sealing if not present
-                var hasGloss = plan.steps.some(function(s) { return s.stepType === 'gloss'; });
-                if (!hasGloss) {
-                    var condIdx = -1;
-                    for (var g = 0; g < plan.steps.length; g++) {
-                        if (plan.steps[g].stepType === 'conditioner') { condIdx = g; break; }
-                    }
-                    if (condIdx !== -1) {
-                        plan.steps.splice(condIdx + 1, 0, {
-                            id: 'step-added-gloss',
-                            number: 0,
-                            stepType: 'gloss',
-                            productId: 'loreal-wonder-water',
-                            productName: 'Gloss',
-                            instruction: 'Spray onto freshly rinsed hair. Seals cuticle flat — locks in the deep conditioning.',
-                            scienceBadge: 'LAMELLAR CONDITIONING',
-                            timer: null,
-                            tip: 'Added — seals in moisture from deep conditioning',
-                            phase: 'PREP & WASH',
-                            alternatives: []
-                        });
-                    }
-                }
             }
 
             function applyHoldingWellAdjustments(plan) {
@@ -8053,30 +8446,6 @@
                 }
             }
 
-            function applyStiffAdjustments(plan) {
-                // Stiff/straw-like hair = needs more moisture.
-                // For coarse, thick, damaged hair, this is almost always a moisture deficit,
-                // NOT protein overload (which is a fine/low-porosity hair problem).
-                // Response: deeper conditioning + extra leave-in.
-                for (var i = 0; i < plan.steps.length; i++) {
-                    if (plan.steps[i].stepType === 'conditioner') {
-                        plan.steps[i].productId = 'elvive-total-repair-5-balm';
-                        plan.steps[i].productName = 'Total Repair 5 Damage Erasing Balm';
-                        plan.steps[i].inventoryName = 'Total Repair 5 Damage Erasing Balm';
-                        plan.steps[i].instruction = 'Section into 4+ parts. Apply generously. Heat cap on — stiff hair needs deep moisture.';
-                        plan.steps[i].tip = '🌿 Stiff = needs moisture. Elvive balm + heat cap for deep hydration.';
-                        plan.steps[i].stepLabel = (plan.steps[i].stepLabel || 'Conditioner') + ' 🧢';
-                        if (plan.steps[i].timer) {
-                            plan.steps[i].timer.duration = 600;
-                            plan.steps[i].timer.label = 'Deep condition — stiff hair needs moisture';
-                        }
-                    }
-                    if (plan.steps[i].stepType === 'leave_in') {
-                        plan.steps[i].tip = 'Extra generous today — stiff hair is moisture-starved.';
-                    }
-                }
-            }
-
             /**
              * Records a product swap on the plan.
              */
@@ -8101,6 +8470,1038 @@
             return {
                 adjust: adjust,
                 recordSwap: recordSwap
+            };
+        })();
+
+        // ===== DiagnosticEngine =====
+        // Cause-based diagnostic system using mixed Bayesian model.
+        // Beta-Binomial for cause selection ranking (binary: user picked this cause or didn't).
+        // Normal-Normal for intervention outcome tracking (continuous: 1-5 wash rating).
+        // Weighted combination for final ranking (selection dominates early, outcome gains weight).
+        const DiagnosticEngine = (function() {
+
+            // ===== Beta-Binomial Tracker (Task 1.2) =====
+            // Tracks how often a user selects each cause for a given symptom + condition.
+            // P(select) = alpha / (alpha + beta)
+            var BetaBinomialTracker = {
+                /**
+                 * Get the Beta-Binomial parameters for a (symptom, cause, condition) tuple.
+                 * Falls back to global prior when condition-specific data has < 3 observations.
+                 * @param {string} symptomId
+                 * @param {string} causeId
+                 * @param {string} conditionKey - 'dry' | 'moderate' | 'humid'
+                 * @param {object} domainPrior - { alpha, beta } from cause tree definition
+                 * @returns {{ alpha: number, beta: number, n: number }}
+                 */
+                get: function(symptomId, causeId, conditionKey, domainPrior) {
+                    var diagState = StateManager.getDiagnosticState();
+                    var entries = diagState.betaBinomials;
+
+                    // Look for condition-specific entry
+                    var entry = null;
+                    for (var i = 0; i < entries.length; i++) {
+                        if (entries[i].symptomId === symptomId &&
+                            entries[i].causeId === causeId &&
+                            entries[i].conditionKey === conditionKey) {
+                            entry = entries[i];
+                            break;
+                        }
+                    }
+
+                    if (entry && (entry.alpha + entry.beta - domainPrior.alpha - domainPrior.beta) >= 3) {
+                        // Enough condition-specific data
+                        return { alpha: entry.alpha, beta: entry.beta, n: entry.alpha + entry.beta - domainPrior.alpha - domainPrior.beta };
+                    }
+
+                    // Fallback: aggregate across all condition keys for this symptom+cause
+                    var globalAlpha = domainPrior.alpha;
+                    var globalBeta = domainPrior.beta;
+                    for (var j = 0; j < entries.length; j++) {
+                        if (entries[j].symptomId === symptomId && entries[j].causeId === causeId) {
+                            globalAlpha += (entries[j].alpha - domainPrior.alpha);
+                            globalBeta += (entries[j].beta - domainPrior.beta);
+                        }
+                    }
+                    var globalN = globalAlpha + globalBeta - domainPrior.alpha - domainPrior.beta;
+
+                    if (globalN >= 3) {
+                        return { alpha: globalAlpha, beta: globalBeta, n: globalN };
+                    }
+
+                    // Not enough data anywhere — return domain prior
+                    return { alpha: domainPrior.alpha, beta: domainPrior.beta, n: 0 };
+                },
+
+                /**
+                 * Record that the user selected this cause.
+                 * Increments alpha for the selected cause.
+                 */
+                recordSelection: function(symptomId, causeId, conditionKey, domainPrior) {
+                    var diagState = StateManager.getDiagnosticState();
+                    var entries = diagState.betaBinomials;
+                    var found = false;
+
+                    for (var i = 0; i < entries.length; i++) {
+                        if (entries[i].symptomId === symptomId &&
+                            entries[i].causeId === causeId &&
+                            entries[i].conditionKey === conditionKey) {
+                            entries[i].alpha += 1;
+                            entries[i].lastUpdated = new Date().toISOString();
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        entries.push({
+                            symptomId: symptomId,
+                            causeId: causeId,
+                            conditionKey: conditionKey,
+                            alpha: domainPrior.alpha + 1,
+                            beta: domainPrior.beta,
+                            lastUpdated: new Date().toISOString()
+                        });
+                    }
+
+                    StateManager.saveBetaBinomial(entries[entries.length - 1] || entries.find(function(e) {
+                        return e.symptomId === symptomId && e.causeId === causeId && e.conditionKey === conditionKey;
+                    }));
+                },
+
+                /**
+                 * Record that the user selected a DIFFERENT cause (non-selection).
+                 * Increments beta for this cause.
+                 */
+                recordNonSelection: function(symptomId, causeId, conditionKey, domainPrior) {
+                    var diagState = StateManager.getDiagnosticState();
+                    var entries = diagState.betaBinomials;
+                    var found = false;
+
+                    for (var i = 0; i < entries.length; i++) {
+                        if (entries[i].symptomId === symptomId &&
+                            entries[i].causeId === causeId &&
+                            entries[i].conditionKey === conditionKey) {
+                            entries[i].beta += 1;
+                            entries[i].lastUpdated = new Date().toISOString();
+                            found = true;
+                            StateManager.saveBetaBinomial(entries[i]);
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        var newEntry = {
+                            symptomId: symptomId,
+                            causeId: causeId,
+                            conditionKey: conditionKey,
+                            alpha: domainPrior.alpha,
+                            beta: domainPrior.beta + 1,
+                            lastUpdated: new Date().toISOString()
+                        };
+                        StateManager.saveBetaBinomial(newEntry);
+                    }
+                },
+
+                /**
+                 * Get selection probability: alpha / (alpha + beta)
+                 */
+                getSelectionProbability: function(symptomId, causeId, conditionKey, domainPrior) {
+                    var params = this.get(symptomId, causeId, conditionKey, domainPrior);
+                    return params.alpha / (params.alpha + params.beta);
+                }
+            };
+
+            // ===== Normal-Normal Outcome Tracker (Task 1.3) =====
+            // Tracks how well interventions work based on wash ratings.
+            // Shared across condition keys (a good rating is good regardless of humidity).
+            // Reuses the same conjugate math as BeliefTracker.
+            var PRIOR_VARIANCE = 2.0;
+            var OBSERVATION_VARIANCE = 1.0;
+
+            var OutcomeTracker = {
+                /**
+                 * Get outcome parameters for a cause.
+                 * @param {string} causeId
+                 * @returns {{ mu: number, variance: number, n: number }}
+                 */
+                get: function(causeId) {
+                    var diagState = StateManager.getDiagnosticState();
+                    var entries = diagState.normalNormals;
+
+                    for (var i = 0; i < entries.length; i++) {
+                        if (entries[i].causeId === causeId) {
+                            return { mu: entries[i].mu, variance: entries[i].variance, n: entries[i].n };
+                        }
+                    }
+
+                    // No data — return neutral prior
+                    return { mu: 3.0, variance: PRIOR_VARIANCE, n: 0 };
+                },
+
+                /**
+                 * Record a wash outcome for a confirmed cause.
+                 * Normal-Normal conjugate update.
+                 * @param {string} causeId
+                 * @param {number} rating - 1-5 wash rating
+                 */
+                recordOutcome: function(causeId, rating) {
+                    var current = this.get(causeId);
+                    var priorPrecision = 1 / current.variance;
+                    var obsPrecision = 1 / OBSERVATION_VARIANCE;
+                    var posteriorPrecision = priorPrecision + obsPrecision;
+                    var posteriorVariance = 1 / posteriorPrecision;
+                    var posteriorMu = (current.mu * priorPrecision + rating * obsPrecision) / posteriorPrecision;
+
+                    var entry = {
+                        causeId: causeId,
+                        mu: posteriorMu,
+                        variance: posteriorVariance,
+                        n: current.n + 1,
+                        lastUpdated: new Date().toISOString()
+                    };
+
+                    StateManager.saveNormalNormal(entry);
+                },
+
+                /**
+                 * Get expected outcome value.
+                 * Returns 0.5 (neutral) if fewer than 3 observations.
+                 * @param {string} causeId
+                 * @returns {number} 0-1 normalized expectation
+                 */
+                getExpectation: function(causeId) {
+                    var params = this.get(causeId);
+                    if (params.n < 3) return 0.5; // not enough data — neutral
+                    // Normalize mu from 1-5 scale to 0-1
+                    return Math.max(0, Math.min(1, (params.mu - 1) / 4));
+                }
+            };
+
+            // ===== Mixed Score Calculation (Task 1.4) =====
+            /**
+             * Calculate the mixed ranking score for a cause.
+             * Blends selection probability (Beta-Binomial) with outcome expectation (Normal-Normal).
+             * Selection dominates early; converges to 50/50 at 20+ outcome observations.
+             *
+             * @param {string} symptomId
+             * @param {string} causeId
+             * @param {string} conditionKey
+             * @param {object} domainPrior - { alpha, beta } for Beta-Binomial initialization
+             * @returns {number} 0-1 score
+             */
+            function mixedScore(symptomId, causeId, conditionKey, domainPrior) {
+                var selectionProb = BetaBinomialTracker.getSelectionProbability(symptomId, causeId, conditionKey, domainPrior);
+                var outcomeParams = OutcomeTracker.get(causeId);
+                var outcomeExpectation = outcomeParams.n >= 3 ? Math.max(0, Math.min(1, (outcomeParams.mu - 1) / 4)) : 0.5;
+
+                // Outcome weight grows with data, caps at 0.5
+                var w2 = Math.min(0.5, outcomeParams.n / 20);
+                var w1 = 1 - w2;
+
+                return w1 * selectionProb + w2 * outcomeExpectation;
+            }
+
+            // ===== Condition Key Derivation (Task 2.2) =====
+            /**
+             * Derive humidity condition key from dew point (°F).
+             * @param {number|null} dewPoint - dew point in Fahrenheit
+             * @returns {'dry'|'moderate'|'humid'}
+             */
+            function getConditionKey(dewPoint) {
+                if (dewPoint === null || dewPoint === undefined) return 'moderate';
+                if (dewPoint < 35) return 'dry';
+                if (dewPoint > 60) return 'humid';
+                return 'moderate';
+            }
+
+            /**
+             * Get clarify modifier for buildup-related causes.
+             * Multiplies alpha of buildup causes as clarify becomes overdue.
+             * @param {number|null} daysSinceClarify
+             * @returns {number} 1.0-2.0 multiplier
+             */
+            function getClarifyModifier(daysSinceClarify) {
+                if (daysSinceClarify === null || daysSinceClarify === undefined) return 1.0;
+                return Math.min(2.0, daysSinceClarify / 7);
+            }
+
+            // ===== Cause Decision Trees (Task 2.1) =====
+            // Each cause: { id, symptomId, name, mechanism, getEvidence(context), getDomainPrior(conditionKey, context), isBuildup }
+            var CAUSE_TREES = {
+                frizzy: [
+                    {
+                        id: 'frizz-humidity',
+                        symptomId: 'frizzy',
+                        name: 'Humidity swelling cortex',
+                        mechanism: 'Water molecules penetrate cortex via open cuticle, swell hair shaft.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            if (ctx.dewPoint !== null && ctx.dewPoint > 60) {
+                                return 'Dew point is ' + Math.round(ctx.dewPoint) + '°F — moisture is penetrating the cuticle.';
+                            }
+                            return 'High humidity can swell the cortex through open cuticle.';
+                        },
+                        getDomainPrior: function(conditionKey) {
+                            if (conditionKey === 'humid') return { alpha: 3, beta: 1 };
+                            if (conditionKey === 'dry') return { alpha: 1, beta: 3 };
+                            return { alpha: 2, beta: 2 };
+                        }
+                    },
+                    {
+                        id: 'frizz-dry-air',
+                        symptomId: 'frizzy',
+                        name: 'Dry air lifting cuticle',
+                        mechanism: 'Low moisture air pulls water from cortex, cuticle lifts to compensate.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            if (ctx.dewPoint !== null && ctx.dewPoint < 35) {
+                                return 'Dew point is ' + Math.round(ctx.dewPoint) + '°F — dry air is pulling moisture from hair.';
+                            }
+                            return 'Dry air can lift the cuticle as moisture escapes.';
+                        },
+                        getDomainPrior: function(conditionKey) {
+                            if (conditionKey === 'dry') return { alpha: 3, beta: 1 };
+                            if (conditionKey === 'humid') return { alpha: 1, beta: 3 };
+                            return { alpha: 1, beta: 2 };
+                        }
+                    },
+                    {
+                        id: 'frizz-buildup',
+                        symptomId: 'frizzy',
+                        name: 'Product buildup blocking seal',
+                        mechanism: 'Silicone/product layers prevent conditioner from depositing properly.',
+                        isBuildup: true,
+                        getEvidence: function(ctx) {
+                            if (ctx.daysSinceClarify !== null && ctx.daysSinceClarify > 7) {
+                                return 'Last clarified ' + ctx.daysSinceClarify + ' days ago — layers may be blocking seal.';
+                            }
+                            return 'Product buildup can prevent conditioner from depositing.';
+                        },
+                        getDomainPrior: function(conditionKey, ctx) {
+                            var base = { alpha: 2, beta: 2 };
+                            if (ctx && ctx.daysSinceClarify !== null && ctx.daysSinceClarify > 7) {
+                                base.alpha = 3;
+                            }
+                            return base;
+                        }
+                    },
+                    {
+                        id: 'frizz-friction',
+                        symptomId: 'frizzy',
+                        name: 'Overnight friction damage',
+                        mechanism: 'Pillow friction roughens cuticle, especially on regrowth hairs.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            return 'Pillow friction roughens cuticle on regrowth hairs.';
+                        },
+                        getDomainPrior: function() {
+                            return { alpha: 1, beta: 3 }; // low static prior
+                        }
+                    }
+                ],
+
+                'dry-rough': [
+                    {
+                        id: 'dry-moisture-deficit',
+                        symptomId: 'dry-rough',
+                        name: 'Moisture deficit (cuticle damage)',
+                        mechanism: 'Weathered cuticle can\'t retain moisture, needs deep conditioning.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            var parts = [];
+                            if (ctx.lastRating !== null && ctx.lastRating < 3) {
+                                parts.push('Last wash rated ' + ctx.lastRating + '/5.');
+                            }
+                            parts.push('Weathered cuticle loses moisture — deep conditioning helps.');
+                            return parts.join(' ');
+                        },
+                        getDomainPrior: function() {
+                            return { alpha: 3, beta: 1 }; // high default for this hair profile
+                        }
+                    },
+                    {
+                        id: 'dry-overwash',
+                        symptomId: 'dry-rough',
+                        name: 'Over-washing stripping lipids',
+                        mechanism: 'Too-frequent sulfate exposure removes protective lipid layer.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            if (ctx.daysSinceWash !== null && ctx.daysSinceWash < 2) {
+                                return 'Last washed ' + ctx.daysSinceWash + ' day(s) ago — frequent washing strips lipids.';
+                            }
+                            return 'Frequent washing can strip the protective lipid layer.';
+                        },
+                        getDomainPrior: function(conditionKey, ctx) {
+                            if (ctx && ctx.daysSinceWash !== null && ctx.daysSinceWash < 2) {
+                                return { alpha: 2, beta: 1 };
+                            }
+                            return { alpha: 1, beta: 2 };
+                        }
+                    },
+                    {
+                        id: 'dry-clarify-aftermath',
+                        symptomId: 'dry-rough',
+                        name: 'Post-clarify dryness',
+                        mechanism: 'Clarifying removed protective silicone layers, hair feels exposed.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            if (ctx.daysSinceClarify !== null && ctx.daysSinceClarify <= 2) {
+                                return 'Clarified ' + ctx.daysSinceClarify + ' day(s) ago — silicone layers were stripped.';
+                            }
+                            return 'Recent clarifying can leave hair feeling exposed.';
+                        },
+                        getDomainPrior: function(conditionKey, ctx) {
+                            if (ctx && ctx.daysSinceClarify !== null && ctx.daysSinceClarify <= 2) {
+                                return { alpha: 3, beta: 1 };
+                            }
+                            return { alpha: 1, beta: 3 };
+                        }
+                    }
+                ],
+
+                stiff: [
+                    {
+                        id: 'stiff-moisture',
+                        symptomId: 'stiff',
+                        name: 'Moisture deficit',
+                        mechanism: 'Coarse hair without adequate moisture feels rigid.',
+                        isBuildup: false,
+                        getEvidence: function() {
+                            return 'Coarse, thick hair needs deep moisture to stay flexible.';
+                        },
+                        getDomainPrior: function() {
+                            return { alpha: 3, beta: 1 }; // most common for this profile
+                        }
+                    },
+                    {
+                        id: 'stiff-gel-cast',
+                        symptomId: 'stiff',
+                        name: 'Residual gel cast',
+                        mechanism: 'Didn\'t fully scrunch out the crunch from last wash.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            if (ctx.lastWashUsedGel) {
+                                return 'Last wash used gel — cast may not have been fully scrunched out.';
+                            }
+                            return 'Residual gel cast can make hair feel stiff.';
+                        },
+                        getDomainPrior: function(conditionKey, ctx) {
+                            if (ctx && ctx.lastWashUsedGel) return { alpha: 2, beta: 1 };
+                            return { alpha: 1, beta: 2 };
+                        }
+                    }
+                ],
+
+                'curls-dropping': [
+                    {
+                        id: 'curl-hold-weak',
+                        symptomId: 'curls-dropping',
+                        name: 'Insufficient hold strength',
+                        mechanism: 'Current gel can\'t maintain curl pattern through the day.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            if (ctx.currentGel === 'nym-curl-talk-gel') {
+                                return 'NYM Curl Talk may not be strong enough — Got2b has stronger hold.';
+                            }
+                            return 'Current gel may not provide enough hold for your curl pattern.';
+                        },
+                        getDomainPrior: function(conditionKey) {
+                            if (conditionKey === 'moderate') return { alpha: 2, beta: 1 };
+                            return { alpha: 1, beta: 2 };
+                        }
+                    },
+                    {
+                        id: 'curl-humidity',
+                        symptomId: 'curls-dropping',
+                        name: 'Humidity overwhelming barrier',
+                        mechanism: 'Moisture swelling cortex faster than gel can resist.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            if (ctx.dewPoint !== null && ctx.dewPoint > 60) {
+                                return 'Dew point ' + Math.round(ctx.dewPoint) + '°F — humidity is overwhelming the gel barrier.';
+                            }
+                            return 'High humidity can overwhelm gel hold.';
+                        },
+                        getDomainPrior: function(conditionKey) {
+                            if (conditionKey === 'humid') return { alpha: 3, beta: 1 };
+                            return { alpha: 1, beta: 2 };
+                        }
+                    },
+                    {
+                        id: 'curl-weight',
+                        symptomId: 'curls-dropping',
+                        name: 'Product weight pulling curls down',
+                        mechanism: 'Too much leave-in or conditioner weighing hair down.',
+                        isBuildup: false,
+                        getEvidence: function() {
+                            return 'Heavy product application can weigh curls down.';
+                        },
+                        getDomainPrior: function() {
+                            return { alpha: 1, beta: 3 }; // low prior
+                        }
+                    },
+                    {
+                        id: 'curl-buildup',
+                        symptomId: 'curls-dropping',
+                        name: 'Buildup preventing gel adhesion',
+                        mechanism: 'Product layers between hair and gel reduce grip.',
+                        isBuildup: true,
+                        getEvidence: function(ctx) {
+                            if (ctx.daysSinceClarify !== null && ctx.daysSinceClarify > 7) {
+                                return 'Last clarified ' + ctx.daysSinceClarify + ' days ago — buildup may be blocking gel.';
+                            }
+                            return 'Product buildup can prevent gel from gripping hair.';
+                        },
+                        getDomainPrior: function(conditionKey, ctx) {
+                            var base = { alpha: 2, beta: 2 };
+                            if (ctx && ctx.daysSinceClarify !== null && ctx.daysSinceClarify > 7) {
+                                base.alpha = 3;
+                            }
+                            return base;
+                        }
+                    }
+                ],
+
+                buildup: [
+                    {
+                        id: 'buildup-overdue',
+                        symptomId: 'buildup',
+                        name: 'Overdue for clarify',
+                        mechanism: 'Silicone and product accumulation from multiple washes.',
+                        isBuildup: true,
+                        getEvidence: function(ctx) {
+                            if (ctx.daysSinceClarify !== null && ctx.daysSinceClarify > 7) {
+                                return 'Last clarified ' + ctx.daysSinceClarify + ' days ago — product accumulation likely.';
+                            }
+                            return 'Multiple washes without clarifying can cause buildup.';
+                        },
+                        getDomainPrior: function(conditionKey, ctx) {
+                            if (ctx && ctx.daysSinceClarify !== null && ctx.daysSinceClarify > 7) {
+                                return { alpha: 3, beta: 1 };
+                            }
+                            return { alpha: 2, beta: 2 };
+                        }
+                    },
+                    {
+                        id: 'buildup-heavy-application',
+                        symptomId: 'buildup',
+                        name: 'Over-application last wash',
+                        mechanism: 'Too much product applied, not buildup over time.',
+                        isBuildup: false,
+                        getEvidence: function(ctx) {
+                            if (ctx.daysSinceClarify !== null && ctx.daysSinceClarify < 5) {
+                                return 'Recently clarified (' + ctx.daysSinceClarify + ' days) — this is likely over-application, not accumulation.';
+                            }
+                            return 'Heavy product application can feel like buildup.';
+                        },
+                        getDomainPrior: function(conditionKey, ctx) {
+                            if (ctx && ctx.daysSinceClarify !== null && ctx.daysSinceClarify < 5) {
+                                return { alpha: 2, beta: 1 };
+                            }
+                            return { alpha: 1, beta: 2 };
+                        }
+                    }
+                ]
+            };
+
+            // ===== Cause Ranking (Task 2.3) =====
+            /**
+             * Rank causes for a symptom given current context.
+             * Returns top 2-3 causes sorted by mixed score.
+             *
+             * @param {string} symptomId - one of: 'frizzy', 'dry-rough', 'stiff', 'curls-dropping', 'buildup'
+             * @param {object} context - { dewPoint, daysSinceClarify, daysSinceWash, lastRating, lastWashUsedGel, currentGel }
+             * @returns {Array<{ cause, score, evidence }>}
+             */
+            function rankCauses(symptomId, context) {
+                var causes = CAUSE_TREES[symptomId];
+                if (!causes) return [];
+
+                var conditionKey = getConditionKey(context.dewPoint);
+                var clarifyMod = getClarifyModifier(context.daysSinceClarify);
+
+                var scored = causes.map(function(cause) {
+                    var domainPrior = cause.getDomainPrior(conditionKey, context);
+
+                    // Apply clarify modifier to buildup-related causes
+                    var adjustedPrior = { alpha: domainPrior.alpha, beta: domainPrior.beta };
+                    if (cause.isBuildup && clarifyMod > 1.0) {
+                        adjustedPrior.alpha = domainPrior.alpha * clarifyMod;
+                    }
+
+                    var score = mixedScore(symptomId, cause.id, conditionKey, adjustedPrior);
+                    var evidence = cause.getEvidence(context);
+
+                    return { cause: cause, score: score, evidence: evidence };
+                });
+
+                // Sort descending by score
+                scored.sort(function(a, b) { return b.score - a.score; });
+
+                // Return top 3 (or fewer if scores are very low)
+                var MIN_THRESHOLD = 0.15;
+                var results = [];
+                for (var i = 0; i < scored.length && i < 3; i++) {
+                    if (scored[i].score >= MIN_THRESHOLD || i === 0) {
+                        results.push(scored[i]);
+                    }
+                }
+
+                return results;
+            }
+
+            /**
+             * Rank causes across multiple symptoms, boosting shared root causes.
+             * Used when user selects multiple symptoms at once.
+             *
+             * @param {Array<string>} symptomIds
+             * @param {object} context
+             * @returns {Array<{ cause, score, evidence, symptoms }>}
+             */
+            function rankCausesMultiSymptom(symptomIds, context) {
+                if (symptomIds.length === 1) {
+                    return rankCauses(symptomIds[0], context);
+                }
+
+                // Collect all causes across symptoms
+                var allScored = [];
+                var causeScoreMap = {}; // causeId → { totalScore, count, causes, evidence, symptoms }
+
+                symptomIds.forEach(function(symptomId) {
+                    var ranked = rankCauses(symptomId, context);
+                    ranked.forEach(function(item) {
+                        var key = item.cause.id;
+                        if (!causeScoreMap[key]) {
+                            causeScoreMap[key] = {
+                                cause: item.cause,
+                                totalScore: 0,
+                                count: 0,
+                                evidence: item.evidence,
+                                symptoms: []
+                            };
+                        }
+                        causeScoreMap[key].totalScore += item.score;
+                        causeScoreMap[key].count += 1;
+                        causeScoreMap[key].symptoms.push(symptomId);
+                    });
+                });
+
+                // Boost shared causes (appear in multiple symptom rankings)
+                var results = Object.keys(causeScoreMap).map(function(key) {
+                    var entry = causeScoreMap[key];
+                    var avgScore = entry.totalScore / entry.count;
+                    // Boost by 20% for each additional symptom it appears in
+                    var boost = 1 + (entry.count - 1) * 0.2;
+                    return {
+                        cause: entry.cause,
+                        score: Math.min(1.0, avgScore * boost),
+                        evidence: entry.evidence,
+                        symptoms: entry.symptoms
+                    };
+                });
+
+                results.sort(function(a, b) { return b.score - a.score; });
+                return results.slice(0, 3);
+            }
+
+            // ===== Delta-Awareness (Task 3.1) =====
+            /**
+             * Check what adjustments the plan already contains.
+             * Prevents duplicate interventions and enables escalation.
+             */
+            function getExistingAdjustments(plan) {
+                var result = {
+                    hasGloss: false,
+                    conditionerUpgraded: false,
+                    hasHeatCap: false,
+                    hasPreWash: false,
+                    gelUpgraded: false,
+                    hasFinishingOils: false,
+                    hasClarify: false,
+                    hasLeaveIn: false,
+                    conditionerTime: 0
+                };
+
+                if (!plan || !plan.steps) return result;
+
+                for (var i = 0; i < plan.steps.length; i++) {
+                    var step = plan.steps[i];
+                    if (step.stepType === 'gloss' || step.productId === 'loreal-wonder-water' || step.productId === 'everpure-glossing-mask') {
+                        result.hasGloss = true;
+                    }
+                    if (step.productId === 'elvive-total-repair-5-balm' || step.productId === 'ogx-bond-repair-mask') {
+                        result.conditionerUpgraded = true;
+                    }
+                    if (step.stepType === 'conditioner' && step.timer && step.timer.duration >= 600) {
+                        result.hasHeatCap = true;
+                    }
+                    if (step.stepType === 'pre_wash' || step.productId === 'pure-coconut-oil') {
+                        result.hasPreWash = true;
+                    }
+                    if (step.productId === 'got2b-ultra-glued') {
+                        result.gelUpgraded = true;
+                    }
+                    if (step.stepType === 'finishing') {
+                        result.hasFinishingOils = true;
+                    }
+                    if (step.productId === 'everpure-clarifying') {
+                        result.hasClarify = true;
+                    }
+                    if (step.stepType === 'leave_in') {
+                        result.hasLeaveIn = true;
+                    }
+                    if (step.stepType === 'conditioner' && step.timer) {
+                        result.conditionerTime = Math.max(result.conditionerTime, step.timer.duration || 0);
+                    }
+                }
+
+                return result;
+            }
+
+            // ===== Intervention Application with Escalation (Tasks 3.2 + 3.3) =====
+
+            function applyIntervention(plan, cause, context) {
+                var interventionFn = INTERVENTIONS[cause.id];
+                if (interventionFn) {
+                    return interventionFn(plan, context);
+                }
+                return plan;
+            }
+
+            var INTERVENTIONS = {
+                'frizz-humidity': function(plan) {
+                    var existing = getExistingAdjustments(plan);
+                    if (!existing.gelUpgraded) swapGelToGot2b(plan);
+                    if (!existing.hasGloss) {
+                        addWonderWater(plan);
+                    } else if (!existing.hasHeatCap) {
+                        upgradeConditionerTime(plan, 600);
+                    }
+                    return plan;
+                },
+
+                'frizz-dry-air': function(plan) {
+                    var existing = getExistingAdjustments(plan);
+                    if (!existing.conditionerUpgraded) upgradeConditioner(plan);
+                    upgradeConditionerTime(plan, 600);
+                    if (!existing.hasGloss) addWonderWater(plan);
+                    return plan;
+                },
+
+                'frizz-buildup': function(plan) {
+                    swapToClarify(plan);
+                    return plan;
+                },
+
+                'frizz-friction': function(plan) {
+                    var existing = getExistingAdjustments(plan);
+                    if (existing.hasLeaveIn) {
+                        addTipToLeaveIn(plan, 'Extra on hairline and regrowth \u2014 friction damage is worst there.');
+                    }
+                    return plan;
+                },
+
+                'dry-moisture-deficit': function(plan) {
+                    var existing = getExistingAdjustments(plan);
+                    if (!existing.conditionerUpgraded) upgradeConditioner(plan);
+                    upgradeConditionerTime(plan, 600);
+                    if (!existing.hasGloss) addWonderWater(plan);
+                    return plan;
+                },
+
+                'dry-overwash': function(plan) {
+                    var existing = getExistingAdjustments(plan);
+                    if (!existing.hasPreWash) addPreWash(plan);
+                    addGeneralTip(plan, 'Consider extending wash interval \u2014 frequent sulfate exposure strips lipids.');
+                    return plan;
+                },
+
+                'dry-clarify-aftermath': function(plan) {
+                    var existing = getExistingAdjustments(plan);
+                    upgradeConditionerTime(plan, 600);
+                    if (existing.hasLeaveIn) {
+                        addTipToLeaveIn(plan, 'Extra generous today \u2014 post-clarify hair needs more protection.');
+                    }
+                    return plan;
+                },
+
+                'stiff-moisture': function(plan) {
+                    var existing = getExistingAdjustments(plan);
+                    if (!existing.conditionerUpgraded) upgradeConditioner(plan);
+                    upgradeConditionerTime(plan, 600);
+                    if (existing.hasLeaveIn) {
+                        addTipToLeaveIn(plan, 'Generous application \u2014 stiff hair is moisture-starved.');
+                    }
+                    return plan;
+                },
+
+                'stiff-gel-cast': function(plan) {
+                    addGeneralTip(plan, 'Try a water mist + re-scrunch to break the gel cast without rewashing.');
+                    return plan;
+                },
+
+                'curl-hold-weak': function(plan) {
+                    var existing = getExistingAdjustments(plan);
+                    if (!existing.gelUpgraded) swapGelToGot2b(plan);
+                    return plan;
+                },
+
+                'curl-humidity': function(plan) {
+                    var existing = getExistingAdjustments(plan);
+                    if (!existing.gelUpgraded) swapGelToGot2b(plan);
+                    if (!existing.hasGloss) addWonderWater(plan);
+                    return plan;
+                },
+
+                'curl-weight': function(plan) {
+                    if (plan.steps) {
+                        for (var i = 0; i < plan.steps.length; i++) {
+                            if (plan.steps[i].stepType === 'leave_in') {
+                                plan.steps[i].tip = 'Light application today \u2014 too much product may be weighing curls down.';
+                            }
+                            if (plan.steps[i].stepType === 'finishing') {
+                                plan.steps[i].tip = 'Skip finishing oils today \u2014 reducing weight to help curls hold.';
+                            }
+                        }
+                    }
+                    return plan;
+                },
+
+                'curl-buildup': function(plan) {
+                    swapToClarify(plan);
+                    return plan;
+                },
+
+                'buildup-overdue': function(plan) {
+                    swapToClarify(plan);
+                    return plan;
+                },
+
+                'buildup-heavy-application': function(plan) {
+                    addGeneralTip(plan, 'Use less product today \u2014 last wash may have been over-applied.');
+                    if (plan.steps) {
+                        for (var i = 0; i < plan.steps.length; i++) {
+                            if (plan.steps[i].stepType === 'finishing') {
+                                plan.steps[i].tip = 'Skip finishing oils today to reduce buildup feeling.';
+                            }
+                        }
+                    }
+                    return plan;
+                }
+            };
+
+            // ===== Intervention Helpers =====
+
+            function swapGelToGot2b(plan) {
+                if (!plan.steps) return;
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'styling' && plan.steps[i].productId === 'nym-curl-talk-gel') {
+                        plan.steps[i].productId = 'got2b-ultra-glued';
+                        plan.steps[i].productName = 'Ultra Glued Invincible Styling Gel';
+                        plan.steps[i].instruction = 'Glycerin-free PQ-69 gel. Stronger hold + humidity barrier.';
+                        if (!plan.productSwaps) plan.productSwaps = [];
+                        plan.productSwaps.push({ step: plan.steps[i].id, from: 'nym-curl-talk-gel', to: 'got2b-ultra-glued' });
+                        break;
+                    }
+                }
+            }
+
+            function addWonderWater(plan) {
+                if (!plan.steps) return;
+                var insertIdx = -1;
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'conditioner') { insertIdx = i + 1; break; }
+                }
+                if (insertIdx === -1) insertIdx = plan.steps.length;
+                plan.steps.splice(insertIdx, 0, {
+                    id: 'step-gloss-diag',
+                    number: insertIdx + 1,
+                    stepType: 'gloss',
+                    productId: 'loreal-wonder-water',
+                    productName: '8 Second Wonder Water',
+                    instruction: 'Spray evenly through lengths. Rinse after 8 seconds.',
+                    scienceBadge: null,
+                    timer: { duration: 8, label: 'Wonder Water' },
+                    tip: 'Lamellar rinse seals cuticle \u2014 helps lock in moisture and block humidity.',
+                    phase: 'PREP & WASH',
+                    alternatives: []
+                });
+                for (var j = insertIdx + 1; j < plan.steps.length; j++) {
+                    plan.steps[j].number = j + 1;
+                }
+            }
+
+            function upgradeConditioner(plan) {
+                if (!plan.steps) return;
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'conditioner') {
+                        var oldId = plan.steps[i].productId;
+                        plan.steps[i].productId = 'elvive-total-repair-5-balm';
+                        plan.steps[i].productName = 'Total Repair 5 Damage Erasing Balm';
+                        plan.steps[i].instruction = 'Section into 4+ parts. Apply generously. Heat cap on for deep moisture.';
+                        if (!plan.productSwaps) plan.productSwaps = [];
+                        plan.productSwaps.push({ step: plan.steps[i].id, from: oldId, to: 'elvive-total-repair-5-balm' });
+                        break;
+                    }
+                }
+            }
+
+            function upgradeConditionerTime(plan, seconds) {
+                if (!plan.steps) return;
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'conditioner') {
+                        if (!plan.steps[i].timer) {
+                            plan.steps[i].timer = { duration: seconds, label: 'Deep condition' };
+                        } else if (plan.steps[i].timer.duration < seconds) {
+                            plan.steps[i].timer.duration = seconds;
+                            plan.steps[i].timer.label = 'Deep condition (extended)';
+                        }
+                        plan.steps[i].stepLabel = (plan.steps[i].stepLabel || 'Conditioner') + ' \uD83E\uDDE2';
+                        break;
+                    }
+                }
+            }
+
+            function swapToClarify(plan) {
+                if (!plan.steps) return;
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'shampoo') {
+                        var oldId = plan.steps[i].productId;
+                        plan.steps[i].productId = 'everpure-clarifying';
+                        plan.steps[i].productName = 'Clarifying Shampoo';
+                        plan.steps[i].instruction = 'Full clarifying wash \u2014 removes silicone and product buildup.';
+                        if (!plan.productSwaps) plan.productSwaps = [];
+                        plan.productSwaps.push({ step: plan.steps[i].id, from: oldId, to: 'everpure-clarifying' });
+                        break;
+                    }
+                }
+            }
+
+            function addPreWash(plan) {
+                if (!plan.steps) return;
+                plan.steps.unshift({
+                    id: 'step-prewash-diag',
+                    number: 1,
+                    stepType: 'pre_wash',
+                    productId: 'pure-coconut-oil',
+                    productName: 'Pure Coconut Oil',
+                    instruction: 'Apply to lengths and ends. Leave 20+ minutes (or overnight). Prevents hygral fatigue during wash.',
+                    scienceBadge: null,
+                    timer: { duration: 1200, label: 'Coconut oil pre-wash' },
+                    tip: 'Lauric acid penetrates cortex \u2014 protects protein structure during washing.',
+                    phase: 'PREP & WASH',
+                    alternatives: []
+                });
+                for (var j = 1; j < plan.steps.length; j++) {
+                    plan.steps[j].number = j + 1;
+                }
+            }
+
+            function addTipToLeaveIn(plan, tipText) {
+                if (!plan.steps) return;
+                for (var i = 0; i < plan.steps.length; i++) {
+                    if (plan.steps[i].stepType === 'leave_in') {
+                        plan.steps[i].tip = tipText;
+                        break;
+                    }
+                }
+            }
+
+            function addGeneralTip(plan, tipText) {
+                if (!plan.diagnosticTips) plan.diagnosticTips = [];
+                plan.diagnosticTips.push(tipText);
+            }
+
+            // ===== Discrepancy Detection (Task 4.1) =====
+            /**
+             * Check if there's a discrepancy between what the user usually selects
+             * and what actually produces better outcomes.
+             * Triggers when: top-by-selection has > 60% selection rate AND
+             * top-by-outcome has mean > top-by-selection mean by >= 0.8,
+             * both with >= 5 outcome observations.
+             *
+             * @param {string} symptomId
+             * @param {string} conditionKey
+             * @returns {object|null} discrepancy object or null
+             */
+            function checkDiscrepancy(symptomId, conditionKey) {
+                var causes = CAUSE_TREES[symptomId];
+                if (!causes) return null;
+
+                // Score all causes by selection and outcome separately
+                var withData = [];
+                for (var i = 0; i < causes.length; i++) {
+                    var cause = causes[i];
+                    var domainPrior = cause.getDomainPrior(conditionKey, {});
+                    var selParams = BetaBinomialTracker.get(symptomId, cause.id, conditionKey, domainPrior);
+                    var selProb = selParams.alpha / (selParams.alpha + selParams.beta);
+                    var outcomeParams = OutcomeTracker.get(cause.id);
+
+                    withData.push({
+                        cause: cause,
+                        selectionProb: selProb,
+                        outcomeMu: outcomeParams.mu,
+                        outcomeN: outcomeParams.n
+                    });
+                }
+
+                // Find top by selection
+                var topBySelection = null;
+                for (var j = 0; j < withData.length; j++) {
+                    if (!topBySelection || withData[j].selectionProb > topBySelection.selectionProb) {
+                        topBySelection = withData[j];
+                    }
+                }
+
+                // Find top by outcome (only those with >= 5 observations)
+                var topByOutcome = null;
+                for (var k = 0; k < withData.length; k++) {
+                    if (withData[k].outcomeN >= 5) {
+                        if (!topByOutcome || withData[k].outcomeMu > topByOutcome.outcomeMu) {
+                            topByOutcome = withData[k];
+                        }
+                    }
+                }
+
+                if (!topByOutcome) return null; // not enough data
+                if (!topBySelection) return null;
+                if (topBySelection.cause.id === topByOutcome.cause.id) return null; // agreement
+
+                // Check thresholds
+                if (topBySelection.selectionProb > 0.6 &&
+                    topByOutcome.outcomeN >= 5 &&
+                    topBySelection.outcomeN >= 5 &&
+                    (topByOutcome.outcomeMu - topBySelection.outcomeMu) >= 0.8) {
+
+                    var discrepancy = {
+                        symptomId: symptomId,
+                        conditionKey: conditionKey,
+                        message: 'You usually think it\u2019s "' + topBySelection.cause.name + '", but your hair does better when you treat for "' + topByOutcome.cause.name + '".',
+                        selectedCauseId: topBySelection.cause.id,
+                        suggestedCauseId: topByOutcome.cause.id,
+                        surfacedDate: new Date().toISOString().split('T')[0],
+                        dismissed: false
+                    };
+
+                    StateManager.saveDiscrepancy(discrepancy);
+                    return discrepancy;
+                }
+
+                return null;
+            }
+
+            return {
+                BetaBinomialTracker: BetaBinomialTracker,
+                OutcomeTracker: OutcomeTracker,
+                mixedScore: mixedScore,
+                getConditionKey: getConditionKey,
+                getClarifyModifier: getClarifyModifier,
+                CAUSE_TREES: CAUSE_TREES,
+                rankCauses: rankCauses,
+                rankCausesMultiSymptom: rankCausesMultiSymptom,
+                getExistingAdjustments: getExistingAdjustments,
+                applyIntervention: applyIntervention,
+                checkDiscrepancy: checkDiscrepancy
             };
         })();
 
@@ -8543,6 +9944,31 @@
                 insightMessage.textContent = insights[0].message;
             } else {
                 insightCard.classList.remove('active');
+            }
+
+            // Discrepancy card (diagnostic engine insight)
+            var discrepancyCard = document.getElementById('discrepancy-card');
+            var discrepancyMessage = document.getElementById('discrepancy-message');
+            var diagState = StateManager.getDiagnosticState();
+            var activeDiscrepancy = null;
+            if (diagState.discrepancies) {
+                for (var di = 0; di < diagState.discrepancies.length; di++) {
+                    if (!diagState.discrepancies[di].dismissed) {
+                        activeDiscrepancy = diagState.discrepancies[di];
+                        break;
+                    }
+                }
+            }
+            if (activeDiscrepancy) {
+                discrepancyCard.style.display = 'block';
+                discrepancyMessage.textContent = '\uD83E\uDD14 ' + activeDiscrepancy.message;
+                document.getElementById('discrepancy-dismiss').onclick = function() {
+                    activeDiscrepancy.dismissed = true;
+                    StateManager.saveDiscrepancy(activeDiscrepancy);
+                    discrepancyCard.style.display = 'none';
+                };
+            } else {
+                discrepancyCard.style.display = 'none';
             }
 
             // Compensation card (contextual product statements)
@@ -9090,6 +10516,15 @@
             updateSealState(event);
             BeliefTracker.updateBeliefs(event);
 
+            // Update DiagnosticEngine outcome tracker if a cause was confirmed this session
+            if (lastConfirmedCause && event.rating) {
+                DiagnosticEngine.OutcomeTracker.recordOutcome(lastConfirmedCause.causeId, event.rating);
+                // Store confirmed cause on the event for history
+                event.confirmedCause = lastConfirmedCause;
+                StateManager.saveState(StateManager.getState()); // re-save with confirmedCause
+                lastConfirmedCause = null;
+            }
+
             // Track which heat protectant was used for A/B alternation
             if (currentPlan.lane === 'blowout') {
                 var heatProd = null;
@@ -9289,6 +10724,201 @@
 
         function applyAdjustments() {
             if (!currentPlan) return;
+
+            // Separate diagnostic symptoms from context adjustments
+            var diagnosticSymptoms = [];
+            var contextOnly = { quick: [], context: currentObservations.context.slice(), detailed: currentObservations.detailed.slice() };
+
+            // Map observation values to DiagnosticEngine symptom IDs
+            var symptomMap = {
+                'frizzy': 'frizzy',
+                'dry_rough': 'dry-rough',
+                'stiff': 'stiff',
+                'curl_not_holding': 'curls-dropping',
+                'buildup': 'buildup'
+            };
+
+            for (var i = 0; i < currentObservations.quick.length; i++) {
+                var val = currentObservations.quick[i];
+                if (symptomMap[val]) {
+                    diagnosticSymptoms.push(symptomMap[val]);
+                } else {
+                    contextOnly.quick.push(val);
+                }
+            }
+
+            // Also check detailed layer for stiff
+            for (var d = 0; d < currentObservations.detailed.length; d++) {
+                if (currentObservations.detailed[d] === 'stiff') {
+                    diagnosticSymptoms.push('stiff');
+                }
+            }
+
+            // If there are diagnostic symptoms, show cause cards
+            if (diagnosticSymptoms.length > 0) {
+                showCauseCards(diagnosticSymptoms, contextOnly);
+                return;
+            }
+
+            // No diagnostic symptoms — apply context adjustments directly (old behavior)
+            applyAdjustmentsDirect(currentObservations);
+        }
+
+        // Track confirmed cause for outcome tracking after wash rating
+        var lastConfirmedCause = null;
+
+        function showCauseCards(symptomIds, contextObservations) {
+            // Build context for ranking
+            var state = StateManager.getState();
+            var events = state.events || [];
+            var lastEvent = events.length > 0 ? events[events.length - 1] : null;
+
+            var context = {
+                dewPoint: detectedDewPoint,
+                daysSinceClarify: null,
+                daysSinceWash: null,
+                lastRating: lastEvent ? lastEvent.rating : null,
+                lastWashUsedGel: false,
+                currentGel: 'nym-curl-talk-gel'
+            };
+
+            // Calculate days since clarify
+            for (var i = events.length - 1; i >= 0; i--) {
+                if (events[i].treatments && events[i].treatments.indexOf('clarify') !== -1) {
+                    context.daysSinceClarify = daysSince(events[i].date);
+                    break;
+                }
+            }
+            // Days since last wash
+            if (lastEvent && lastEvent.date) {
+                context.daysSinceWash = daysSince(lastEvent.date);
+            }
+            // Check if last wash used gel
+            if (lastEvent && lastEvent.products) {
+                context.lastWashUsedGel = lastEvent.products.indexOf('nym-curl-talk-gel') !== -1 ||
+                                          lastEvent.products.indexOf('got2b-ultra-glued') !== -1;
+            }
+            // Check current plan for gel type
+            if (currentPlan && currentPlan.steps) {
+                for (var j = 0; j < currentPlan.steps.length; j++) {
+                    if (currentPlan.steps[j].productId === 'got2b-ultra-glued') {
+                        context.currentGel = 'got2b-ultra-glued';
+                        break;
+                    }
+                }
+            }
+
+            // Rank causes (use first symptom for now; multi-symptom uses combined ranking)
+            var ranked;
+            if (symptomIds.length === 1) {
+                ranked = DiagnosticEngine.rankCauses(symptomIds[0], context);
+            } else {
+                ranked = DiagnosticEngine.rankCausesMultiSymptom(symptomIds, context);
+            }
+
+            // Render cause cards
+            var overlay = document.getElementById('cause-card-overlay');
+            var titleEl = document.getElementById('cause-card-title');
+            var listEl = document.getElementById('cause-card-list');
+
+            // Set title based on symptom
+            var symptomLabels = {
+                'frizzy': 'frizz',
+                'dry-rough': 'dryness',
+                'stiff': 'stiffness',
+                'curls-dropping': 'curl drop',
+                'buildup': 'buildup'
+            };
+            var label = symptomIds.length === 1 ? symptomLabels[symptomIds[0]] || 'this' : 'these symptoms';
+            titleEl.textContent = 'What\u2019s causing the ' + label + '?';
+
+            // Build card HTML
+            var html = '';
+            for (var k = 0; k < ranked.length; k++) {
+                var item = ranked[k];
+                var rankLabel = k === 0 ? 'Most likely' : (k === 1 ? 'Also possible' : 'Less likely');
+                html += '<div class="cause-card" data-cause-id="' + item.cause.id + '" data-symptom-id="' + item.cause.symptomId + '" role="button" tabindex="0" aria-label="' + item.cause.name + '">';
+                html += '<div class="cause-card-rank">' + rankLabel + '</div>';
+                html += '<div class="cause-card-name">' + item.cause.name + '</div>';
+                html += '<div class="cause-card-evidence">' + item.evidence + '</div>';
+                html += '</div>';
+            }
+            listEl.innerHTML = html;
+
+            // Show overlay
+            overlay.classList.add('visible');
+
+            // Wire cause card clicks
+            var conditionKey = DiagnosticEngine.getConditionKey(detectedDewPoint);
+            var cards = listEl.querySelectorAll('.cause-card');
+            cards.forEach(function(card) {
+                card.onclick = function() {
+                    var causeId = card.getAttribute('data-cause-id');
+                    var symptomId = card.getAttribute('data-symptom-id');
+
+                    // Find the cause object
+                    var causes = DiagnosticEngine.CAUSE_TREES[symptomId];
+                    var selectedCause = null;
+                    for (var c = 0; c < causes.length; c++) {
+                        if (causes[c].id === causeId) { selectedCause = causes[c]; break; }
+                    }
+                    if (!selectedCause) return;
+
+                    var domainPrior = selectedCause.getDomainPrior(conditionKey, context);
+
+                    // Update Beta-Binomial: increment alpha for selected, beta for others
+                    DiagnosticEngine.BetaBinomialTracker.recordSelection(symptomId, causeId, conditionKey, domainPrior);
+                    for (var nc = 0; nc < causes.length; nc++) {
+                        if (causes[nc].id !== causeId) {
+                            var otherPrior = causes[nc].getDomainPrior(conditionKey, context);
+                            DiagnosticEngine.BetaBinomialTracker.recordNonSelection(symptomId, causes[nc].id, conditionKey, otherPrior);
+                        }
+                    }
+
+                    // Store confirmed cause for outcome tracking after wash rating
+                    lastConfirmedCause = { symptomId: symptomId, causeId: causeId };
+
+                    // Apply the intervention
+                    DiagnosticEngine.applyIntervention(currentPlan, selectedCause, context);
+
+                    // Also apply context adjustments
+                    if (contextObservations.quick.length > 0 || contextObservations.context.length > 0) {
+                        currentPlan = AdjustmentEngine.adjust(currentPlan, contextObservations);
+                    }
+
+                    // Close overlay and re-render
+                    overlay.classList.remove('visible');
+                    renderPlanView(currentPlan);
+                    showAdjustToast('Treating for: ' + selectedCause.name);
+                };
+            });
+
+            // "Not sure" button — apply top-ranked intervention, no Bayesian updates
+            document.getElementById('cause-card-not-sure').onclick = function() {
+                if (ranked.length > 0) {
+                    var topCause = ranked[0].cause;
+                    DiagnosticEngine.applyIntervention(currentPlan, topCause, context);
+                    lastConfirmedCause = null; // no tracking
+                }
+
+                // Also apply context adjustments
+                if (contextObservations.quick.length > 0 || contextObservations.context.length > 0) {
+                    currentPlan = AdjustmentEngine.adjust(currentPlan, contextObservations);
+                }
+
+                overlay.classList.remove('visible');
+                renderPlanView(currentPlan);
+                showAdjustToast('Applied general adjustment');
+            };
+
+            // Close on backdrop
+            document.getElementById('cause-card-backdrop').onclick = function() {
+                overlay.classList.remove('visible');
+            };
+        }
+
+        function applyAdjustmentsDirect(observations) {
+            if (!currentPlan) return;
             // Capture step IDs before adjustment for comparison
             var oldStepIds = currentPlan.steps.map(function(s) { return s.id + ':' + s.productId + ':' + (s.tip || ''); });
 
@@ -9300,7 +10930,7 @@
             basePlan.confidence = suggestion.confidence;
             basePlan.productSwaps = currentPlan.productSwaps || [];
 
-            currentPlan = AdjustmentEngine.adjust(basePlan, currentObservations);
+            currentPlan = AdjustmentEngine.adjust(basePlan, observations);
 
             // Mark steps that are new or changed
             var newStepIds = currentPlan.steps.map(function(s) { return s.id + ':' + s.productId + ':' + (s.tip || ''); });
@@ -9571,6 +11201,12 @@
                                     products: state.events[eventIdx].products || [],
                                     rating: rating
                                 });
+                                // Update DiagnosticEngine outcome if cause was confirmed for this event
+                                if (state.events[eventIdx].confirmedCause) {
+                                    DiagnosticEngine.OutcomeTracker.recordOutcome(
+                                        state.events[eventIdx].confirmedCause.causeId, rating
+                                    );
+                                }
                             }
                             localStorage.removeItem('hair_deferred_rating_date');
                             localStorage.removeItem('hair_deferred_rating_event_idx');
@@ -11194,6 +12830,12 @@
             updateSealState(washEvent);
             BeliefTracker.updateBeliefs(washEvent);
             FeedbackEngine.analyze();
+
+            // Update DiagnosticEngine outcome tracker if a cause was confirmed this session
+            if (lastConfirmedCause && washEvent.rating) {
+                DiagnosticEngine.OutcomeTracker.recordOutcome(lastConfirmedCause.causeId, washEvent.rating);
+                lastConfirmedCause = null;
+            }
 
             // Track which heat protectant was used for A/B alternation
             if (finalLane === 'blowout') {

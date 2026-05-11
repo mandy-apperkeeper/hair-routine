@@ -41,6 +41,7 @@
 | 2026-05-10 | L'Oréal 21-in-1 Leave-In | 45/50 | 48/50 | 0% | 93% | Excellent | Confirms primary tier; coconut oil + amodimethicone + UV filter |
 | 2026-05-10 | EverPure Clarifying Shampoo | — | — | — | 8.6/10 | Excellent | Confirms primary tier (periodic); AOS sulfonate + salicylic acid |
 | 2026-05-10 | EverPure Bond Pre-Shampoo | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms supporting tier; same base as Garnier Hair Filler; citric acid mechanism peer-reviewed |
+| 2026-05-11 | EverPure Glossing Mask | 50/50 | 45/50 | -5% | 90% | Excellent | Confirms supporting tier; coconut oil + glycolic acid + dual polymer film; INCIDecoder INCI is wrong |
 
 ---
 
