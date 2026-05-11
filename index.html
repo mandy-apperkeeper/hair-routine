@@ -1879,7 +1879,8 @@
                     step: 'shampoo',
                     outcomes: { cleanliness: 1.0 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['sodium c14-16 olefin sulfonate', 'cocamidopropyl betaine']
                 }
             },
             {
@@ -1892,7 +1893,8 @@
                     step: 'bond_repair',
                     outcomes: { strength: 0.9, elasticity: 0.8 },
                     cumulative: true,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['bis-aminopropyl diglycol dimaleate']
                 }
             },
             // Supporting Cast — Every Wash
@@ -1906,7 +1908,8 @@
                     step: 'gloss',
                     outcomes: { shine: 0.7, smoothness: 0.8 },
                     cumulative: false,
-                    interactions: [{ with: '*', type: 'enhances', note: 'Smoother cuticle improves subsequent product distribution' }]
+                    interactions: [{ with: '*', type: 'enhances', note: 'Smoother cuticle improves subsequent product distribution' }],
+                    ingredients: ['cetrimonium chloride', 'behentrimonium chloride', 'citric acid']
                 }
             },
             // Supporting Cast — Weekly/Bond Repair
@@ -1920,7 +1923,8 @@
                     step: 'bond_repair',
                     outcomes: { strength: 0.6, smoothness: 0.4 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['citric acid', 'hydrolyzed wheat protein', 'panthenol']
                 }
             },
             {
@@ -1933,7 +1937,8 @@
                     step: 'deep_condition',
                     outcomes: { smoothness: 0.7, strength: 0.5, shine: 0.5 },
                     cumulative: true,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['amodimethicone', 'hydrolyzed wheat protein', 'panthenol', 'cetearyl alcohol']
                 }
             },
             {
@@ -1946,7 +1951,8 @@
                     step: 'bond_repair',
                     outcomes: { strength: 0.4 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['citric acid', 'tartaric acid']
                 }
             },
             {
@@ -1959,7 +1965,8 @@
                     step: 'gloss',
                     outcomes: { cleanliness: 0.8, shine: 0.5 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['glycolic acid', 'sodium laureth sulfate', 'citric acid']
                 }
             },
             // Supporting Cast — Finishing/As-needed
@@ -1973,7 +1980,8 @@
                     step: 'finishing',
                     outcomes: { shine: 0.9, smoothness: 0.8 },
                     cumulative: true,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['amodimethicone', 'citric acid', 'dimethicone']
                 }
             },
             {
@@ -1986,7 +1994,8 @@
                     step: 'finishing',
                     outcomes: { shine: 0.6, smoothness: 0.6 },
                     cumulative: true,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['amodimethicone', 'dimethicone', 'cyclomethicone']
                 }
             },
             {
@@ -1999,7 +2008,8 @@
                     step: 'leave_in',
                     outcomes: { strength: 0.6, smoothness: 0.5, shine: 0.4 },
                     cumulative: true,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['bis-aminopropyl dimethicone', 'histidine', 'panthenol']
                 }
             },
             // Supporting Cast — Humid days
@@ -2013,7 +2023,8 @@
                     step: 'styling',
                     outcomes: { definition: 0.8, frizz_control: 0.95 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['polyquaternium-69', 'vp/va copolymer']
                 }
             },
             // Supporting Cast — Curly Days
@@ -2027,7 +2038,8 @@
                     step: 'styling',
                     outcomes: { definition: 0.5, frizz_control: 0.4, smoothness: 0.5 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['cocos nucifera oil', 'butyrospermum parkii butter', 'polyquaternium-37', 'glycerin']
                 }
             },
             // Supporting Cast — Weekly Deep Condition
@@ -2041,7 +2053,8 @@
                     step: 'deep_condition',
                     outcomes: { shine: 0.8, smoothness: 0.8, strength: 0.5 },
                     cumulative: true,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['amodimethicone', 'hydrolyzed wheat protein', 'ceramide np', 'cetearyl alcohol']
                 }
             },
             // Use-Up Queue
@@ -2055,7 +2068,8 @@
                     step: 'shampoo',
                     outcomes: { cleanliness: 0.7 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['sodium laureth sulfate', 'cocamidopropyl betaine', 'dimethicone']
                 }
             },
             {
@@ -2068,7 +2082,8 @@
                     step: 'conditioner',
                     outcomes: { shine: 0.4, smoothness: 0.5 },
                     cumulative: false,
-                    interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
+                    interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }],
+                    ingredients: ['dimethicone/silsesquioxane copolymer', 'dimethiconol', 'cetearyl alcohol', 'sh-polypeptide-121']
                 }
             },
             {
@@ -2081,7 +2096,8 @@
                     step: 'deep_condition',
                     outcomes: { shine: 0.5, smoothness: 0.6 },
                     cumulative: false,
-                    interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
+                    interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }],
+                    ingredients: ['dimethicone/silsesquioxane copolymer', 'dimethiconol', 'cetearyl alcohol', 'sh-polypeptide-121']
                 }
             },
             {
@@ -2094,7 +2110,8 @@
                     step: 'shampoo',
                     outcomes: { cleanliness: 0.7 },
                     cumulative: false,
-                    interactions: []
+                    interactions: [],
+                    ingredients: ['sodium laureth sulfate', 'cocamidopropyl betaine', 'dimethicone']
                 }
             },
             {
@@ -2107,7 +2124,8 @@
                     step: 'conditioner',
                     outcomes: { shine: 0.3, smoothness: 0.4 },
                     cumulative: false,
-                    interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }]
+                    interactions: [{ with: '*', type: 'reduces', note: 'Dimethiconol coating slightly reduces subsequent product deposition' }],
+                    ingredients: ['dimethiconol', 'cetearyl alcohol', 'stearamidopropyl dimethylamine']
                 }
             },
             {
