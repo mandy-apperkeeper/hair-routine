@@ -9,7 +9,7 @@ Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pa
 ## Tasks
 
 - [ ] 1. Ingredient Knowledge Base
-  - [ ] 1.1 Create IngredientKB module with ~100 hair care ingredients (NOT YET STARTED)
+  - [x] 1.1 Create IngredientKB module with ~100 hair care ingredients
     - Embed as a JavaScript object literal in `index.html`
     - Each entry: INCI name (key), common name, functional roles array, mechanism description, molecular weight class, flags array, interaction flags array, outcome weights object
     - Organize by functional role: cuticle_smoothing, bond_repair, protein_fill, humidity_barrier, conditioning, penetrating_oil, humectant, clarifying, heat_protection, hold
