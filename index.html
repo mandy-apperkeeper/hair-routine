@@ -7345,10 +7345,23 @@
         }
 
         // ===== History View =====
+        var historyFilter = { lane: null, treatment: null }; // null = show all
+
         function renderHistory() {
             var state = StateManager.getState();
-            var events = (state.events || []).slice().reverse();
+            var allEvents = (state.events || []).slice().reverse();
             var historySection = document.getElementById('history');
+
+            // Apply filters
+            var events = allEvents;
+            if (historyFilter.lane) {
+                events = events.filter(function(e) { return e.lane === historyFilter.lane; });
+            }
+            if (historyFilter.treatment) {
+                events = events.filter(function(e) {
+                    return e.treatments && e.treatments.indexOf(historyFilter.treatment) !== -1;
+                });
+            }
 
             var html = '';
 
@@ -7357,15 +7370,15 @@
             html += '<button class="btn-secondary" id="history-log-btn" style="width:100%;justify-content:center;">+ Log a wash day</button>';
             html += '</div>';
 
-            // Summary stats
-            if (events.length > 0) {
-                var totalWashes = events.length;
-                var intervals = events.filter(function(e) { return e.intervalDays > 0; }).map(function(e) { return e.intervalDays; });
+            // Summary stats (always based on ALL events, not filtered)
+            if (allEvents.length > 0) {
+                var totalWashes = allEvents.length;
+                var intervals = allEvents.filter(function(e) { return e.intervalDays > 0; }).map(function(e) { return e.intervalDays; });
                 var avgInterval = intervals.length > 0 ? (intervals.reduce(function(a, b) { return a + b; }, 0) / intervals.length).toFixed(1) : '—';
                 var lanes = {};
-                events.forEach(function(e) { lanes[e.lane] = (lanes[e.lane] || 0) + 1; });
+                allEvents.forEach(function(e) { lanes[e.lane] = (lanes[e.lane] || 0) + 1; });
                 var mostCommonLane = Object.keys(lanes).sort(function(a, b) { return lanes[b] - lanes[a]; })[0] || '—';
-                var rated = events.filter(function(e) { return e.rating !== null; });
+                var rated = allEvents.filter(function(e) { return e.rating !== null; });
                 var avgRating = rated.length > 0 ? (rated.reduce(function(a, e) { return a + e.rating; }, 0) / rated.length).toFixed(1) : '—';
 
                 html += '<div class="tracker-box" style="margin-bottom:1.25rem;">';
@@ -7376,9 +7389,44 @@
                 html += '</div>';
             }
 
+            // Filter bar (only show when there are events)
+            if (allEvents.length > 0) {
+                html += '<div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1rem;">';
+                var laneFilters = [
+                    { value: null, label: 'All' },
+                    { value: 'curly', label: '🌀 Curly' },
+                    { value: 'blowout', label: '💨 Blowout' },
+                    { value: 'refresh', label: '✨ Refresh' }
+                ];
+                for (var lf = 0; lf < laneFilters.length; lf++) {
+                    var f = laneFilters[lf];
+                    var active = historyFilter.lane === f.value ? ' style="background:var(--accent2);color:var(--text);border-color:var(--accent2);"' : '';
+                    html += '<button class="btn-secondary history-lane-filter" data-lane="' + (f.value || '') + '"' + active + '>' + f.label + '</button>';
+                }
+                // Treatment filters
+                var treatmentFilters = [
+                    { value: 'clarify', label: 'Clarify' },
+                    { value: 'protein', label: 'Protein' },
+                    { value: 'bond-repair', label: 'Bond' }
+                ];
+                for (var tf = 0; tf < treatmentFilters.length; tf++) {
+                    var t = treatmentFilters[tf];
+                    var tActive = historyFilter.treatment === t.value ? ' style="background:rgba(122,184,168,0.3);color:var(--green);border-color:var(--green);"' : '';
+                    html += '<button class="btn-secondary history-treatment-filter" data-treatment="' + t.value + '"' + tActive + '>' + t.label + '</button>';
+                }
+                html += '</div>';
+
+                // Show count when filtered
+                if (historyFilter.lane || historyFilter.treatment) {
+                    html += '<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;">Showing ' + events.length + ' of ' + allEvents.length + ' events</p>';
+                }
+            }
+
             // Event list
-            if (events.length === 0) {
+            if (allEvents.length === 0) {
                 html += '<div class="empty-state active"><p>No wash events yet. Complete a walkthrough to start tracking.</p></div>';
+            } else if (events.length === 0) {
+                html += '<div class="empty-state active"><p>No events match this filter.</p></div>';
             } else {
                 var ratingEmojis = { 1: '😫', 2: '😕', 3: '😐', 4: '😊', 5: '🤩' };
                 var treatmentLabels = { 'clarify': 'Clarify', 'protein': 'Protein', 'deep-condition': 'Deep Cond', 'bond-repair': 'Bond Repair' };
@@ -7471,6 +7519,22 @@
                         renderHistory();
                         renderLanding();
                     }
+                });
+            });
+
+            // Wire filter buttons
+            historySection.querySelectorAll('.history-lane-filter').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var lane = btn.getAttribute('data-lane') || null;
+                    historyFilter.lane = (historyFilter.lane === lane) ? null : lane;
+                    renderHistory();
+                });
+            });
+            historySection.querySelectorAll('.history-treatment-filter').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var treatment = btn.getAttribute('data-treatment');
+                    historyFilter.treatment = (historyFilter.treatment === treatment) ? null : treatment;
+                    renderHistory();
                 });
             });
         }
