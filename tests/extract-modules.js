@@ -92,6 +92,44 @@ export function createSynergyModules(mockState = null) {
 }
 
 /**
+ * Extract the real DEFAULT_INVENTORY from index.html.
+ * Returns the actual product array used in the app.
+ */
+export function extractRealInventory() {
+  const html = readFileSync(HTML_PATH, 'utf-8');
+  const scriptMatch = html.match(/<script[^>]*>([\s\S]*?)<\/script>/);
+  if (!scriptMatch) throw new Error('No script tag found in index.html');
+  const scriptContent = scriptMatch[1];
+
+  // Find DEFAULT_INVENTORY array
+  const startMarker = 'const DEFAULT_INVENTORY = [';
+  const startIdx = scriptContent.indexOf(startMarker);
+  if (startIdx === -1) throw new Error('Could not find DEFAULT_INVENTORY in script');
+
+  // Find the matching closing bracket by counting brackets
+  let depth = 0;
+  let endIdx = startIdx + startMarker.length - 1; // position of the opening [
+  for (let i = endIdx; i < scriptContent.length; i++) {
+    if (scriptContent[i] === '[') depth++;
+    else if (scriptContent[i] === ']') {
+      depth--;
+      if (depth === 0) {
+        endIdx = i + 1;
+        break;
+      }
+    }
+  }
+
+  const inventoryCode = scriptContent.substring(startIdx, endIdx);
+
+  // Evaluate in a sandbox to get the actual array
+  const sandbox = { console, Math, Object, Array, JSON, parseInt, parseFloat, isNaN, String, Number };
+  const context = createContext(sandbox);
+  runInContext(inventoryCode + '\nthis.result = DEFAULT_INVENTORY;', context);
+  return sandbox.result;
+}
+
+/**
  * Create a test inventory with configurable interaction density.
  */
 export function createTestInventory(productCount = 10, interactionDensity = 0.3) {
