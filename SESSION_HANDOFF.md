@@ -1,4 +1,4 @@
-# Session Handoff — Hair Routine
+# Session Handoff — Erinyes (Hair Routine)
 
 **Date:** May 12, 2026
 **Session focus:** Quick-log improvements — group count badges + quick-add for unlisted products

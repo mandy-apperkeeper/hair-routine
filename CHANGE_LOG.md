@@ -1,4 +1,4 @@
-# Hair App — Requested Changes
+# Erinyes (Hair App) — Requested Changes
 
 Changes to make after the current spec work is complete. Add items as they come up.
 

@@ -1,5 +1,5 @@
 /**
- * Service Worker for Hair Routine
+ * Service Worker for Erinyes (adaptive hair care)
  * 
  * Strategy:
  * - HTML (index.html): Network-first with cache fallback (always fresh when online)
@@ -12,8 +12,8 @@
  * - Posts 'SW_UPDATED' message to all clients so UI can show "Updated" indicator
  */
 
-var CACHE_VERSION = 'v20';
-var CACHE_NAME = 'hair-routine-cache-' + CACHE_VERSION;
+var CACHE_VERSION = 'v21';
+var CACHE_NAME = 'erinyes-cache-' + CACHE_VERSION;
 
 var PRECACHE_URLS = [
     './',
@@ -42,17 +42,10 @@ self.addEventListener('activate', function(event) {
         caches.keys().then(function(cacheNames) {
             return Promise.all(
                 cacheNames.filter(function(name) {
-                    return name.startsWith('hair-routine-cache-') && name !== CACHE_NAME;
-                }).map(function(name) {
-                    return caches.delete(name);
-                })
-            );
-        }).then(function() {
-            return caches.keys();
-        }).then(function(cacheNames) {
-            return Promise.all(
-                cacheNames.filter(function(name) {
-                    return name.startsWith('hair-routine-v2-cache-');
+                    // Clean old hair-routine-cache-* AND old erinyes-cache-* entries
+                    return (name.startsWith('hair-routine-cache-') ||
+                            name.startsWith('hair-routine-v2-cache-') ||
+                            (name.startsWith('erinyes-cache-') && name !== CACHE_NAME));
                 }).map(function(name) {
                     return caches.delete(name);
                 })

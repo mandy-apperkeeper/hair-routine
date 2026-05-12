@@ -2,9 +2,9 @@
 
 ## Overview
 
-Adds a product intelligence layer to the hair routine app (`index.html`). Builds on the existing `intelligence` field already present on inventory products. Implementation is additive — no existing functionality is removed or broken.
+Adds a product intelligence layer to Erinyes (`index.html`). Builds on the existing `intelligence` field already present on inventory products. Implementation is additive — no existing functionality is removed or broken.
 
-Single-file architecture: all code goes into `index.html`. Deployed to GitHub Pages via push to main.
+Single-file architecture: all code goes into `index.html`. Deployed locally via the Cauldron.
 
 ## Tasks
 

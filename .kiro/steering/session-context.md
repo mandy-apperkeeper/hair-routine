@@ -2,21 +2,30 @@
 inclusion: always
 ---
 
-# Hair Routine — Session Context
+# Erinyes (Hair Routine) — Session Context
 
 ## What This Is
 
-Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed to GitHub Pages. Used on her iPad in the bathroom with wet hands. Science-backed, personalized to her specific hair profile (2C-3A, coarse, very thick, post-TE recovery, weathered cuticle).
+Adaptive hair care app for Mandy. Named after the Greek Furies — serpent-haired enforcers of natural law. The name reflects monster reclamation: what was called "monstrous" (wild, uncontrollable hair) is actually power that demands respect, not taming.
 
-**Live URL:** https://mandy-apperkeeper.github.io/hair-routine/
+**Subsystem codenames:**
+- **Alecto** ("unceasing") — the diagnostic engine. Never stops watching for damage signals.
+- **Megaera** ("grudging") — the cooldown system. Enforces minimums, grudges every premature treatment.
+- **Tisiphone** ("avenger of destruction") — the synergy optimizer. Prevents destructive product interactions.
+
+**Naming convention (until June 23, 2026):** Use "Erinyes (hair routine)" in docs/steering where both names help with recognition. After that date, drop the parenthetical.
+
+Single-file HTML app (`index.html`) deployed locally via the Cauldron. Used on Mandy's iPad in the bathroom with wet hands. Science-backed, personalized to her specific hair profile (2C-3A, coarse, very thick, post-TE recovery, weathered cuticle).
+
+**Live URL (local):** https://192.168.68.36:8443/erinyes/ (also accessible at /hair-routine/ during transition)
 
 ## Tech Stack
 
 - Single HTML file with embedded CSS + JS (no build step, no framework)
 - localStorage for all persistence (schema v12)
 - Open-Meteo API for dew point auto-detection
-- Service worker (`hair-sw.js`) — exists but not registered in v1
-- GitHub Pages deployment (push to main = live)
+- Service worker (`hair-sw.js`) — registered, handles offline caching (v21)
+- Deployed locally via the Cauldron (commits are immediately live)
 - No dependencies, no npm, no bundler
 
 ## Key Files

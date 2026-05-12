@@ -1,4 +1,4 @@
-# Hair Routine — Next Steps Plan
+# Erinyes (Hair Routine) — Next Steps Plan
 
 **Created:** May 10, 2026  
 **Status:** Active  
