@@ -5795,6 +5795,115 @@
             };
         })();
 
+        // ===== InteractionLookup =====
+        // Precomputed bidirectional pair map for product synergy scoring.
+        // Built from inventory interactions arrays on app load.
+        var InteractionLookup = (function() {
+            var _map = {};       // key: "productA|productB" (alphabetical), value: { type, weight, note, confidence, source }
+            var _wildcards = []; // { productId, type, weight, note }
+
+            var WEIGHT_TABLE = {
+                enables:       { high: 1.0, medium: 0.6, low: 0.3 },
+                blocks:        { high: -1.0, medium: -0.6, low: -0.3 },
+                enhances:      { high: 0.5, medium: 0.5, low: 0.5 },
+                reduces:       { high: -0.3, medium: -0.3, low: -0.3 },
+                complements:   { high: 0.4, medium: 0.4, low: 0.4 },
+                outclassed_by: { high: -0.2, medium: -0.2, low: -0.2 },
+                neutral:       { high: 0, medium: 0, low: 0 }
+            };
+
+            function makeKey(idA, idB) {
+                return idA < idB ? idA + '|' + idB : idB + '|' + idA;
+            }
+
+            function getWeight(type, confidence) {
+                var conf = confidence || 'medium';
+                var typeWeights = WEIGHT_TABLE[type];
+                if (!typeWeights) return 0;
+                return typeWeights[conf] || typeWeights.medium;
+            }
+
+            function build(inventory) {
+                _map = {};
+                _wildcards = [];
+
+                for (var i = 0; i < inventory.length; i++) {
+                    var product = inventory[i];
+                    var interactions = product.intelligence && product.intelligence.interactions;
+                    if (!interactions || interactions.length === 0) continue;
+
+                    for (var j = 0; j < interactions.length; j++) {
+                        var inter = interactions[j];
+                        var confidence = inter.confidence || 'medium';
+                        var weight = getWeight(inter.type, confidence);
+
+                        // Wildcard interactions stored separately
+                        if (inter.with === '*') {
+                            _wildcards.push({
+                                productId: product.id,
+                                type: inter.type,
+                                weight: weight,
+                                note: inter.note
+                            });
+                            continue;
+                        }
+
+                        var key = makeKey(product.id, inter.with);
+                        // Don't overwrite if already exists (first definition wins)
+                        if (!_map[key]) {
+                            _map[key] = {
+                                type: inter.type,
+                                weight: weight,
+                                note: inter.note,
+                                confidence: confidence,
+                                source: product.id
+                            };
+                        }
+                    }
+                }
+            }
+
+            function get(idA, idB) {
+                return _map[makeKey(idA, idB)] || null;
+            }
+
+            function getAll(productId) {
+                var results = [];
+                var keys = Object.keys(_map);
+                for (var k = 0; k < keys.length; k++) {
+                    if (keys[k].indexOf(productId) !== -1) {
+                        var parts = keys[k].split('|');
+                        if (parts[0] === productId || parts[1] === productId) {
+                            results.push({ key: keys[k], interaction: _map[keys[k]] });
+                        }
+                    }
+                }
+                // Also include applicable wildcards
+                for (var w = 0; w < _wildcards.length; w++) {
+                    if (_wildcards[w].productId !== productId) {
+                        results.push({ key: _wildcards[w].productId + '|*', interaction: _wildcards[w] });
+                    }
+                }
+                return results;
+            }
+
+            function getWildcards() {
+                return _wildcards;
+            }
+
+            function getMap() {
+                return _map;
+            }
+
+            return {
+                build: build,
+                get: get,
+                getAll: getAll,
+                getWildcards: getWildcards,
+                getMap: getMap
+            };
+        })();
+
         // ===== AttributionEngine (Passive Intelligence) =====
         // Provides mechanism-based attribution (day 1), marginal contribution detection (3+ events),
         // contextual pattern detection (15+ events), and interaction detection (30+ events).
@@ -13059,6 +13168,10 @@
         function init() {
             // Set up navigation
             setupNavigation();
+
+            // Build interaction lookup from inventory (synergy pairing system)
+            var state = StateManager.getState();
+            InteractionLookup.build(state.inventory);
 
             // Auto-detect dew point for daily plan (non-blocking)
             detectDewPointForPlan();
