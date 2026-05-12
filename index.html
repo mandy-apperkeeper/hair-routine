@@ -1069,6 +1069,16 @@
             background: rgba(212, 165, 116, 0.08);
         }
 
+        .cause-card.selected {
+            border-color: var(--green);
+            background: rgba(122, 184, 168, 0.1);
+        }
+
+        .cause-card.selected .cause-card-rank::after {
+            content: ' ✓';
+            color: var(--green);
+        }
+
         .cause-card-rank {
             font-size: 0.7rem;
             color: var(--muted);
@@ -1995,8 +2005,10 @@
         <div class="adjust-backdrop" id="cause-card-backdrop"></div>
         <div class="adjust-sheet">
             <h3 id="cause-card-title">What's causing this?</h3>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.75rem;">Tap all that apply, then hit Done.</p>
             <div id="cause-card-list"></div>
-            <button class="btn-secondary" id="cause-card-not-sure" style="width:100%;margin-top:1rem;min-height:48px;">Not sure — generally off</button>
+            <button class="btn-primary" id="cause-card-done" style="display:none;margin-top:1rem;min-height:48px;">Done</button>
+            <button class="btn-secondary" id="cause-card-not-sure" style="width:100%;margin-top:0.5rem;min-height:48px;">Not sure — generally off</button>
         </div>
     </div>
 
@@ -11534,13 +11546,15 @@
                 PairBeliefTracker.update(products, rating);
             }
 
-            // Update DiagnosticEngine outcome tracker if a cause was confirmed this session
-            if (lastConfirmedCause && event.rating) {
-                DiagnosticEngine.OutcomeTracker.recordOutcome(lastConfirmedCause.causeId, event.rating);
-                // Store confirmed cause on the event for history
-                event.confirmedCause = lastConfirmedCause;
+            // Update DiagnosticEngine outcome tracker if causes were confirmed this session
+            if (lastConfirmedCauses && event.rating) {
+                for (var lc = 0; lc < lastConfirmedCauses.length; lc++) {
+                    DiagnosticEngine.OutcomeTracker.recordOutcome(lastConfirmedCauses[lc].causeId, event.rating);
+                }
+                // Store confirmed causes on the event for history
+                event.confirmedCause = lastConfirmedCauses;
                 StateManager.saveState(StateManager.getState()); // re-save with confirmedCause
-                lastConfirmedCause = null;
+                lastConfirmedCauses = null;
             }
 
             // Track which heat protectant was used for A/B alternation
@@ -11785,8 +11799,8 @@
             applyAdjustmentsDirect(currentObservations);
         }
 
-        // Track confirmed cause for outcome tracking after wash rating
-        var lastConfirmedCause = null;
+        // Track confirmed causes for outcome tracking after wash rating (array for multi-select)
+        var lastConfirmedCauses = null;
 
         function showCauseCards(symptomIds, contextObservations) {
             // Build context for ranking
@@ -11874,57 +11888,89 @@
             // Show overlay
             overlay.classList.add('visible');
 
-            // Wire cause card clicks
+            // Multi-select: track selected cause IDs
+            var selectedCauseIds = [];
+            var doneBtn = document.getElementById('cause-card-done');
+            doneBtn.style.display = 'none';
+
+            // Wire cause card clicks (toggle selection)
             var conditionKey = DiagnosticEngine.getConditionKey(detectedDewPoint);
             var cards = listEl.querySelectorAll('.cause-card');
             cards.forEach(function(card) {
                 card.onclick = function() {
                     var causeId = card.getAttribute('data-cause-id');
-                    var symptomId = card.getAttribute('data-symptom-id');
-
-                    // Find the cause object
-                    var causes = DiagnosticEngine.CAUSE_TREES[symptomId];
-                    var selectedCause = null;
-                    for (var c = 0; c < causes.length; c++) {
-                        if (causes[c].id === causeId) { selectedCause = causes[c]; break; }
+                    var idx = selectedCauseIds.indexOf(causeId);
+                    if (idx === -1) {
+                        selectedCauseIds.push(causeId);
+                        card.classList.add('selected');
+                    } else {
+                        selectedCauseIds.splice(idx, 1);
+                        card.classList.remove('selected');
                     }
-                    if (!selectedCause) return;
+                    // Show/hide Done button based on selection
+                    doneBtn.style.display = selectedCauseIds.length > 0 ? 'flex' : 'none';
+                };
+            });
+
+            // "Done" button — apply all selected interventions
+            doneBtn.onclick = function() {
+                var confirmedCauses = [];
+
+                for (var s = 0; s < selectedCauseIds.length; s++) {
+                    var causeId = selectedCauseIds[s];
+                    // Find the cause object from ranked list
+                    var selectedCause = null;
+                    var symptomId = null;
+                    for (var r = 0; r < ranked.length; r++) {
+                        if (ranked[r].cause.id === causeId) {
+                            selectedCause = ranked[r].cause;
+                            symptomId = ranked[r].cause.symptomId;
+                            break;
+                        }
+                    }
+                    if (!selectedCause) continue;
 
                     var domainPrior = selectedCause.getDomainPrior(conditionKey, context);
 
-                    // Update Beta-Binomial: increment alpha for selected, beta for others
+                    // Update Beta-Binomial: increment alpha for selected
                     DiagnosticEngine.BetaBinomialTracker.recordSelection(symptomId, causeId, conditionKey, domainPrior);
-                    for (var nc = 0; nc < causes.length; nc++) {
-                        if (causes[nc].id !== causeId) {
-                            var otherPrior = causes[nc].getDomainPrior(conditionKey, context);
-                            DiagnosticEngine.BetaBinomialTracker.recordNonSelection(symptomId, causes[nc].id, conditionKey, otherPrior);
-                        }
-                    }
 
-                    // Store confirmed cause for outcome tracking after wash rating
-                    lastConfirmedCause = { symptomId: symptomId, causeId: causeId };
-
-                    // Apply the intervention
+                    // Apply the intervention (stacks safely — checks getExistingAdjustments)
                     DiagnosticEngine.applyIntervention(currentPlan, selectedCause, context);
 
-                    // Also apply context adjustments
-                    if (contextObservations.quick.length > 0 || contextObservations.context.length > 0) {
-                        currentPlan = AdjustmentEngine.adjust(currentPlan, contextObservations);
-                    }
+                    confirmedCauses.push({ symptomId: symptomId, causeId: causeId });
+                }
 
-                    // Close overlay and re-render
-                    overlay.classList.remove('visible');
-                    renderPlanView(currentPlan);
-                    showAdjustToast('Treating for: ' + selectedCause.name);
-                };
-            });
+                // Update Beta-Binomial: increment beta for non-selected causes
+                for (var r2 = 0; r2 < ranked.length; r2++) {
+                    if (selectedCauseIds.indexOf(ranked[r2].cause.id) === -1) {
+                        var otherCause = ranked[r2].cause;
+                        var otherPrior = otherCause.getDomainPrior(conditionKey, context);
+                        DiagnosticEngine.BetaBinomialTracker.recordNonSelection(otherCause.symptomId, otherCause.id, conditionKey, otherPrior);
+                    }
+                }
+
+                // Store confirmed causes for outcome tracking
+                lastConfirmedCauses = confirmedCauses.length > 0 ? confirmedCauses : null;
+
+                // Also apply context adjustments
+                if (contextObservations.quick.length > 0 || contextObservations.context.length > 0) {
+                    currentPlan = AdjustmentEngine.adjust(currentPlan, contextObservations);
+                }
+
+                // Close overlay and re-render
+                overlay.classList.remove('visible');
+                renderPlanView(currentPlan);
+                var names = confirmedCauses.map(function(c) { return c.causeId.replace(/-/g, ' '); });
+                showAdjustToast('Treating for: ' + names.join(' + '));
+            };
 
             // "Not sure" button — apply top-ranked intervention, no Bayesian updates
             document.getElementById('cause-card-not-sure').onclick = function() {
                 if (ranked.length > 0) {
                     var topCause = ranked[0].cause;
                     DiagnosticEngine.applyIntervention(currentPlan, topCause, context);
-                    lastConfirmedCause = null; // no tracking
+                    lastConfirmedCauses = null; // no tracking
                 }
 
                 // Also apply context adjustments
@@ -14029,10 +14075,12 @@
             }
             FeedbackEngine.analyze();
 
-            // Update DiagnosticEngine outcome tracker if a cause was confirmed this session
-            if (lastConfirmedCause && washEvent.rating) {
-                DiagnosticEngine.OutcomeTracker.recordOutcome(lastConfirmedCause.causeId, washEvent.rating);
-                lastConfirmedCause = null;
+            // Update DiagnosticEngine outcome tracker if causes were confirmed this session
+            if (lastConfirmedCauses && washEvent.rating) {
+                for (var lc2 = 0; lc2 < lastConfirmedCauses.length; lc2++) {
+                    DiagnosticEngine.OutcomeTracker.recordOutcome(lastConfirmedCauses[lc2].causeId, washEvent.rating);
+                }
+                lastConfirmedCauses = null;
             }
 
             // Track which heat protectant was used for A/B alternation
