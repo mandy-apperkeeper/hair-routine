@@ -6420,6 +6420,202 @@
             };
         })();
 
+        // ===== SynergyExplainer =====
+        // Generates user-facing text for synergy-driven product selections.
+        var SynergyExplainer = (function() {
+
+            /**
+             * Generate explanation for why a product was selected due to synergy.
+             * @param {string} productId - The selected product
+             * @param {Array} plan - [{ stepIndex, productId }] full plan
+             * @param {object} interactionLookup - InteractionLookup module
+             * @returns {{ text: string, pairedWith: string, mechanism: string, overriddenProduct: string } | null}
+             */
+            function explainSelection(productId, plan, interactionLookup) {
+                // Find the strongest positive interaction this product has with others in the plan
+                var bestInteraction = null;
+                var bestWeight = 0;
+                var pairedWith = null;
+
+                for (var i = 0; i < plan.length; i++) {
+                    if (plan[i].productId === productId) continue;
+                    var interaction = interactionLookup.get(productId, plan[i].productId);
+                    if (interaction && interaction.weight > bestWeight) {
+                        bestWeight = interaction.weight;
+                        bestInteraction = interaction;
+                        pairedWith = plan[i].productId;
+                    }
+                }
+
+                if (!bestInteraction || bestWeight <= 0) return null;
+
+                // Look up partner product name from inventory
+                var state = StateManager.getState();
+                var inventory = state.inventory || [];
+                var partnerName = pairedWith;
+                for (var p = 0; p < inventory.length; p++) {
+                    if (inventory[p].id === pairedWith) {
+                        partnerName = (inventory[p].brand ? inventory[p].brand + ' ' : '') + inventory[p].name;
+                        break;
+                    }
+                }
+
+                var mechanism = bestInteraction.note || bestInteraction.type;
+                var text = 'Pairs with ' + partnerName + ' \u2014 ' + mechanism;
+
+                return {
+                    text: text,
+                    pairedWith: pairedWith,
+                    mechanism: mechanism,
+                    overriddenProduct: null // caller sets this from synergy metadata
+                };
+            }
+
+            /**
+             * Generate chain summary for display.
+             * @param {object} chain - { products: [id, ...], bonus: number }
+             * @param {object} interactionLookup - InteractionLookup module
+             * @returns {{ products: Array<string>, productNames: Array<string>, benefit: string } | null}
+             */
+            function explainChain(chain, interactionLookup) {
+                if (!chain || !chain.products || chain.products.length < 3) return null;
+
+                var state = StateManager.getState();
+                var inventory = state.inventory || [];
+                var names = [];
+
+                for (var i = 0; i < chain.products.length; i++) {
+                    var name = chain.products[i];
+                    for (var p = 0; p < inventory.length; p++) {
+                        if (inventory[p].id === chain.products[i]) {
+                            name = (inventory[p].brand ? inventory[p].brand + ' ' : '') + inventory[p].name;
+                            break;
+                        }
+                    }
+                    names.push(name);
+                }
+
+                // Build benefit text from the chain's enables relationships
+                var steps = [];
+                for (var j = 0; j < chain.products.length - 1; j++) {
+                    var inter = interactionLookup.get(chain.products[j], chain.products[j + 1]);
+                    if (inter && inter.note) {
+                        steps.push(inter.note);
+                    }
+                }
+
+                var benefit = 'Synergy chain: ' + names.join(' \u2192 ');
+                if (steps.length > 0) {
+                    benefit += ' (' + steps[0] + ')';
+                }
+
+                return {
+                    products: chain.products,
+                    productNames: names,
+                    benefit: benefit
+                };
+            }
+
+            /**
+             * Generate synergy impact text for an alternative product.
+             * Computes what would happen if this alternative replaced the current product at stepIndex.
+             * @param {string} alternativeId - Product ID of the alternative
+             * @param {Array} currentPlan - [{ stepIndex, productId }] current plan
+             * @param {number} stepIndex - Which step the alternative would replace
+             * @param {object} interactionLookup - InteractionLookup module
+             * @returns {{ impact: 'positive'|'negative'|'neutral', score: number, text: string }}
+             */
+            function explainAlternativeImpact(alternativeId, currentPlan, stepIndex, interactionLookup) {
+                var positiveInteractions = [];
+                var negativeInteractions = [];
+                var netScore = 0;
+
+                var state = StateManager.getState();
+                var inventory = state.inventory || [];
+
+                for (var i = 0; i < currentPlan.length; i++) {
+                    if (currentPlan[i].stepIndex === stepIndex) continue;
+                    var interaction = interactionLookup.get(alternativeId, currentPlan[i].productId);
+                    if (!interaction) continue;
+
+                    var proximityFactor = 1.0 / Math.abs(currentPlan[i].stepIndex - stepIndex);
+                    var contribution = interaction.weight * proximityFactor;
+                    netScore += contribution;
+
+                    // Look up partner name
+                    var partnerName = currentPlan[i].productId;
+                    for (var p = 0; p < inventory.length; p++) {
+                        if (inventory[p].id === currentPlan[i].productId) {
+                            partnerName = (inventory[p].brand ? inventory[p].brand + ' ' : '') + inventory[p].name;
+                            break;
+                        }
+                    }
+
+                    if (interaction.weight > 0) {
+                        positiveInteractions.push({ partner: partnerName, type: interaction.type, note: interaction.note });
+                    } else if (interaction.weight < 0) {
+                        negativeInteractions.push({ partner: partnerName, type: interaction.type, note: interaction.note });
+                    }
+                }
+
+                // Also check what synergy the CURRENT product at this step has (what would be lost)
+                var currentProductId = null;
+                for (var c = 0; c < currentPlan.length; c++) {
+                    if (currentPlan[c].stepIndex === stepIndex) {
+                        currentProductId = currentPlan[c].productId;
+                        break;
+                    }
+                }
+
+                var lostScore = 0;
+                if (currentProductId) {
+                    for (var k = 0; k < currentPlan.length; k++) {
+                        if (currentPlan[k].stepIndex === stepIndex) continue;
+                        var currentInter = interactionLookup.get(currentProductId, currentPlan[k].productId);
+                        if (currentInter && currentInter.weight > 0) {
+                            var proxFactor = 1.0 / Math.abs(currentPlan[k].stepIndex - stepIndex);
+                            lostScore += currentInter.weight * proxFactor;
+                        }
+                    }
+                }
+
+                // Net impact = what the alternative gains minus what the current product loses
+                var totalImpact = netScore - lostScore;
+
+                var impact = 'neutral';
+                var text = 'No known interaction';
+                if (totalImpact > 0.1) {
+                    impact = 'positive';
+                    if (positiveInteractions.length > 0) {
+                        var best = positiveInteractions[0];
+                        text = (best.type === 'enables' ? 'Enables ' : 'Enhances ') + best.partner;
+                        if (best.note) text = best.note;
+                    }
+                } else if (totalImpact < -0.1) {
+                    impact = 'negative';
+                    if (negativeInteractions.length > 0) {
+                        var worst = negativeInteractions[0];
+                        text = 'Would conflict with ' + worst.partner;
+                        if (worst.note) text = worst.note;
+                    } else if (lostScore > 0.1) {
+                        text = 'Would break existing pairing';
+                    }
+                }
+
+                return {
+                    impact: impact,
+                    score: Math.round(totalImpact * 100) / 100,
+                    text: text
+                };
+            }
+
+            return {
+                explainSelection: explainSelection,
+                explainChain: explainChain,
+                explainAlternativeImpact: explainAlternativeImpact
+            };
+        })();
+
         // ===== AttributionEngine (Passive Intelligence) =====
         // Provides mechanism-based attribution (day 1), marginal contribution detection (3+ events),
         // contextual pattern detection (15+ events), and interaction detection (30+ events).
@@ -8707,6 +8903,38 @@
                                         planSteps[ps].synergy.chainMember = true;
                                     }
                                 }
+                            }
+                        }
+                    }
+
+                    // Generate explanations for synergy-selected steps
+                    for (var ex = 0; ex < planSteps.length; ex++) {
+                        if (planSteps[ex].synergy && planSteps[ex].synergy.selectedOverHigherRank) {
+                            var explainPlan = optimizerResult.plan || [];
+                            var explanation = SynergyExplainer.explainSelection(planSteps[ex].productId, explainPlan, InteractionLookup);
+                            if (explanation) {
+                                planSteps[ex].synergy.explanation = explanation.text;
+                                planSteps[ex].synergy.pairedWith = explanation.pairedWith;
+                            }
+                        }
+
+                        // Add synergy impact to alternatives for this step
+                        if (planSteps[ex].alternatives && planSteps[ex].alternatives.length > 0 && optimizerResult.plan) {
+                            for (var ai = 0; ai < planSteps[ex].alternatives.length; ai++) {
+                                var alt = planSteps[ex].alternatives[ai];
+                                alt.synergyImpact = SynergyExplainer.explainAlternativeImpact(
+                                    alt.productId, optimizerResult.plan, ex, InteractionLookup
+                                );
+                            }
+                            // Re-sort alternatives by combined score (individual + synergy impact)
+                            planSteps[ex].alternatives.sort(function(a, b) {
+                                var aScore = (a.score || 0) + ((a.synergyImpact && a.synergyImpact.score) || 0) * PlanOptimizer.SYNERGY_WEIGHT;
+                                var bScore = (b.score || 0) + ((b.synergyImpact && b.synergyImpact.score) || 0) * PlanOptimizer.SYNERGY_WEIGHT;
+                                return bScore - aScore;
+                            });
+                            // Re-assign ranks after sort
+                            for (var ri = 0; ri < planSteps[ex].alternatives.length; ri++) {
+                                planSteps[ex].alternatives[ri].rank = ri + 1;
                             }
                         }
                     }
