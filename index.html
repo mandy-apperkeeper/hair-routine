@@ -2121,8 +2121,8 @@
             // Primary Rotation — Blowout Days
             {
                 id: 'marc-anthony-shield', name: 'Grow Long Anti-Frizz Shield', brand: 'Marc Anthony',
-                tier: 'primary', context: 'blowout', usingUp: false,
-                notes: 'Polysilicone-29 heat seal. Activates seal state.',
+                tier: 'supporting', context: 'blowout', usingUp: false,
+                notes: 'Polysilicone-29 heat seal. Backup to Diamond Sleek (less complete formula — no proteins, no argan oil, less glycerin).',
                 intelligence: {
                     mechanisms: ['heat_protection', 'cuticle_smoothing'],
                     delivery: 'leave_on',
@@ -2136,15 +2136,15 @@
             {
                 id: 'garnier-diamond-sleek', name: 'Diamond Sleek Shine-Coat Smoothing Spray', brand: 'Garnier Fructis',
                 tier: 'primary', context: 'blowout', usingUp: false,
-                notes: 'Polysilicone-29 heat seal. Interchangeable with Marc Anthony — same active, lighter formula with hydrolyzed proteins.',
+                notes: 'Polysilicone-29 heat seal. PRIMARY heat protectant — most complete formula (triple protein + argan oil + high glycerin). Superior to Marc Anthony for coarse/dry hair.',
                 intelligence: {
-                    mechanisms: ['heat_protection', 'cuticle_smoothing'],
+                    mechanisms: ['heat_protection', 'cuticle_smoothing', 'protein_repair'],
                     delivery: 'leave_on',
                     step: 'heat_protection',
-                    outcomes: { smoothness: 0.8, strength: 0.3, frizz_control: 0.7 },
+                    outcomes: { smoothness: 0.9, strength: 0.5, frizz_control: 0.8 },
                     cumulative: false,
                     interactions: [{ with: 'nym-curl-talk-gel', type: 'blocks', note: 'PQ-69 may block polysilicone-29 (medium confidence)' }],
-                    ingredients: ['polysilicone-29', 'stearamidopropyl dimethylamine', 'hydrolyzed wheat protein', 'argania spinosa kernel oil']
+                    ingredients: ['polysilicone-29', 'stearamidopropyl dimethylamine', 'hydrolyzed corn protein', 'hydrolyzed soy protein', 'hydrolyzed wheat protein', 'argania spinosa kernel oil', 'glycerin']
                 }
             },
             // Primary Rotation — Weekly
@@ -2253,8 +2253,8 @@
             // Supporting Cast — Finishing/As-needed
             {
                 id: 'garnier-filler-serum', name: 'Hair Filler Strength Repair Serum', brand: 'Garnier Fructis',
-                tier: 'supporting', context: 'as-needed', usingUp: false,
-                notes: 'Amodimethicone + citric acid. Leave-in serum.',
+                tier: 'use-up', context: 'as-needed', usingUp: true,
+                notes: 'Standard dimethicone/dimethiconol serum. Outclassed by Dove 10-in-1 (selective silicone) and L\'Oréal 21-in-1 (amodimethicone + coconut oil + UV). Vitamin Cg is marketing.',
                 intelligence: {
                     mechanisms: ['cuticle_smoothing'],
                     delivery: 'leave_on',
@@ -2262,7 +2262,7 @@
                     outcomes: { shine: 0.9, smoothness: 0.8 },
                     cumulative: true,
                     interactions: [],
-                    ingredients: ['amodimethicone', 'citric acid', 'dimethicone']
+                    ingredients: ['dimethicone', 'dimethiconol', 'citric acid', 'ascorbyl glucoside']
                 }
             },
             {
@@ -2526,7 +2526,8 @@
                 defaultHumidity: null,
                 soundEnabled: true,
                 vibrationEnabled: true,
-                lastHeatProtectant: null
+                lastHeatProtectant: null,
+                dryingMethod: 'diffuse'
             },
             useUpRotation: {
                 lastAssignedProductId: null,
@@ -6972,7 +6973,14 @@
                     {
                         number: 9,
                         title: 'Dry',
-                        instruction: 'Shark FlexStyle diffuser: hover on medium heat, don\'t touch. OR air dry. Don\'t touch until 100% dry.',
+                        instruction: (function() {
+                            var st = StateManager.getState();
+                            var method = (st.settings && st.settings.dryingMethod) || 'diffuse';
+                            if (method === 'air-dry') {
+                                return 'Air dry. Don\'t touch until 100% dry — handling wet curls breaks the gel cast.';
+                            }
+                            return 'Shark FlexStyle diffuser: hover on medium heat, don\'t touch. Don\'t touch until 100% dry.';
+                        })(),
                         productId: null,
                         scienceBadge: null,
                         timer: null,
@@ -6998,13 +7006,9 @@
              * Returns { id, name } for the product to use.
              */
             function getNextHeatProtectant() {
-                var state = StateManager.getState();
-                var last = (state.settings && state.settings.lastHeatProtectant) || null;
-                if (last === 'marc-anthony-shield') {
-                    return { id: 'garnier-diamond-sleek', name: 'Diamond Sleek Spray' };
-                }
-                // Default to Marc Anthony if no history or last was Diamond Sleek
-                return { id: 'marc-anthony-shield', name: 'Heat Protection Spray' };
+                // Diamond Sleek is primary (most complete formula for coarse/dry hair)
+                // Marc Anthony is backup/supporting — only use if Diamond Sleek unavailable
+                return { id: 'garnier-diamond-sleek', name: 'Diamond Sleek Spray' };
             }
 
             function getBlowoutSteps(humidity) {
@@ -12378,6 +12382,17 @@
             html += '<span>Vibration on timer completion</span></label>';
             html += '</div>';
 
+            // Drying method
+            html += '<h2 style="margin-top:1.5rem;">Drying Method</h2>';
+            html += '<div class="card">';
+            html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">';
+            var dryMethod = settings.dryingMethod || 'diffuse';
+            html += '<button class="btn-secondary setting-dry-method' + (dryMethod === 'diffuse' ? ' active' : '') + '" data-method="diffuse" style="flex:1;min-height:48px;' + (dryMethod === 'diffuse' ? 'background:var(--accent);color:var(--bg);border-color:var(--accent);' : '') + '">Diffuse</button>';
+            html += '<button class="btn-secondary setting-dry-method' + (dryMethod === 'air-dry' ? ' active' : '') + '" data-method="air-dry" style="flex:1;min-height:48px;' + (dryMethod === 'air-dry' ? 'background:var(--accent);color:var(--bg);border-color:var(--accent);' : '') + '">Air Dry</button>';
+            html += '</div>';
+            html += '<p style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;">Changes the Dry step instruction in your walkthrough and daily plan.</p>';
+            html += '</div>';
+
             // Data management
             html += '<h2 style="margin-top:1.5rem;">Data Management</h2>';
             html += '<div style="display:flex;gap:0.75rem;flex-wrap:wrap;">';
@@ -12471,6 +12486,18 @@
                     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
                 });
             }
+
+            // Drying method toggle
+            document.querySelectorAll('.setting-dry-method').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var method = btn.getAttribute('data-method');
+                    var state = StateManager.getState();
+                    state.settings = state.settings || {};
+                    state.settings.dryingMethod = method;
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+                    renderSettings();
+                });
+            });
 
             // Export
             var exportBtn = document.getElementById('settings-export');
