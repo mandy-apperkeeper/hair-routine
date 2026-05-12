@@ -2172,7 +2172,7 @@
                     step: 'bond_repair',
                     outcomes: { strength: 0.9, elasticity: 0.8 },
                     cumulative: true,
-                    interactions: [],
+                    interactions: [{ with: 'garnier-pre-shampoo', type: 'complements', note: 'Different bond types: Olaplex reforms disulfide bonds, Garnier creates new ester crosslinks in KAP matrix' }],
                     ingredients: ['bis-aminopropyl diglycol dimaleate']
                 }
             },
@@ -2202,7 +2202,7 @@
                     step: 'bond_repair',
                     outcomes: { strength: 0.6, smoothness: 0.4 },
                     cumulative: false,
-                    interactions: [],
+                    interactions: [{ with: 'olaplex-3', type: 'complements', note: 'Different bond types: Garnier creates ester crosslinks in KAP matrix, Olaplex reforms disulfide bonds. Additive structural benefit.' }],
                     ingredients: ['citric acid', 'hydrolyzed wheat protein', 'panthenol']
                 }
             },
@@ -2239,15 +2239,15 @@
             {
                 id: 'everpure-glossing-mask', name: 'Glossing 5-Min Lamination Mask', brand: "L'Oréal EverPure",
                 tier: 'supporting', context: 'weekly', usingUp: false,
-                notes: '\u26A0\uFE0F NOT a conditioner \u2014 clarifying treatment (surfactants + glycolic acid). Use as occasional reset only.',
+                notes: 'Weekly shine treatment. Same amodimethicone base as conditioner PLUS coconut oil (cortex penetration), glycolic acid (cuticle plasticization), and dual polymer film (hydroxypropyl guar + PQ-37). Replaces conditioner on mask days.',
                 intelligence: {
-                    mechanisms: ['clarifying'],
+                    mechanisms: ['deep_condition', 'shine'],
                     delivery: 'rinse_off',
-                    step: 'gloss',
-                    outcomes: { cleanliness: 0.8, shine: 0.5 },
+                    step: 'deep_condition',
+                    outcomes: { shine: 0.9, smoothness: 0.8, strength: 0.4 },
                     cumulative: false,
-                    interactions: [],
-                    ingredients: ['glycolic acid', 'sodium laureth sulfate', 'citric acid']
+                    interactions: [{ with: 'everpure-bond-conditioner', type: 'complements', note: 'Mask adds coconut oil cortex penetration + glycolic acid cuticle plasticization that conditioner lacks. Use IN PLACE of conditioner on mask days.' }],
+                    ingredients: ['amodimethicone', 'cocos nucifera oil', 'glycolic acid', 'hydroxypropyl guar', 'polyquaternium-37', 'behentrimonium chloride']
                 }
             },
             // Supporting Cast — Finishing/As-needed
@@ -2282,7 +2282,7 @@
             {
                 id: 'pantene-bond-spray', name: 'Miracle Rescue Instant Repair Leave-In', brand: 'Pantene',
                 tier: 'supporting', context: 'every-wash', usingUp: false,
-                notes: 'Bis-aminopropyl dimethicone (bond-bridging silicone) + histidine (amino acid cortex fill). Genuine bond repair leave-in.',
+                notes: 'Bis-aminopropyl dimethicone (selective amino silicone, more substantive than amodimethicone) + histidine (amino acid cortex penetration). Functional repair via electrostatic bridging — hair behaves stronger but disulfide bonds are not reformed. Targeted damage conditioning, not structural bond repair.',
                 intelligence: {
                     mechanisms: ['bond_repair', 'cuticle_smoothing'],
                     delivery: 'leave_on',
@@ -2484,7 +2484,7 @@
                     step: 'finishing',
                     outcomes: { strength: 0.6, smoothness: 0.3 },
                     cumulative: false,
-                    interactions: [{ with: 'garnier-filler-serum', type: 'complements', note: 'This fills cortex (protein), Garnier smooths cuticle (amodimethicone)' }],
+                    interactions: [{ with: 'loreal-21in1', type: 'complements', note: 'OGX provides silicone-free protein fill; 21-in-1 provides selective silicone + UV. Different mechanisms, complementary.' }],
                     ingredients: ['hydrolyzed wheat protein', 'hydrolyzed keratin', 'panthenol']
                 }
             },
@@ -2835,7 +2835,7 @@
                                 step: 'finishing',
                                 outcomes: { strength: 0.6, smoothness: 0.3 },
                                 cumulative: false,
-                                interactions: [{ with: 'garnier-filler-serum', type: 'complements', note: 'This fills cortex (protein), Garnier smooths cuticle (amodimethicone)' }]
+                                interactions: [{ with: 'loreal-21in1', type: 'complements', note: 'OGX provides silicone-free protein fill; 21-in-1 provides selective silicone + UV. Different mechanisms, complementary.' }]
                             }
                         });
                     }
