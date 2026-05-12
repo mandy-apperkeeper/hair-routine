@@ -36,7 +36,7 @@
 | 2026-05-10 | Dove Conditioner/Mask | 42.25/50 | 50/50 | -5% | 87.25% | Excellent | Confirms use-up tier; no query log (-5%) |
 | 2026-05-10 | Dove Shampoos (Bond + Intensive) | 42.5/50 | 50/50 | -5% | 87.5% | Excellent | Sulfate system harsher than primary; no query log (-5%) |
 | 2026-05-10 | Dove 10-in-1 Serum | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms supporting tier; aminopropyl dimethicone = selective |
-| 2026-05-10 | EverPure Bond Shampoo | 47.5/50 | 50/50 | 0% | 97.5% | Excellent | Confirms primary tier; 5-surfactant mild system + amodimethicone |
+| 2026-05-10 | EverPure Bond Shampoo | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms primary tier; 7-surfactant mild system + amodimethicone + citric acid (PMID 39757966); re-scored May 12 |
 | 2026-05-10 | EverPure Bond Conditioner | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms primary tier; amodimethicone-only formula (improved) |
 | 2026-05-10 | L'Oréal 21-in-1 Leave-In | 45/50 | 48/50 | 0% | 93% | Excellent | Confirms primary tier; coconut oil + amodimethicone + UV filter |
 | 2026-05-10 | EverPure Clarifying Shampoo | — | — | — | 8.6/10 | Excellent | Confirms primary tier (periodic); AOS sulfonate + salicylic acid |
@@ -57,3 +57,9 @@ Full analysis: `research/V2_RESCORE_COMPARISON.md`
 
 | 2026-05-10 | Product Recommendations for Hair Profile | 45/50 | 45/50 | 0% | 90% | Excellent | Gap analysis + 4 targeted recommendations; all INCI verified |
 | 2026-05-10 | Garnier Color Repair Conditioner | 47.5/50 | 45/50 | -5% | 87.5% | Excellent | Co-primary with EverPure; pseudoceramide differentiator; N4 penalty (C&T 403) |
+| 2026-05-11 | Elvive Total Repair 5 Balm | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms supporting tier; mask replaces conditioner (shared amodimethicone); wheat protein (pos 19) only unique mechanism |
+| 2026-05-11 | Garnier Pre-Shampoo | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms supporting tier; citric acid (pos 6) = real active (peer-reviewed KAP crosslinking); peptides are cosmetic dusting; complementary to Olaplex |
+| 2026-05-11 | Marc Anthony Shield | 50/50 | 50/50 | 0% | 100% | Excellent | Tier qualified: Primary (heat-styling days only); Polysilicone-29 = Color Wow dupe at 63% less; adversarial run (3 queries, all survived) |
+| 2026-05-11 | Garnier Diamond Sleek | 50/50 | 50/50 | 0% | 100% | Excellent | Primary tier confirmed (potentially superior to Marc Anthony for coarse/dry hair); most complete Polysilicone-29 formula (triple protein + argan oil + high glycerin); adversarial run (3 queries, all survived with monitoring qualifier) |
+
+| 2026-05-12 | Project Signals & LLM Communication Patterns | 82/100 | 78/100 | 0% | 80% | Good | Meta-research on Kiro's own failure patterns; maps friction log to empirical LLM research; 5 actionable recommendations |
