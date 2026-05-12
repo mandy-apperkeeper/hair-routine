@@ -8597,6 +8597,121 @@
                     }
                 }
 
+                // === Synergy Optimization ===
+                // After domain rules (use-up, tiered conditioning) have been applied,
+                // run PlanOptimizer on steps that have multiple candidates and weren't
+                // overridden by domain logic.
+                var candidatesPerStep = [];
+                var stepIndicesForOptimizer = []; // maps optimizer index → planSteps index
+                var domainOverriddenSteps = []; // step indices that domain rules locked
+
+                // Identify which steps were locked by domain rules
+                for (var so = 0; so < planSteps.length; so++) {
+                    // Steps locked by domain rules: use-up rotation, tiered conditioning overrides
+                    var isDomainLocked = false;
+                    if (planSteps[so].useUpNote) isDomainLocked = true;
+                    if (planSteps[so].stepType === 'deep_condition') isDomainLocked = true;
+                    // Conditioner step that was overridden by tiered conditioning (product changed from walkthrough default)
+                    if (planSteps[so].stepType === 'conditioner' && condPlan.product && condPlan.product !== 'garnier-color-repair-cond') isDomainLocked = true;
+
+                    if (isDomainLocked) {
+                        domainOverriddenSteps.push(so);
+                    }
+                }
+
+                // Collect top-3 candidates for each non-locked step that has alternatives
+                for (var co = 0; co < planSteps.length; co++) {
+                    var stepAlts = planSteps[co].alternatives || [];
+                    if (stepAlts.length === 0 || domainOverriddenSteps.indexOf(co) !== -1) {
+                        // Fixed step — single candidate (current product) or no product
+                        if (planSteps[co].productId) {
+                            candidatesPerStep.push([{ productId: planSteps[co].productId, score: 100 }]);
+                        } else {
+                            candidatesPerStep.push([]);
+                        }
+                    } else {
+                        // Variable step — take top 3 from ranked alternatives
+                        var top3 = [];
+                        var limit = Math.min(3, stepAlts.length);
+                        for (var t3 = 0; t3 < limit; t3++) {
+                            top3.push({ productId: stepAlts[t3].productId, score: stepAlts[t3].score });
+                        }
+                        candidatesPerStep.push(top3);
+                    }
+                    stepIndicesForOptimizer.push(co);
+                }
+
+                // Run optimizer if there are variable steps with interactions
+                var hardConstraints = [];
+                if (sealActive) {
+                    hardConstraints = ['nym-curl-talk-gel', 'got2b-ultra-glued', 'maui-curl-smoothie'];
+                }
+
+                var optimizerResult = PlanOptimizer.optimize(
+                    candidatesPerStep,
+                    InteractionLookup,
+                    PairBeliefTracker,
+                    { hardConstraints: hardConstraints }
+                );
+
+                // Apply optimizer selections to plan steps (only non-domain-locked steps)
+                if (optimizerResult && optimizerResult.plan) {
+                    for (var oi = 0; oi < optimizerResult.plan.length; oi++) {
+                        var optStep = optimizerResult.plan[oi];
+                        var planIdx = optStep.stepIndex;
+
+                        // Skip domain-locked steps
+                        if (domainOverriddenSteps.indexOf(planIdx) !== -1) continue;
+                        // Skip steps with no product
+                        if (!planSteps[planIdx].productId) continue;
+                        // Skip if optimizer chose the same product already assigned
+                        if (planSteps[planIdx].productId === optStep.productId) continue;
+
+                        // Apply the optimizer's selection
+                        var oldProductId = planSteps[planIdx].productId;
+                        planSteps[planIdx].productId = optStep.productId;
+                        planSteps[planIdx].productName = optStep.productName || optStep.productId;
+
+                        // Look up full name from inventory
+                        for (var inv = 0; inv < inventory.length; inv++) {
+                            if (inventory[inv].id === optStep.productId) {
+                                planSteps[planIdx].productName = (inventory[inv].brand ? inventory[inv].brand + ' ' : '') + inventory[inv].name;
+                                planSteps[planIdx].inventoryName = planSteps[planIdx].productName;
+                                break;
+                            }
+                        }
+
+                        // Attach synergy metadata
+                        planSteps[planIdx].synergy = {
+                            selectedOverHigherRank: true,
+                            overriddenProduct: oldProductId,
+                            explanation: null, // filled by SynergyExplainer in task 6
+                            chainMember: false
+                        };
+
+                        // If this is a conditioner/deep_condition step, update timer to match new product
+                        if ((planSteps[planIdx].stepType === 'conditioner' || planSteps[planIdx].stepType === 'deep_condition') && planSteps[planIdx].timer) {
+                            planSteps[planIdx].timer.duration = getProductTime(optStep.productId, inventory);
+                        }
+                    }
+
+                    // Mark chain members
+                    if (optimizerResult.chains && optimizerResult.chains.length > 0) {
+                        for (var ch = 0; ch < optimizerResult.chains.length; ch++) {
+                            var chainProducts = optimizerResult.chains[ch].products;
+                            for (var ps = 0; ps < planSteps.length; ps++) {
+                                if (chainProducts.indexOf(planSteps[ps].productId) !== -1) {
+                                    if (!planSteps[ps].synergy) {
+                                        planSteps[ps].synergy = { selectedOverHigherRank: false, overriddenProduct: null, explanation: null, chainMember: true };
+                                    } else {
+                                        planSteps[ps].synergy.chainMember = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 var skips = getSkipReasons(state);
 
                 return {
@@ -8604,7 +8719,9 @@
                     dewPoint: dewPoint,
                     humidity: humidity,
                     steps: planSteps,
-                    skips: skips
+                    skips: skips,
+                    synergyScore: optimizerResult ? optimizerResult.synergyScore : 0,
+                    chains: optimizerResult ? (optimizerResult.chains || []) : []
                 };
             }
 
@@ -11132,6 +11249,9 @@
             StateManager.saveWashEvent(event);
             updateSealState(event);
             BeliefTracker.updateBeliefs(event);
+            if (rating && products.length > 1) {
+                PairBeliefTracker.update(products, rating);
+            }
 
             // Update DiagnosticEngine outcome tracker if a cause was confirmed this session
             if (lastConfirmedCause && event.rating) {
@@ -11875,6 +11995,11 @@
                                     products: state.events[eventIdx].products || [],
                                     rating: rating
                                 });
+                                // Update pair beliefs for synergy learning
+                                var deferredProducts = state.events[eventIdx].products || [];
+                                if (deferredProducts.length > 1) {
+                                    PairBeliefTracker.update(deferredProducts, rating);
+                                }
                                 // Update DiagnosticEngine outcome if cause was confirmed for this event
                                 if (state.events[eventIdx].confirmedCause) {
                                     DiagnosticEngine.OutcomeTracker.recordOutcome(
@@ -13521,6 +13646,9 @@
             StateManager.saveWashEvent(washEvent);
             updateSealState(washEvent);
             BeliefTracker.updateBeliefs(washEvent);
+            if (washEvent.rating && washEvent.products && washEvent.products.length > 1) {
+                PairBeliefTracker.update(washEvent.products, washEvent.rating);
+            }
             FeedbackEngine.analyze();
 
             // Update DiagnosticEngine outcome tracker if a cause was confirmed this session
