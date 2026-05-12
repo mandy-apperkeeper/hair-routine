@@ -178,7 +178,7 @@ Implementation proceeds: interaction lookup → synergy scoring → plan optimiz
   - [x] 8.1 Property-based tests for SynergyScorer (Properties 1-4, 8-10, 14)
   - [x] 8.2 Property-based tests for PlanOptimizer (Properties 5-7, 11-12, 20-21)
   - [x] 8.3 Property-based tests for PairBeliefTracker (Properties 15-19)
-  - [ ] 8.4 Unit tests — edge cases and integration
+  - [x] 8.4 Unit tests — edge cases and integration
 
 ## Notes
 
