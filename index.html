@@ -6990,7 +6990,14 @@
                     {
                         number: 10,
                         title: 'Scrunch out the crunch',
-                        instruction: 'Once FULLY dry, scrunch the gel cast. Optional: drop of Dove 10-in-1 Serum.',
+                        instruction: (function() {
+                            var st = StateManager.getState();
+                            var method = (st.settings && st.settings.dryingMethod) || 'diffuse';
+                            if (method === 'air-dry') {
+                                return 'Come back when FULLY dry (2-3 hours). Scrunch the gel cast to release soft curls. Optional: drop of Dove 10-in-1 Serum.';
+                            }
+                            return 'Once FULLY dry, scrunch the gel cast. Optional: drop of Dove 10-in-1 Serum.';
+                        })(),
                         productId: null,
                         scienceBadge: null,
                         timer: null,
@@ -7491,6 +7498,19 @@
                         if (product.id === 'marc-anthony-shield' || product.id === 'garnier-diamond-sleek') {
                             score += 25;
                             reasons.push('Polysilicone-29 heat seal + humidity barrier');
+                        }
+                    }
+
+                    // Domain rule: OGX Bond Protein Serum preferred on air-dry days
+                    // Silicone-free protein fill — doesn't need heat activation, delivers protein without coating
+                    var dryingMethod = (function() {
+                        var st = StateManager.getState();
+                        return (st.settings && st.settings.dryingMethod) || 'diffuse';
+                    })();
+                    if (dryingMethod === 'air-dry') {
+                        if (product.id === 'ogx-bond-protein-serum') {
+                            score += 20;
+                            reasons.push('Air dry day — silicone-free protein without heat');
                         }
                     }
 
