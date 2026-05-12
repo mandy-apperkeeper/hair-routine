@@ -2065,7 +2065,7 @@
             {
                 id: 'garnier-color-repair-cond', name: 'Color Repair Conditioner', brand: 'Garnier Fructis',
                 tier: 'primary', context: 'every-wash', usingUp: false,
-                notes: 'Amodimethicone + synthetic ceramide (18-MEA replacement). Best conditioner — rotate with use-up bottles until they\'re gone. 3-5 min.',
+                notes: 'Amodimethicone (pos 3) + pseudoceramide (2-oleamido-1,3-octadecanediol — cuticle lipid repair). Co-primary with EverPure. 3-5 min.',
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
@@ -2073,7 +2073,7 @@
                     outcomes: { shine: 0.8, smoothness: 0.9, strength: 0.3 },
                     cumulative: true,
                     interactions: [],
-                    ingredients: ['amodimethicone', 'ceramide np', 'cetearyl alcohol', 'behentrimonium chloride']
+                    ingredients: ['amodimethicone', '2-oleamido-1,3-octadecanediol', 'cetearyl alcohol', 'behentrimonium chloride', 'citric acid', 'arginine']
                 }
             },
             {
@@ -2107,7 +2107,7 @@
             {
                 id: 'everpure-bond-conditioner', name: 'Bond Repair Conditioner', brand: "L'Oréal EverPure",
                 tier: 'primary', context: 'every-wash', usingUp: false,
-                notes: 'Bis-cetearyl amodimethicone + dimethicone. Second-best conditioner.',
+                notes: 'Amodimethicone-only formula (no dimethicone, no buildup silicones). Co-primary with Garnier Color Repair. 1-2 min.',
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'conditioning'],
                     delivery: 'rinse_off',
@@ -2115,7 +2115,7 @@
                     outcomes: { shine: 0.7, smoothness: 0.8, strength: 0.2 },
                     cumulative: true,
                     interactions: [],
-                    ingredients: ['bis-cetearyl amodimethicone', 'dimethicone', 'cetearyl alcohol', 'citric acid']
+                    ingredients: ['amodimethicone', 'cetearyl alcohol', 'behentrimonium chloride', 'citric acid', 'arginine']
                 }
             },
             // Primary Rotation — Curly Days
@@ -2286,15 +2286,15 @@
             {
                 id: 'dove-10in1-serum', name: 'Bond Repair 10-in-1 Serum', brand: 'Dove',
                 tier: 'supporting', context: 'as-needed', usingUp: false,
-                notes: 'Amodimethicone (buried in formula). Better than Dove conditioners.',
+                notes: 'Aminopropyl dimethicone (selective, same family as amodimethicone) + phenyl trimethicone (high-shine RI 1.498). Better than Dove conditioners — leave-on format makes silicones effective.',
                 intelligence: {
                     mechanisms: ['cuticle_smoothing'],
                     delivery: 'leave_on',
                     step: 'finishing',
-                    outcomes: { shine: 0.6, smoothness: 0.6 },
+                    outcomes: { shine: 0.8, smoothness: 0.6 },
                     cumulative: true,
                     interactions: [],
-                    ingredients: ['amodimethicone', 'dimethicone', 'cyclomethicone']
+                    ingredients: ['aminopropyl dimethicone', 'dimethiconol', 'phenyl trimethicone', 'cyclopentasiloxane']
                 }
             },
             {
@@ -2345,7 +2345,7 @@
             {
                 id: 'elvive-total-repair-5-balm', name: 'Total Repair 5 Damage Erasing Balm', brand: "L'Oréal Elvive",
                 tier: 'supporting', context: 'weekly', usingUp: false,
-                notes: 'Amodimethicone + hydrolyzed wheat protein + synthetic ceramide (18-MEA). Strong deep conditioner. Use 3-5 min with heat cap.',
+                notes: 'Amodimethicone + hydrolyzed wheat protein + pseudoceramide (2-oleamido-1,3-octadecanediol). Strong deep conditioner. Use 3-5 min with heat cap.',
                 intelligence: {
                     mechanisms: ['cuticle_smoothing', 'protein_fill', 'conditioning'],
                     delivery: 'rinse_off',
@@ -2355,7 +2355,7 @@
                     outcomes: { shine: 0.8, smoothness: 0.8, strength: 0.5 },
                     cumulative: true,
                     interactions: [],
-                    ingredients: ['amodimethicone', 'hydrolyzed wheat protein', 'ceramide np', 'cetearyl alcohol']
+                    ingredients: ['amodimethicone', 'hydrolyzed wheat protein', '2-oleamido-1,3-octadecanediol', 'cetearyl alcohol']
                 }
             },
             // Use-Up Queue
@@ -3040,6 +3040,16 @@
                 interactionFlags: ['blocks_penetration_after'],
                 outcomeWeights: { shine: 0.8, smoothness: 0.9, frizz_control: 0.6 }
             },
+            'aminopropyl dimethicone': {
+                inci: 'Aminopropyl Dimethicone',
+                commonName: 'Aminopropyl Dimethicone',
+                roles: ['cuticle_smoothing'],
+                mechanism: 'Amine-functionalized silicone — same selective binding mechanism as amodimethicone (electrostatic attraction to damaged sites, self-limiting via charge repulsion). Amine group at chain terminus rather than backbone. Functionally equivalent to amodimethicone.',
+                mwClass: 'high',
+                flags: ['cumulative', 'selective_binding', 'self_limiting'],
+                interactionFlags: ['blocks_penetration_after'],
+                outcomeWeights: { shine: 0.7, smoothness: 0.8, frizz_control: 0.5 }
+            },
             'bis-cetearyl amodimethicone': {
                 inci: 'Bis-Cetearyl Amodimethicone',
                 commonName: 'Bis-Cetearyl Amodimethicone',
@@ -3089,6 +3099,16 @@
                 flags: ['volatile', 'no_residue', 'carrier'],
                 interactionFlags: [],
                 outcomeWeights: { smoothness: 0.2 }
+            },
+            'phenyl trimethicone': {
+                inci: 'Phenyl Trimethicone',
+                commonName: 'Phenyl Trimethicone',
+                roles: ['cuticle_smoothing'],
+                mechanism: 'High-refractive-index silicone (RI 1.498). Provides superior shine via light refraction. Lighter than dimethicone, non-greasy film. Used in finishing serums for glass-like gloss.',
+                mwClass: 'mid',
+                flags: ['high_shine', 'lightweight'],
+                interactionFlags: [],
+                outcomeWeights: { shine: 0.9, smoothness: 0.4 }
             },
             'dimethicone/silsesquioxane copolymer': {
                 inci: 'Dimethicone/Silsesquioxane Copolymer',
@@ -3638,6 +3658,16 @@
             },
 
             // ===== Ceramides & Lipids =====
+            '2-oleamido-1,3-octadecanediol': {
+                inci: '2-Oleamido-1,3-Octadecanediol',
+                commonName: 'Pseudoceramide (Ceramide-2 analog)',
+                roles: ['conditioning', 'cuticle_smoothing'],
+                mechanism: 'Synthetic analog of ceramide-2. Fills gaps in cuticle lipid layer (CMC repair). Recovers lost intercellular lipids in damaged hair. L\'Oréal standard pseudoceramide ingredient.',
+                mwClass: 'mid',
+                flags: ['biomimetic', 'cmc_repair', 'cumulative'],
+                interactionFlags: [],
+                outcomeWeights: { smoothness: 0.6, strength: 0.4, shine: 0.3 }
+            },
             'ceramide np': {
                 inci: 'Ceramide NP',
                 commonName: 'Ceramide NP',
@@ -8270,14 +8300,14 @@
                         var ings = (product.intelligence && product.intelligence.ingredients) || [];
                         // Check actual ingredients for amodimethicone (the mechanism name in inventory is 'cuticle_smoothing')
                         var hasAmodimethicone = ings.indexOf('amodimethicone') !== -1;
-                        var hasCeramide = ings.indexOf('ceramide np') !== -1;
+                        var hasCeramide = ings.indexOf('2-oleamido-1,3-octadecanediol') !== -1;
                         if (hasAmodimethicone) {
                             score += 30;
                             reasons.push('Amodimethicone — selective cuticle repair');
                         }
                         if (hasCeramide) {
                             score += 15;
-                            reasons.push('Ceramide — 18-MEA replacement, structural');
+                            reasons.push('Pseudoceramide — cuticle lipid repair');
                         }
                         // Deep conditioners get a base penalty (they're upgrades, not default)
                         // but context can boost them above regular conditioner
