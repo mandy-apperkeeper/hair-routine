@@ -6070,6 +6070,196 @@
             };
         })();
 
+        // ===== PlanOptimizer =====
+        // Bounded exhaustive search over candidate combinations to find the plan
+        // with highest combined individual + synergy score.
+        var PlanOptimizer = (function() {
+            var SYNERGY_WEIGHT = 15;
+
+            /**
+             * Find the optimal product combination across steps.
+             * @param {Array} candidatesPerStep - [[{productId, score}, ...], ...] (top 3 per step)
+             * @param {object} interactionLookup - InteractionLookup module
+             * @param {object} pairBeliefs - PairBeliefTracker module (or null)
+             * @param {object} options - { hardConstraints: [productIds to exclude] }
+             * @returns {{ plan: [{stepIndex, productId, productName}], planScore, synergyScore, individualScore, explanations }}
+             */
+            function optimize(candidatesPerStep, interactionLookup, pairBeliefs, options) {
+                options = options || {};
+                var hardConstraints = options.hardConstraints || [];
+
+                // Filter out hard-constrained products and cap at 3 per step
+                var filtered = [];
+                for (var s = 0; s < candidatesPerStep.length; s++) {
+                    var stepCandidates = candidatesPerStep[s];
+                    var valid = [];
+                    for (var c = 0; c < stepCandidates.length && valid.length < 3; c++) {
+                        if (hardConstraints.indexOf(stepCandidates[c].productId) === -1) {
+                            valid.push(stepCandidates[c]);
+                        }
+                    }
+                    filtered.push(valid);
+                }
+
+                // Check graceful degradation conditions
+                var totalCombinations = 1;
+                var variableSteps = 0;
+                for (var i = 0; i < filtered.length; i++) {
+                    if (filtered[i].length > 1) variableSteps++;
+                    totalCombinations *= Math.max(1, filtered[i].length);
+                }
+
+                // If no interactions exist or too few variable steps, return rank-1
+                if (variableSteps < 1 || Object.keys(interactionLookup.getMap()).length === 0) {
+                    return buildResult(filtered, getRank1(filtered), interactionLookup, pairBeliefs);
+                }
+
+                // If combinations exceed 729, use greedy fallback
+                if (totalCombinations > 729) {
+                    return buildResult(filtered, greedySelect(filtered, interactionLookup, pairBeliefs), interactionLookup, pairBeliefs);
+                }
+
+                // Exhaustive search
+                var bestIndices = getRank1Indices(filtered);
+                var bestScore = -Infinity;
+
+                var indices = new Array(filtered.length);
+                for (var idx = 0; idx < indices.length; idx++) indices[idx] = 0;
+
+                while (true) {
+                    // Build plan from current indices
+                    var plan = [];
+                    var individualScore = 0;
+                    var valid2 = true;
+                    for (var step = 0; step < filtered.length; step++) {
+                        if (filtered[step].length === 0) { valid2 = false; break; }
+                        var ci = Math.min(indices[step], filtered[step].length - 1);
+                        var candidate = filtered[step][ci];
+                        plan.push({ stepIndex: step, productId: candidate.productId });
+                        individualScore += candidate.score;
+                    }
+
+                    if (valid2) {
+                        var synergyResult = SynergyScorer.score(plan, interactionLookup, pairBeliefs);
+                        var planScore = individualScore + (synergyResult.score * SYNERGY_WEIGHT);
+
+                        if (planScore > bestScore) {
+                            bestScore = planScore;
+                            bestIndices = indices.slice();
+                        }
+                    }
+
+                    // Increment indices (odometer-style)
+                    var carry = true;
+                    for (var pos = filtered.length - 1; pos >= 0 && carry; pos--) {
+                        indices[pos]++;
+                        if (indices[pos] < filtered[pos].length) {
+                            carry = false;
+                        } else {
+                            indices[pos] = 0;
+                        }
+                    }
+                    if (carry) break; // All combinations exhausted
+                }
+
+                return buildResult(filtered, bestIndices, interactionLookup, pairBeliefs);
+            }
+
+            function getRank1(filtered) {
+                var indices = [];
+                for (var i = 0; i < filtered.length; i++) indices.push(0);
+                return indices;
+            }
+
+            function getRank1Indices(filtered) {
+                return getRank1(filtered);
+            }
+
+            function greedySelect(filtered, interactionLookup, pairBeliefs) {
+                var indices = new Array(filtered.length);
+                var fixedPlan = [];
+
+                for (var step = 0; step < filtered.length; step++) {
+                    if (filtered[step].length <= 1) {
+                        indices[step] = 0;
+                        if (filtered[step].length === 1) {
+                            fixedPlan.push({ stepIndex: step, productId: filtered[step][0].productId });
+                        }
+                        continue;
+                    }
+
+                    var bestIdx = 0;
+                    var bestCombinedScore = -Infinity;
+
+                    for (var c = 0; c < filtered[step].length; c++) {
+                        var testPlan = fixedPlan.concat([{ stepIndex: step, productId: filtered[step][c].productId }]);
+                        var synergy = SynergyScorer.score(testPlan, interactionLookup, pairBeliefs);
+                        var combined = filtered[step][c].score + (synergy.score * SYNERGY_WEIGHT);
+
+                        if (combined > bestCombinedScore) {
+                            bestCombinedScore = combined;
+                            bestIdx = c;
+                        }
+                    }
+
+                    indices[step] = bestIdx;
+                    fixedPlan.push({ stepIndex: step, productId: filtered[step][bestIdx].productId });
+                }
+
+                return indices;
+            }
+
+            function buildResult(filtered, indices, interactionLookup, pairBeliefs) {
+                var plan = [];
+                var individualScore = 0;
+
+                for (var step = 0; step < filtered.length; step++) {
+                    if (filtered[step].length === 0) continue;
+                    var ci = Math.min(indices[step], filtered[step].length - 1);
+                    var candidate = filtered[step][ci];
+                    plan.push({
+                        stepIndex: step,
+                        productId: candidate.productId,
+                        productName: candidate.productName || candidate.productId,
+                        selectedOverHigherRank: ci > 0
+                    });
+                    individualScore += candidate.score;
+                }
+
+                var synergyResult = SynergyScorer.score(plan, interactionLookup, pairBeliefs);
+                var planScore = individualScore + (synergyResult.score * SYNERGY_WEIGHT);
+
+                // Build explanations for products selected over higher-ranked alternatives
+                var explanations = [];
+                for (var e = 0; e < plan.length; e++) {
+                    if (plan[e].selectedOverHigherRank) {
+                        var stepIdx = plan[e].stepIndex;
+                        var overridden = filtered[stepIdx][0];
+                        explanations.push({
+                            stepIndex: stepIdx,
+                            selected: plan[e].productId,
+                            overridden: overridden.productId,
+                            reason: 'synergy'
+                        });
+                    }
+                }
+
+                return {
+                    plan: plan,
+                    planScore: planScore,
+                    synergyScore: synergyResult.score,
+                    individualScore: individualScore,
+                    chains: synergyResult.chains,
+                    explanations: explanations
+                };
+            }
+
+            return {
+                optimize: optimize,
+                SYNERGY_WEIGHT: SYNERGY_WEIGHT
+            };
+        })();
+
         // ===== AttributionEngine (Passive Intelligence) =====
         // Provides mechanism-based attribution (day 1), marginal contribution detection (3+ events),
         // contextual pattern detection (15+ events), and interaction detection (30+ events).
