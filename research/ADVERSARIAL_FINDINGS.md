@@ -314,7 +314,72 @@ The Dove serum's aminopropyl dimethicone is functionally equivalent to amodimeth
 |---|----------|---------------|--------|
 | A4 | Does Garnier Color Repair challenge EverPure Conditioner? | `everpure-bond-conditioner.md` | ✅ DONE — YES, Garnier is equivalent/slightly better |
 | A5 | Does aminopropyl dimethicone outperform amodimethicone? | `dove-10in1-serum.md` | ✅ DONE — No, mechanistically identical |
-| A6 | Does dimethiconol/silsesquioxane provide measurably better frizz in high humidity for coarse hair? | `DOVE_DEEP_DIVE.md` | ⏳ Queued for next session |
+| A6 | Does dimethiconol/silsesquioxane provide measurably better frizz in high humidity for coarse hair? | `DOVE_DEEP_DIVE.md` | ✅ DONE — Theoretically yes (different mechanism), but no direct comparative data found |
+
+---
+
+## A6: Dimethiconol/Silsesquioxane vs. Amodimethicone for Humidity Frizz Control
+
+**Date:** May 12, 2026
+**Target report:** `DOVE_DEEP_DIVE.md`
+**Claim challenged:** The Dove deep dive positions dimethiconol as inferior to amodimethicone. But does dimethiconol + trimethylsiloxysilicate (TMS/MQ resin) actually provide BETTER humidity protection for coarse hair, even if it's worse for conditioning?
+
+### Search Queries
+
+1. `dimethiconol vs amodimethicone frizz humidity protection coarse hair 2024 2025` — found HairAide, Lab Muffin, general comparisons
+2. `trimethylsiloxysilicate silsesquioxane humidity barrier hair frizz control study` — found Personal Care Magazine (resin blend anti-frizz), XJY Silicones (MQ resin guide), Cosmetics & Toiletries (frizz measurement)
+3. `"trimethylsiloxysilicate" hair anti-humidity film forming silicone resin` — found XJY Silicones in-depth guide, Personal Care Magazine resin blend article
+4. `dimethiconol humidity protection hair study comparison amodimethicone frizz measurement` — found Dow Corning frizz control, HairAide dimethiconol page, COSSMA alternatives article
+
+### Key Findings
+
+**1. Different mechanisms, different purposes:**
+
+- **Amodimethicone:** Selective deposition on damaged areas → targeted conditioning, smoothing, reduced friction. Self-limiting (won't build up). Primary benefit: repair and conditioning. Secondary benefit: some frizz reduction via cuticle smoothing.
+- **Dimethiconol:** Uniform heavy coating over entire shaft → intense smoothing, moisture sealing, frizz control. NOT selective, NOT self-limiting. Primary benefit: physical barrier against humidity. Requires clarifying to remove.
+- **Trimethylsiloxysilicate (TMS/MQ resin):** Highly cross-linked silicone resin that forms a rigid, water-resistant film. Described as the "industry staple" for anti-frizz applications ([Personal Care Magazine, Oct 2021](https://personalcaremagazine.com/story/36816/resin-blend-emulsion-for-user-friendly-anti-frizz)). Creates a hydrophobic barrier that physically blocks moisture ingress.
+
+**2. Dimethiconol IS specifically recommended for coarse/thick/frizzy hair:**
+
+HairAide (2025) explicitly lists dimethiconol as "Best For: Thick hair, coarse hair, frizzy hair, dry hair, damaged hair" and states it provides "longer-lasting frizz control and moisture sealing" compared to standard dimethicone. ([HairAide, 2025](https://hairaide.com/ingredients/dimethiconol/))
+
+**3. TMS resin forms a superior humidity barrier:**
+
+XJY Silicones (2025) describes MQ resin as having "exceptional heat resistance and water repellency" with a "highly cross-linked network" that provides "weather/oxidation resistance." In hair applications, it forms an "ultra-thin coating" with "zero heavy residue" while maintaining hydrophobicity. ([XJY Silicones, 2025](https://www.xjysilicone.com/in-depth-guide-how-mq-silicone-resins-are-reshaping-high-end-beauty-and-personal-care-formulations.html))
+
+**4. No direct comparative study found:**
+
+Despite searching specifically for head-to-head comparisons of dimethiconol/TMS vs. amodimethicone for frizz in high humidity, no peer-reviewed or industry study was found that directly measures this comparison. The evidence is mechanistic inference only.
+
+### Analysis
+
+The adversarial question has theoretical merit:
+
+- **For pure humidity barrier function:** Dimethiconol + TMS should theoretically outperform amodimethicone. Dimethiconol forms a heavier, more complete coating (not selective — covers everything). TMS adds a rigid, water-resistant film layer. Together they create a physical barrier against moisture ingress that amodimethicone's selective, self-limiting deposition cannot match.
+
+- **For overall hair health:** Amodimethicone is superior. It doesn't build up, targets damage, and works synergistically with other treatments. Dimethiconol accumulates and requires periodic clarifying to remove.
+
+- **For the Dove products specifically:** The Dove conditioners/masks use dimethiconol as their primary silicone. In the context of the Dove deep dive, the conclusion that "dimethiconol is inferior to amodimethicone" is correct FOR THE OVERALL ASSESSMENT (conditioning, selectivity, buildup risk). But it's incomplete — dimethiconol may provide better short-term humidity protection on high-humidity days, at the cost of buildup over time.
+
+### Verdict
+
+**The adversarial angle has partial merit but doesn't change the tier conclusion.**
+
+- Dimethiconol + TMS likely provides stronger humidity barrier than amodimethicone alone (mechanistic inference — no direct data).
+- However, the Dove products being assessed are conditioners/masks (rinse-off), not leave-in styling products. The dimethiconol deposits during conditioning but the amount remaining after rinse is limited.
+- The hair routine already has dedicated humidity protection via PQ-69 gel cast (NYM/Got2b) and polysilicone-29 heat seal (Marc Anthony/Diamond Sleek). These are leave-on products specifically designed for humidity barrier — they serve this function better than residual dimethiconol from a rinse-off conditioner.
+- The Dove products' use-up tier is based on the TOTAL package (non-selective silicone + sulfate shampoo + no bond repair), not just the humidity question.
+
+**Impact on Dove Deep Dive tier:** None. Use-up tier stands. The dimethiconol humidity advantage is real but irrelevant in context — the routine has better humidity solutions via leave-on products.
+
+**Confidence:** Medium. The mechanistic reasoning is sound but no direct comparative data exists. The conclusion could change if a study showed dimethiconol from rinse-off products provides meaningful 24-hour humidity protection at typical deposition levels.
+
+### Sources
+
+1. HairAide. "Dimethiconol in Hair Products." 2025. https://hairaide.com/ingredients/dimethiconol/
+2. Personal Care Magazine. "Resin blend emulsion for user-friendly anti-frizz." Oct 2021. https://personalcaremagazine.com/story/36816/resin-blend-emulsion-for-user-friendly-anti-frizz
+3. XJY Silicones. "In-Depth Guide: How MQ Silicone Resins Are Reshaping High-End Beauty." 2025. https://www.xjysilicone.com/in-depth-guide-how-mq-silicone-resins-are-reshaping-high-end-beauty-and-personal-care-formulations.html
+4. Lab Muffin (Wong M). "Amodimethicone: The Science of My Favourite Hair Ingredient." April 2024. https://labmuffin.com/amodimethicone-my-new-favourite-hair-ingredient/
 
 ---
 
