@@ -63,3 +63,5 @@ Full analysis: `research/V2_RESCORE_COMPARISON.md`
 | 2026-05-11 | Garnier Diamond Sleek | 50/50 | 50/50 | 0% | 100% | Excellent | Primary tier confirmed (potentially superior to Marc Anthony for coarse/dry hair); most complete Polysilicone-29 formula (triple protein + argan oil + high glycerin); adversarial run (3 queries, all survived with monitoring qualifier) |
 
 | 2026-05-12 | Project Signals & LLM Communication Patterns | 82/100 | 78/100 | 0% | 80% | Good | Meta-research on Kiro's own failure patterns; maps friction log to empirical LLM research; 5 actionable recommendations |
+| 2026-05-12 | Monday Moisture Leave-In | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms use-up tier; dimethicone (non-selective) outclassed by 21-in-1 (amodimethicone) on every axis |
+| 2026-05-12 | Pure Coconut Oil | 50/50 | 50/50 | 0% | 100% | Excellent | Confirms primary tier; hygral fatigue framing updated per Wong 2026; protein loss prevention + CMC repair mechanisms validated independently |

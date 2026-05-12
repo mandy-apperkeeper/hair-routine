@@ -46,9 +46,9 @@ Commit: `5f0caef`
 4. **Auto-scroll untested on device** — from prior session
 5. **Synergy system untested on device** — all logic verified via property tests but no iPad testing yet
 7. **Established decision needs update:** "Pre-shampoo treatment is marketing" is too broad — citric acid crosslinking (Garnier pre-shampoo) is a legitimate mechanism with peer-reviewed evidence
-8. **Marc Anthony tier should be updated:** Diamond Sleek research recommends Marc Anthony drop to Supporting (backup). This change hasn't been made in the app's inventory yet.
-9. **Garnier Filler Serum tier should be updated:** Deep dive recommends downgrade to Use-Up. Not yet reflected in app inventory.
-10. **Pantene "bond repair" established decision needs nuance:** Current says "genuine bond repair (bis-aminopropyl dimethicone)." Should say "genuine targeted damage conditioning via electrostatic bridging — functional repair, not structural repair."
+8. ~~**Marc Anthony tier:**~~ Done — already `tier: 'supporting'` in inventory.
+9. ~~**Garnier Filler Serum tier:**~~ Done — already `tier: 'use-up'` with `usingUp: true`.
+10. ~~**Pantene wording:**~~ Done — already updated to electrostatic bridging language.
 
 ---
 
@@ -75,11 +75,11 @@ Commit: `5f0caef`
 2. **iPad testing** — ranking changes, product-aware timers, mask-replaces-conditioner display, dew point, no geolocation prompt
 
 ### Still pending from prior sessions:
-4. Dev note follow-up — "More than one secondary reason for hair considerations can be true" (diagnostic engine logic)
+4. ~~Dev note follow-up~~ — "More than one secondary reason for hair considerations can be true" — VERIFIED: already implemented. Multi-symptom ranking (`rankCausesMultiSymptom`), multi-cause selection ("Tap all that apply"), and stacking interventions all work.
 5. Re-score everpure-bond-shampoo.md
 6. A6 adversarial pass
 7. Verify-mode: research drift audit
-8. Deep dive queue: monday-moisture-leave-in, pure-coconut-oil (2 remaining)
+8. Deep dive queue: ~~monday-moisture-leave-in~~, ~~pure-coconut-oil~~ (DONE — both written May 12)
 
 ---
 

@@ -2510,9 +2510,9 @@
             {
                 id: 'pure-coconut-oil', name: 'Pure Coconut Oil', brand: 'Generic',
                 tier: 'primary', context: 'every-wash', usingUp: false,
-                notes: 'Penetrates hair cortex (lauric acid affinity for keratin). Prevents hygral fatigue and protein loss during washing. Best pre-wash oil for damaged/weathered hair.',
+                notes: 'Penetrates hair cortex (lauric acid affinity for keratin). Reduces protein loss during washing. Fills CMC lipid gaps in weathered cuticle. Best pre-wash oil for damaged hair.',
                 intelligence: {
-                    mechanisms: ['penetrating_oil', 'hygral_fatigue_protection'],
+                    mechanisms: ['penetrating_oil', 'protein_loss_prevention'],
                     delivery: 'rinse_off',
                     step: 'pre_wash',
                     outcomes: { strength: 0.6, damage_prevention: 0.8 },
@@ -2863,9 +2863,9 @@
                         state.inventory.push({
                             id: 'pure-coconut-oil', name: 'Pure Coconut Oil', brand: 'Generic',
                             tier: 'primary', context: 'every-wash', usingUp: false,
-                            notes: 'Penetrates hair cortex (lauric acid affinity for keratin). Prevents hygral fatigue and protein loss during washing. Best pre-wash oil for damaged/weathered hair.',
+                            notes: 'Penetrates hair cortex (lauric acid affinity for keratin). Reduces protein loss during washing. Fills CMC lipid gaps in weathered cuticle. Best pre-wash oil for damaged hair.',
                             intelligence: {
-                                mechanisms: ['penetrating_oil', 'hygral_fatigue_protection'],
+                                mechanisms: ['penetrating_oil', 'protein_loss_prevention'],
                                 delivery: 'rinse_off',
                                 step: 'pre_wash',
                                 outcomes: { strength: 0.6, damage_prevention: 0.8 },
@@ -3394,9 +3394,9 @@
                 inci: 'Cocos Nucifera (Coconut) Oil',
                 commonName: 'Coconut Oil',
                 roles: ['penetrating_oil'],
-                mechanism: 'Lauric acid has small molecular structure and high affinity for hair proteins, allowing cortex penetration. Reduces hygral fatigue and protein loss during washing. Unique among oils.',
+                mechanism: 'Lauric acid has small molecular structure and high affinity for hair proteins, allowing cortex penetration. Reduces protein loss during washing and fills CMC lipid gaps. Unique among oils.',
                 mwClass: 'mid',
-                flags: ['penetrating', 'cortex_access', 'hygral_fatigue_protection'],
+                flags: ['penetrating', 'cortex_access', 'protein_loss_prevention'],
                 interactionFlags: ['best_on_clean_surface'],
                 outcomeWeights: { strength: 0.6, damage_prevention: 0.8 }
             },
@@ -6707,7 +6707,7 @@
                     protein_fill: { strength: 'fills gaps in damaged cortex', elasticity: 'reinforces weakened fiber' },
                     humidity_barrier: { frizz_control: 'blocks humidity penetration', definition: 'maintains style against moisture' },
                     conditioning: { smoothness: 'lubricates hair fiber', shine: 'reduces surface friction' },
-                    penetrating_oil: { strength: 'penetrates cortex (lauric acid affinity)', elasticity: 'prevents hygral fatigue' },
+                    penetrating_oil: { strength: 'penetrates cortex (lauric acid affinity)', elasticity: 'reduces protein loss during washing' },
                     hold: { definition: 'forms flexible film for curl pattern', frizz_control: 'physical barrier against humidity' },
                     clarifying: { cleanliness: 'removes product buildup and mineral deposits' },
                     heat_protection: { strength: 'thermal shield prevents protein denaturation', frizz_control: 'seals cuticle during heat exposure' },
@@ -10356,7 +10356,7 @@
                 };
 
                 var instruction = bestPreWash.productId === 'pure-coconut-oil'
-                    ? 'Apply to lengths and ends. Leave 20+ minutes (or overnight). Prevents hygral fatigue during wash.'
+                    ? 'Apply to lengths and ends. Leave 20+ minutes (or overnight). Reduces protein loss during wash.'
                     : 'Apply to lengths and ends. Leave 20+ minutes. ' + (bestPreWash.reason || 'Pre-wash protection.');
 
                 plan.steps.unshift({
@@ -13360,7 +13360,7 @@
             html += '</div>';
 
             html += '<div class="card" id="learn-coconut-oil"><h3>Coconut Oil Pre-Wash (Cortex Penetration)</h3>';
-            html += '<p>Coconut oil is the only common oil proven to penetrate the hair cortex. Its lauric acid has high affinity for hair protein, allowing it to reduce protein loss during washing by up to 39%. Applied to dry hair before shampooing, it prevents hygral fatigue (repeated swelling/deswelling damage). Argan oil does NOT penetrate — it stays in the outer 5µm.</p>';
+            html += '<p>Coconut oil is the only common oil proven to penetrate the hair cortex. Its lauric acid has high affinity for hair protein, allowing it to reduce protein loss during washing by up to 39%. Applied to dry hair before shampooing, it fills gaps in the cell membrane complex (the lipid "mortar" between keratin "bricks") and shields proteins from being solubilized by surfactants. Argan oil does NOT penetrate — it stays in the outer 5µm.</p>';
             html += '<span class="badge badge-verified">VERIFIED</span>';
             html += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Source: Rele, A.S. & Mohile, R.B. (2003). Effect of mineral oil, sunflower oil, and coconut oil on prevention of hair damage. J. Cosmet. Sci.</p>';
             html += '</div>';

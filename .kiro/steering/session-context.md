@@ -54,7 +54,7 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 - **Schema v12.** Intelligence uses granular `step` values (no subStep). Optional `additionalSteps` array for multi-group products. Per-product `experienceRating`, `resultsRating`, `experienceNote`, `resultsNote` fields. Got2b unified to `got2b-ultra-glued`. Use-up rotation state (washCountSinceLastRotation, lastAssignedProductId, lastAssignedDate).
 - **Treatments are separate from products** in the data model (clarify, protein, deep-condition, bond-repair)
 - **OGX oils are finishing products** (volatile silicones + dimethiconol film + trace oil). Legitimate shine/frizz tool. Weak pre-wash — pure coconut oil is the right tool for cortex penetration.
-- **Pure coconut oil is the correct pre-wash oil** — penetrates cortex (lauric acid protein affinity), prevents hygral fatigue. Argan oil does NOT penetrate (stays in outer 5µm).
+- **Pure coconut oil is the correct pre-wash oil** — penetrates cortex (lauric acid protein affinity), reduces protein loss during washing (Rele & Mohile 2003), fills CMC lipid gaps (Wong 2026). "Hygral fatigue prevention" framing is scientifically disputed but the protein protection mechanism is independently validated. Argan oil does NOT penetrate (stays in outer 5µm).
 - **"Using-up" protocol:** Track bottles being finished, explain compensation, remove when empty.
 - **Hard floors:** wash ≥ 1 day, clarify ≥ 3 days, protein ≥ 5 days — never below these.
 - **Inventory tiers:** Primary Rotation, Supporting Cast, Use-Up Queue.
@@ -66,9 +66,9 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 - **Product intelligence is a system redesign**, not a quick mapping fix. Each product needs: mechanism, cumulative vs single-use, interactions, outcome contribution.
 - **Offline-first with online product discovery** for new additions.
 - **Both passive and active intelligence surfacing** — post-wash analysis + pre-wash recommendations.
-- **"Pre-shampoo treatment" is marketing** — bond repair works best after shampoo, sealed by conditioner.
+- **"Pre-shampoo treatment" is mostly marketing, with one exception** — most pre-shampoo products (bond repair, oils) work better after shampoo. Exception: Garnier Hair Filler Pre-Shampoo uses citric acid (pos 6) for legitimate KAP crosslinking that requires acidic pH on bare hair. Peer-reviewed mechanism. Complementary to Olaplex (different bond types).
 - **Heat cap benefits all conditioning-step products** (conditioner, deep conditioner, gloss).
-- **Pantene Miracle Rescue Leave-In is genuine bond repair** (bis-aminopropyl dimethicone).
+- **Pantene Miracle Rescue Leave-In is genuine targeted damage conditioning** (bis-aminopropyl dimethicone) — functional repair via electrostatic bridging to damage sites, not structural bond reformation. Hair behaves stronger but bonds aren't reformed. Best understood as daily maintenance between actual repair sessions (Olaplex).
 - **OGX Bond Protein Repair Sealing Serum is silicone-free protein fill** (different tool than Garnier serum).
 - **No humidity manual prompt** — silently defaults to moderate on auto-detect failure.
 
@@ -97,7 +97,7 @@ Adaptive hair care app for Mandy. Single-file HTML app (`index.html`) deployed t
 - **v1 (live):** Working — 7-group step-based quick-log with sub-menus + heat cap badges + multi-group products via additionalSteps, walkthrough, history, status bar, dew point auto-detection (no manual prompt), recommendations, compensation logic, product inventory (30 products) with full intelligence metadata + per-product experience/results ratings, post-wash attribution card, deep-condition auto-detection, use-up rotation (every 3rd wash cycles Dove conditioners with compensation).
 - **Schema:** Version 12. Intelligence uses granular `step` values + optional `additionalSteps` array. Per-product experience/results ratings (v10). Use-up rotation state (v12).
 - **Known broken:** Nothing currently broken.
-- **Pending:** Research documentation write-up (coconut oil + OGX oil findings into research/ folder).
+- **Pending:** Nothing currently pending.
 - **What's next:** iPad testing of DiagnosticEngine adjust flow. Product deep dives. A6 adversarial pass.
 
 ## Design Principles (testing here first, generalize if effective)

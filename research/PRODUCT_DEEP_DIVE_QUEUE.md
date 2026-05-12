@@ -85,44 +85,44 @@
 |---|-----------|------|-------|------|--------|-------|
 | 12 | loreal-21in1 | 21-in-1 Leave-In Spray | L'Oréal EverPure | primary | ✅ DONE | `research/products/loreal-21in1.md` — tier confirmed |
 | 13 | loreal-wonder-water | 8 Second Wonder Water | L'Oréal Elvive | supporting | ✅ DONE | `research/products/loreal-wonder-water.md` — 95% score, tier confirmed |
-| 14 | elvive-total-repair-5-balm | Total Repair 5 Damage Erasing Balm | L'Oréal Elvive | supporting | 📋 PLANNED | **Additional research question:** Does the Elvive provide complementary benefits to Garnier conditioner despite shared amodimethicone? Assess: (1) protein type/concentration differences, (2) whether longer dwell + heat cap changes deposition outcomes, (3) whether cortex-level protein fill + cuticle-level silicone seal = genuinely different targets. Determines whether mask+conditioner is valid or redundant for this specific pair. |
+| 14 | elvive-total-repair-5-balm | Total Repair 5 Damage Erasing Balm | L'Oréal Elvive | supporting | ✅ DONE | `research/products/elvive-total-repair-5-balm.md` — tier confirmed (Supporting). Mask replaces conditioner (shared amodimethicone). Wheat protein (pos 19) is only unique mechanism but low concentration. |
 
 ## Batch 4: Garnier Fructis Line
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
 | 15 | garnier-color-repair-cond | Color Repair Conditioner | Garnier Fructis | primary | ✅ DONE | `research/products/garnier-color-repair-cond.md` — co-primary with EverPure; pseudoceramide + better value; 87.5% score |
-| 16 | garnier-pre-shampoo | Hair Filler Inner Fiber Repair Pre-Shampoo | Garnier Fructis | supporting | 📋 PLANNED | |
-| 17 | garnier-filler-serum | Hair Filler Strength Repair Serum | Garnier Fructis | supporting | 📋 PLANNED | |
+| 16 | garnier-pre-shampoo | Hair Filler Inner Fiber Repair Pre-Shampoo | Garnier Fructis | supporting | ✅ DONE | `research/products/garnier-pre-shampoo.md` — tier confirmed (Supporting). Citric acid (pos 6) is real active — peer-reviewed KAP crosslinking. Peptides are cosmetic dusting. Complementary to Olaplex (different bond types). |
+| 17 | garnier-filler-serum | Hair Filler Strength Repair Serum | Garnier Fructis | supporting | ✅ DONE | `research/products/garnier-filler-serum.md` — Tier downgraded to Use-Up. Standard silicone serum outclassed by Dove 10-in-1 and L'Oréal 21-in-1. Vitamin Cg at pos 15 has zero hair evidence. |
 
 ## Batch 5: Styling & Heat Protection
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
 | 18 | nym-curl-talk-gel | Curl Talk Flash Freeze Gel | Not Your Mother's | primary | ✅ DONE | `research/products/nym-curl-talk-gel.md` — 95% score, tier confirmed |
-| 19 | marc-anthony-shield | Grow Long Anti-Frizz Shield | Marc Anthony | primary | 📋 PLANNED | |
-| 31 | garnier-diamond-sleek | Diamond Sleek Shine-Coat Smoothing Spray | Garnier Fructis | primary | 📋 PLANNED | Same active (Polysilicone-29) as Marc Anthony — interchangeable |
-| 20 | got2b-ultra-glued | Glued Blasting Freeze Spray/Gel | Got2b | supporting | 📋 PLANNED | |
-| 21 | maui-curl-smoothie | Curl Quench + Coconut Oil Curl Smoothie | Maui Moisture | supporting | 📋 PLANNED | |
-| 22 | ogx-bond-heat-spray | Bond Protein Repair 450°F Heat Protect Spray | OGX | supporting | 📋 PLANNED | |
+| 19 | marc-anthony-shield | Grow Long Anti-Frizz Shield | Marc Anthony | primary | ✅ DONE | `research/products/marc-anthony-shield.md` — tier qualified: Primary (heat-styling days only). Polysilicone-29 (pos 14) = Color Wow dupe at 63% less. Caffeine/biotin are marketing. Adversarial run (3 queries, all survived). |
+| 31 | garnier-diamond-sleek | Diamond Sleek Shine-Coat Smoothing Spray | Garnier Fructis | primary | ✅ DONE | `research/products/garnier-diamond-sleek.md` — Primary tier confirmed. Most complete Polysilicone-29 formula (triple protein + argan oil + high glycerin). Superior to Marc Anthony for coarse/dry hair. Adversarial run (3 queries, all survived — one with 3-6 month monitoring qualifier). Marc Anthony recommended to drop to Supporting. |
+| 20 | got2b-ultra-glued | Glued Blasting Freeze Spray/Gel | Got2b | supporting | ✅ DONE | `research/products/got2b-ultra-glued.md` — Supporting tier confirmed. Focused 10-ingredient finishing spray (Amphomer rigid film polymer). NOT a curl definer — locks blowouts/updos. Complementary to NYM gel. Skip adversarial. |
+| 21 | maui-curl-smoothie | Curl Quench + Coconut Oil Curl Smoothie | Maui Moisture | supporting | ✅ DONE | `research/products/maui-curl-smoothie.md` — Supporting confirmed. Silicone-free moisture cream with coconut oil (pos 4). DMDM Hydantoin concern for leave-on product. No hold, no protein. Legitimate moisture layer for cream-then-gel routine. |
+| 22 | ogx-bond-heat-spray | Bond Protein Repair 450°F Heat Protect Spray | OGX | supporting | ✅ DONE | `research/products/ogx-bond-heat-spray.md` — Supporting confirmed. Amodimethicone (selective deposition) + gluconamide/gluconate bond repair + wheat protein. Complementary to Diamond Sleek (different mechanism — no humidity seal). Clean preservative system. |
 
 ## Batch 6: OGX Products (Oils + Serums)
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
-| 23 | ogx-coconut-oil | Coconut Miracle Penetrating Oil | OGX | use-up | 📋 PLANNED | Batch with argan oil (same base) |
-| 24 | ogx-argan-oil | Moroccan Argan Oil | OGX | use-up | 📋 PLANNED | Batch with coconut oil |
-| 25 | ogx-bond-repair-mask | Bond Protein Repair 1-Minute Mask | OGX | supporting | 📋 PLANNED | |
-| 26 | ogx-bond-protein-serum | Bond Protein Repair Sealing Serum | OGX | supporting | 📋 PLANNED | |
+| 23 | ogx-coconut-oil | Coconut Miracle Penetrating Oil | OGX | use-up | ✅ DONE | `research/products/ogx-coconut-oil.md` — Use-Up confirmed. Volatile silicone serum (cyclopentasiloxane + dimethiconol) with trace coconut oil (~1-3%). "Penetrating" claim debunked — coconut oil too dilute to penetrate. Redundant with Dove 10-in-1. Do not repurchase. |
+| 24 | ogx-argan-oil | Moroccan Argan Oil | OGX | use-up | ✅ DONE | `research/products/ogx-argan-oil.md` — Use-Up confirmed. Functionally identical to OGX Coconut Oil (same silicone base, different trace oil). Argan oil does NOT penetrate hair cortex at any concentration. Redundant. Do not repurchase. |
+| 25 | ogx-bond-repair-mask | Bond Protein Repair 1-Minute Mask | OGX | supporting | ✅ DONE | `research/products/ogx-bond-repair-mask.md` — Supporting confirmed. Behentrimonium chloride + amodimethicone + gluconamide/gluconate bond repair + dual PQ film (PQ-47 + PQ-37). 1-min contact limits depth but provides genuine weekly bond maintenance. Unique in inventory for speed + bond repair combo. Score: 87/100. |
+| 26 | ogx-bond-protein-serum | Bond Protein Repair Sealing Serum | OGX | supporting | ✅ DONE | `research/products/ogx-bond-protein-serum.md` — Supporting confirmed. Silicone-free protein-focused leave-in serum. 5 wheat-derived ingredients + hydrolyzed keratin + gluconamide/gluconate bond repair. Unique niche (only silicone-free leave-in in inventory). High cost ($6.17/oz). No humidity protection. Best for targeted protein days 2-3x/week. Score: 84/100. |
 
 ## Batch 7: Standalone Products
 
 | # | Product ID | Name | Brand | Tier | Status | Notes |
 |---|-----------|------|-------|------|--------|-------|
-| 27 | olaplex-3 | Olaplex 3 | Olaplex | primary | 📋 PLANNED | |
-| 28 | pantene-bond-spray | Miracle Rescue Instant Repair Leave-In | Pantene | supporting | 📋 PLANNED | |
-| 29 | monday-moisture-leave-in | Moisture Leave-In Conditioner | Monday Haircare | use-up | 📋 PLANNED | |
-| 30 | pure-coconut-oil | Pure Coconut Oil | Generic | primary | 📋 PLANNED | |
+| 27 | olaplex-3 | Olaplex 3 | Olaplex | primary | ✅ DONE | `research/products/olaplex-3.md` — Primary confirmed (95/100). BADGD at position 2 (unprecedented concentration). Unique disulfide bond repair via Michael addition — only product in inventory with this mechanism. Complementary to all other bond builders. Irreplaceable at this price point. Adversarial passed (3 angles, all survived). |
+| 28 | pantene-bond-spray | Miracle Rescue Instant Repair Leave-In | Pantene | supporting | ✅ DONE | `research/products/pantene-bond-spray.md` — Supporting confirmed (77/100). Bis-Aminopropyl Dimethicone (pos 5) — unique amino silicone that bonds selectively to damage sites, resists washing out. Histidine (pos 9) — amino acid with peer-reviewed cortex penetration evidence. Minimalist 16-ingredient formula. No protein, no UV, no humidity protection. Niche: targeted damage conditioning between washes. |
+| 29 | monday-moisture-leave-in | Moisture Leave-In Conditioner | Monday Haircare | use-up | ✅ DONE | `research/products/monday-moisture-leave-in.md` — Use-Up confirmed (100%). Dimethicone (non-selective, pos 2) outclassed by 21-in-1 (amodimethicone) on every axis. Jojoba/almond oils are surface-only. PQ-37 provides light hold. Finish bottle, don't repurchase. |
+| 30 | pure-coconut-oil | Pure Coconut Oil | Generic | primary | ✅ DONE | `research/products/pure-coconut-oil.md` — Primary confirmed (100%). Only oil with peer-reviewed cortex penetration + protein loss prevention. Hygral fatigue framing updated per Wong 2026 — mechanism is CMC repair + protein shielding, not water-blocking. Irreplaceable. |
 
 ---
 
@@ -141,17 +141,21 @@
 ## Progress
 
 - **Total products:** 31
-- **Completed:** 15 (Dove conditioners/mask + shampoos + 10-in-1 serum + EverPure shampoo + conditioner + 21-in-1 + clarifying + pre-shampoo + Garnier Color Repair + EverPure Glossing Mask + Wonder Water + NYM Curl Talk Gel)
-- **Remaining:** 16
-- **Estimated sessions:** ~7-8 (2-3 products per session)
+- **Completed:** 31/31 ✅ SERIES COMPLETE
+- **Research notes complete (ready for write session):** 0
+- **Remaining (no research):** 0
 
-## Next Session Starts With
+## Series Complete
 
-1. `elvive-total-repair-5-balm` — Total Repair 5 Damage Erasing Balm (L'Oréal Elvive, supporting tier)
-2. `garnier-pre-shampoo` — Hair Filler Inner Fiber Repair Pre-Shampoo (Garnier Fructis, supporting tier)
-3. `marc-anthony-shield` — Grow Long Anti-Frizz Shield (Marc Anthony, primary tier)
+All 31 products in the inventory have been researched and documented. The deep dive series is finished.
 
-**Rationale:** Wonder Water and NYM Curl Talk Gel complete (both 95%). Next batch covers remaining L'Oréal Elvive + Garnier supporting products + primary heat protectant.
+**Final session (May 11, 2026):** Completed `pure-coconut-oil` (Primary, 95/100) and rewrote `monday-moisture-leave-in` (Use-Up, 80/100).
+
+**Tier changes identified during the series:**
+- `garnier-filler-serum` — Downgraded from Supporting to Use-Up (outclassed by Dove 10-in-1 and 21-in-1)
+- `marc-anthony-shield` — Recommended drop to Supporting (Diamond Sleek is superior for coarse/dry hair)
+
+**Adversarial research (A1-A3):** All complete. No tier changes resulted.
 
 ---
 
