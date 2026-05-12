@@ -13879,6 +13879,32 @@
             }
             html += '</div>';
 
+            // Quick-add for unlisted products
+            html += '<div style="margin-bottom:1.25rem;">';
+            html += '<button class="btn-secondary" id="quick-log-add-unlisted" style="width:100%;font-size:0.8rem;color:var(--muted);border-style:dashed;">+ Used something not listed?</button>';
+            html += '<div id="quick-log-add-form" style="display:none;margin-top:0.5rem;padding:0.75rem;border:1px solid var(--border);border-radius:8px;background:var(--card);">';
+            html += '<div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">';
+            html += '<input type="text" id="quick-add-brand" placeholder="Brand" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.5rem;font-size:0.85rem;min-height:40px;" aria-label="Brand name">';
+            html += '<input type="text" id="quick-add-name" placeholder="Product name" style="flex:2;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.5rem;font-size:0.85rem;min-height:40px;" aria-label="Product name">';
+            html += '</div>';
+            html += '<div style="display:flex;gap:0.5rem;align-items:center;">';
+            html += '<select id="quick-add-step" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.5rem;font-size:0.85rem;min-height:40px;" aria-label="Product step category">';
+            html += '<option value="pre_wash">Pre-wash</option>';
+            html += '<option value="shampoo">Shampoo</option>';
+            html += '<option value="bond_repair">Bond Repair</option>';
+            html += '<option value="conditioner">Conditioner</option>';
+            html += '<option value="deep_condition">Deep Conditioner</option>';
+            html += '<option value="gloss">Gloss</option>';
+            html += '<option value="leave_in" selected>Leave-in</option>';
+            html += '<option value="heat_protection">Heat Protection</option>';
+            html += '<option value="styling">Styling</option>';
+            html += '<option value="finishing">Finishing</option>';
+            html += '</select>';
+            html += '<button class="btn-primary" id="quick-add-save" style="font-size:0.8rem;padding:0.5rem 0.75rem;min-height:40px;">Add</button>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+
             // Rating
             html += '<label style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">How did it turn out? <span style="color:var(--muted);">(optional)</span></label>';
             html += '<div style="display:flex;gap:0.75rem;margin-bottom:1.25rem;" id="quick-log-rating">';
@@ -13899,6 +13925,7 @@
             // State
             var selectedProducts = [];
             var selectedRating = null;
+            var quickAddedProducts = [];
 
             function renderProductsForGroup(groupKey, container) {
                 var group = STEP_GROUPS.find(function(g) { return g.key === groupKey; });
@@ -13968,6 +13995,32 @@
                 });
             }
 
+            // Update group button badges with selected product counts
+            function updateGroupCounts() {
+                walkSection.querySelectorAll('.quick-phase-btn').forEach(function(btn) {
+                    var groupKey = btn.getAttribute('data-group');
+                    var group = STEP_GROUPS.find(function(g) { return g.key === groupKey; });
+                    if (!group) return;
+                    var groupProducts = getProductsForGroup(inventory, group);
+                    var count = 0;
+                    for (var c = 0; c < groupProducts.length; c++) {
+                        if (selectedProducts.indexOf(groupProducts[c].id) !== -1) count++;
+                    }
+                    var badge = btn.querySelector('.group-count-badge');
+                    if (count > 0) {
+                        if (!badge) {
+                            badge = document.createElement('span');
+                            badge.className = 'group-count-badge';
+                            badge.style.cssText = 'margin-left:auto;background:var(--green);color:#000;font-size:0.7rem;font-weight:700;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;';
+                            btn.appendChild(badge);
+                        }
+                        badge.textContent = count;
+                    } else if (badge) {
+                        badge.remove();
+                    }
+                });
+            }
+
             // Wire cancel
             document.getElementById('quick-log-cancel').addEventListener('click', function() {
                 showView('landing');
@@ -14006,6 +14059,92 @@
                     btn.style.background = 'rgba(212, 165, 116, 0.15)';
                 });
             });
+
+            // Wire quick-add for unlisted products
+            var quickAddBtn = document.getElementById('quick-log-add-unlisted');
+            var quickAddForm = document.getElementById('quick-log-add-form');
+            if (quickAddBtn && quickAddForm) {
+                quickAddBtn.addEventListener('click', function() {
+                    var isVisible = quickAddForm.style.display !== 'none';
+                    quickAddForm.style.display = isVisible ? 'none' : '';
+                    if (!isVisible) {
+                        document.getElementById('quick-add-brand').focus();
+                    }
+                });
+
+                document.getElementById('quick-add-save').addEventListener('click', function() {
+                    var brand = document.getElementById('quick-add-brand').value.trim();
+                    var name = document.getElementById('quick-add-name').value.trim();
+                    var step = document.getElementById('quick-add-step').value;
+
+                    if (!name) {
+                        document.getElementById('quick-add-name').style.borderColor = 'var(--red, #e74c3c)';
+                        document.getElementById('quick-add-name').focus();
+                        return;
+                    }
+
+                    // Add to inventory with minimal intelligence
+                    var newProduct = InventoryManager.addProduct({
+                        name: name,
+                        brand: brand,
+                        tier: 'supporting',
+                        context: 'as-needed',
+                        usingUp: false,
+                        notes: 'Added from quick-log',
+                        intelligence: {
+                            mechanisms: [],
+                            delivery: 'unknown',
+                            step: step,
+                            outcomes: {},
+                            cumulative: false,
+                            interactions: [],
+                            ingredients: []
+                        }
+                    });
+
+                    // Track it and auto-select it
+                    quickAddedProducts.push(newProduct);
+                    selectedProducts.push(newProduct.id);
+
+                    // Refresh the inventory reference
+                    inventory = InventoryManager.getAll();
+
+                    // Re-render the relevant group if it's open
+                    var targetGroupKey = step;
+                    // Map sub-steps to their parent group
+                    if (step === 'conditioner' || step === 'deep_condition' || step === 'gloss') targetGroupKey = 'condition';
+                    if (step === 'leave_in' || step === 'heat_protection') targetGroupKey = 'leave_in_protect';
+
+                    var productsContainer = walkSection.querySelector('[data-group-products="' + targetGroupKey + '"]');
+                    if (productsContainer && productsContainer.style.display !== 'none') {
+                        renderProductsForGroup(targetGroupKey, productsContainer);
+                    }
+
+                    // Clear form
+                    document.getElementById('quick-add-brand').value = '';
+                    document.getElementById('quick-add-name').value = '';
+                    document.getElementById('quick-add-name').style.borderColor = '';
+                    quickAddForm.style.display = 'none';
+
+                    // Update counts
+                    updateGroupCounts();
+
+                    // Show confirmation
+                    quickAddBtn.textContent = '\u2713 Added ' + (brand ? brand + ' ' : '') + name;
+                    quickAddBtn.style.color = 'var(--green)';
+                    quickAddBtn.style.borderColor = 'var(--green)';
+                    setTimeout(function() {
+                        quickAddBtn.textContent = '+ Used something not listed?';
+                        quickAddBtn.style.color = '';
+                        quickAddBtn.style.borderColor = '';
+                    }, 2000);
+                });
+
+                // Clear validation styling on input
+                document.getElementById('quick-add-name').addEventListener('input', function() {
+                    this.style.borderColor = '';
+                });
+            }
 
             // Wire save
             document.getElementById('quick-log-save').addEventListener('click', function() {
