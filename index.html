@@ -5904,6 +5904,172 @@
             };
         })();
 
+        // ===== SynergyScorer =====
+        // Cross-step evaluation: scores a product plan based on pairwise interactions,
+        // proximity factors, learned pair beliefs, and chain bonuses.
+        var SynergyScorer = (function() {
+
+            function stepDistance(indexA, indexB) {
+                return Math.abs(indexA - indexB);
+            }
+
+            /**
+             * Score a plan's synergy.
+             * @param {Array} plan - [{ stepIndex, productId }]
+             * @param {object} interactionLookup - InteractionLookup module
+             * @param {object} pairBeliefs - PairBeliefTracker module (or null)
+             * @returns {{ score: number, chains: Array, pairContributions: Array }}
+             */
+            function score(plan, interactionLookup, pairBeliefs) {
+                var pairContributions = [];
+                var totalScore = 0;
+
+                // Pairwise scoring
+                for (var i = 0; i < plan.length; i++) {
+                    for (var j = i + 1; j < plan.length; j++) {
+                        var interaction = interactionLookup.get(plan[i].productId, plan[j].productId);
+                        if (!interaction) continue;
+
+                        var proximityFactor = 1.0 / stepDistance(plan[i].stepIndex, plan[j].stepIndex);
+                        var learnedAdjustment = 0;
+                        if (pairBeliefs && pairBeliefs.getAdjustment) {
+                            learnedAdjustment = pairBeliefs.getAdjustment(plan[i].productId, plan[j].productId);
+                        }
+
+                        var contribution = (interaction.weight + learnedAdjustment) * proximityFactor;
+                        totalScore += contribution;
+                        pairContributions.push({
+                            productA: plan[i].productId,
+                            productB: plan[j].productId,
+                            baseWeight: interaction.weight,
+                            learnedAdjustment: learnedAdjustment,
+                            proximityFactor: proximityFactor,
+                            contribution: contribution,
+                            note: interaction.note
+                        });
+                    }
+                }
+
+                // Wildcard scoring
+                var wildcards = interactionLookup.getWildcards();
+                for (var w = 0; w < wildcards.length; w++) {
+                    var wc = wildcards[w];
+                    // Find the wildcard product's position in the plan
+                    var wcIndex = -1;
+                    for (var p = 0; p < plan.length; p++) {
+                        if (plan[p].productId === wc.productId) {
+                            wcIndex = plan[p].stepIndex;
+                            break;
+                        }
+                    }
+                    if (wcIndex === -1) continue; // wildcard product not in this plan
+
+                    // Apply to all OTHER products in the plan (downstream = higher stepIndex)
+                    for (var q = 0; q < plan.length; q++) {
+                        if (plan[q].productId === wc.productId) continue;
+                        // Only apply to products at later steps (downstream)
+                        if (plan[q].stepIndex <= wcIndex) continue;
+
+                        var wcProximity = 1.0 / stepDistance(wcIndex, plan[q].stepIndex);
+                        var wcContribution = wc.weight * wcProximity;
+                        totalScore += wcContribution;
+                        pairContributions.push({
+                            productA: wc.productId,
+                            productB: plan[q].productId,
+                            baseWeight: wc.weight,
+                            learnedAdjustment: 0,
+                            proximityFactor: wcProximity,
+                            contribution: wcContribution,
+                            note: wc.note + ' (wildcard)'
+                        });
+                    }
+                }
+
+                // Chain detection and bonuses
+                var chains = detectChains(plan, interactionLookup);
+                var chainBonus = 0;
+                for (var c = 0; c < chains.length; c++) {
+                    chainBonus += chains[c].bonus;
+                }
+                totalScore += chainBonus;
+
+                return {
+                    score: totalScore,
+                    chains: chains,
+                    pairContributions: pairContributions
+                };
+            }
+
+            /**
+             * Detect "enables" chains in consecutive steps.
+             * A chain requires each product to have an "enables" relationship with the next.
+             * @param {Array} plan - [{ stepIndex, productId }]
+             * @param {object} interactionLookup
+             * @returns {Array} [{ products: [id, ...], bonus: number }]
+             */
+            function detectChains(plan, interactionLookup) {
+                if (plan.length < 3) return [];
+
+                // Sort plan by stepIndex for consecutive scanning
+                var sorted = plan.slice().sort(function(a, b) { return a.stepIndex - b.stepIndex; });
+                var chains = [];
+                var currentChain = [sorted[0].productId];
+
+                for (var i = 1; i < sorted.length; i++) {
+                    var prev = sorted[i - 1];
+                    var curr = sorted[i];
+                    var interaction = interactionLookup.get(prev.productId, curr.productId);
+
+                    if (interaction && interaction.type === 'enables') {
+                        currentChain.push(curr.productId);
+                    } else {
+                        // Chain broken — emit if length >= 3
+                        if (currentChain.length >= 3) {
+                            chains.push(buildChainResult(currentChain, interactionLookup));
+                        }
+                        currentChain = [curr.productId];
+                    }
+                }
+                // Final chain
+                if (currentChain.length >= 3) {
+                    chains.push(buildChainResult(currentChain, interactionLookup));
+                }
+
+                // Cap at length 4 per spec
+                return chains.map(function(chain) {
+                    if (chain.products.length > 4) {
+                        chain.products = chain.products.slice(0, 4);
+                        chain.bonus = calculateChainBonus(chain.products, interactionLookup);
+                    }
+                    return chain;
+                });
+            }
+
+            function buildChainResult(productIds, interactionLookup) {
+                return {
+                    products: productIds,
+                    bonus: calculateChainBonus(productIds, interactionLookup)
+                };
+            }
+
+            function calculateChainBonus(productIds, interactionLookup) {
+                // Sum pairwise enables weights for consecutive pairs
+                var pairwiseSum = 0;
+                for (var i = 0; i < productIds.length - 1; i++) {
+                    var inter = interactionLookup.get(productIds[i], productIds[i + 1]);
+                    if (inter) pairwiseSum += Math.abs(inter.weight);
+                }
+                // Chain multiplier: 1 + 0.25 * (chainLength - 2)
+                var multiplier = 1 + 0.25 * (productIds.length - 2);
+                return pairwiseSum * multiplier;
+            }
+
+            return {
+                score: score,
+                detectChains: detectChains
+            };
+        })();
+
         // ===== AttributionEngine (Passive Intelligence) =====
         // Provides mechanism-based attribution (day 1), marginal contribution detection (3+ events),
         // contextual pattern detection (15+ events), and interaction detection (30+ events).
