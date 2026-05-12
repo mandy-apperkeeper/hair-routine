@@ -1880,6 +1880,12 @@
                 <button class="btn-secondary" id="discrepancy-dismiss" style="margin-top:0.5rem;min-height:36px;font-size:0.8rem;">Got it</button>
             </div>
 
+            <!-- Synergy contradiction card (hidden until PairBeliefTracker detects contradictions) -->
+            <div class="insight-card" id="synergy-contradiction-card" aria-label="Synergy pairing insight" style="display:none;">
+                <p id="synergy-contradiction-message"></p>
+                <button class="btn-secondary" id="synergy-contradiction-dismiss" style="margin-top:0.5rem;min-height:36px;font-size:0.8rem;">Got it</button>
+            </div>
+
             <!-- Compensation card (contextual product statements) -->
             <div class="compensation-card" id="compensation-card" aria-label="Product compensation info">
             </div>
@@ -10933,6 +10939,41 @@
                 discrepancyCard.style.display = 'none';
             }
 
+            // Synergy contradiction card (task 7.5)
+            var contradictionCard = document.getElementById('synergy-contradiction-card');
+            var contradictionMessage = document.getElementById('synergy-contradiction-message');
+            var contradictions = PairBeliefTracker.getContradictions();
+            var dismissedContradictions = [];
+            try { dismissedContradictions = JSON.parse(localStorage.getItem('hair_dismissed_contradictions') || '[]'); } catch(e2) {}
+            var activeContradiction = null;
+            for (var cdi = 0; cdi < contradictions.length; cdi++) {
+                if (dismissedContradictions.indexOf(contradictions[cdi].pair) === -1) {
+                    activeContradiction = contradictions[cdi];
+                    break;
+                }
+            }
+            if (activeContradiction && contradictionCard) {
+                var inv3 = (StateManager.getState().inventory || []);
+                var nameA = activeContradiction.productA;
+                var nameB = activeContradiction.productB;
+                for (var ni = 0; ni < inv3.length; ni++) {
+                    if (inv3[ni].id === activeContradiction.productA) nameA = (inv3[ni].brand ? inv3[ni].brand + ' ' : '') + inv3[ni].name;
+                    if (inv3[ni].id === activeContradiction.productB) nameB = (inv3[ni].brand ? inv3[ni].brand + ' ' : '') + inv3[ni].name;
+                }
+                var contradictionText = activeContradiction.domainExpectation === 'positive'
+                    ? 'You usually pair ' + nameA + ' with ' + nameB + ', but your ratings suggest they don\u2019t work well together.'
+                    : nameA + ' and ' + nameB + ' were expected to conflict, but your ratings suggest they actually work well together.';
+                contradictionCard.style.display = 'block';
+                contradictionMessage.textContent = '\uD83D\uDD17 ' + contradictionText;
+                document.getElementById('synergy-contradiction-dismiss').onclick = function() {
+                    dismissedContradictions.push(activeContradiction.pair);
+                    try { localStorage.setItem('hair_dismissed_contradictions', JSON.stringify(dismissedContradictions)); } catch(e3) {}
+                    contradictionCard.style.display = 'none';
+                };
+            } else if (contradictionCard) {
+                contradictionCard.style.display = 'none';
+            }
+
             // Compensation card (contextual product statements)
             var compCard = document.getElementById('compensation-card');
             var compStatements = CompensationEngine.getStatements();
@@ -11244,6 +11285,18 @@
             html += '<p class="plan-subtitle">' + escapeHtml(laneLabel) + ' · ' + escapeHtml(dewPointStr) + (dayStr ? ' · ' + escapeHtml(dayStr) : '') + '</p>';
             html += '<button class="plan-adjust-btn" id="plan-adjust-btn" aria-label="Adjust plan based on hair observations">Adjust — tell me about your hair →</button>';
             html += '</div>';
+
+            // Synergy chain summary (task 7.3)
+            if (plan.chains && plan.chains.length > 0) {
+                for (var ci = 0; ci < plan.chains.length; ci++) {
+                    var chainExplanation = SynergyExplainer.explainChain(plan.chains[ci], InteractionLookup);
+                    if (chainExplanation) {
+                        html += '<div class="plan-chain-summary" style="margin:0.75rem 0;padding:0.6rem 0.75rem;background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.2);border-radius:8px;">';
+                        html += '<span style="font-size:0.82rem;color:var(--gold);">🔗 ' + escapeHtml(chainExplanation.benefit) + '</span>';
+                        html += '</div>';
+                    }
+                }
+            }
 
             // Steps grouped by phase
             var currentPhase = null;
@@ -11960,6 +12013,23 @@
                     badgeHtml += '<br><button id="info-learn-link" style="margin-top:0.75rem;background:none;border:none;color:var(--gold);font-size:0.85rem;cursor:pointer;text-decoration:underline;min-height:48px;">Learn more about this →</button>';
                 }
             }
+            // Synergy explanation (task 7.1)
+            if (step.synergy && step.synergy.explanation) {
+                badgeHtml += '<div style="margin-top:0.75rem;padding:0.5rem 0.75rem;background:rgba(212,175,55,0.08);border-left:3px solid var(--gold);border-radius:4px;">';
+                badgeHtml += '<span style="font-size:0.8rem;color:var(--gold);">🔗 ' + escapeHtml(step.synergy.explanation) + '</span>';
+                if (step.synergy.selectedOverHigherRank && step.synergy.overriddenProduct) {
+                    var overriddenName = step.synergy.overriddenProduct;
+                    var inv = (StateManager.getState().inventory || []);
+                    for (var oi2 = 0; oi2 < inv.length; oi2++) {
+                        if (inv[oi2].id === step.synergy.overriddenProduct) {
+                            overriddenName = (inv[oi2].brand ? inv[oi2].brand + ' ' : '') + inv[oi2].name;
+                            break;
+                        }
+                    }
+                    badgeHtml += '<br><span style="font-size:0.75rem;color:var(--text-muted);">Chosen over ' + escapeHtml(overriddenName) + ' for better pairing</span>';
+                }
+                badgeHtml += '</div>';
+            }
             document.getElementById('info-badge').innerHTML = badgeHtml;
 
             var popup = document.getElementById('info-popup');
@@ -12009,9 +12079,22 @@
                 var alt = step.alternatives[a];
                 var isCurrent = alt.productId === step.productId;
                 listHtml += '<div class="alt-item' + (isCurrent ? ' current' : '') + '" data-product-id="' + escapeHtml(alt.productId) + '" data-product-name="' + escapeHtml(alt.productName) + '">';
-                listHtml += '<div class="alt-item-name">' + (isCurrent ? '← ' : '') + escapeHtml(alt.productName) + '</div>';
+                listHtml += '<div class="alt-item-name">';
+                // Synergy impact indicator (task 7.2)
+                if (!isCurrent && alt.synergyImpact) {
+                    if (alt.synergyImpact.impact === 'positive') {
+                        listHtml += '<span style="color:#4caf50;font-weight:bold;margin-right:0.3rem;">+</span>';
+                    } else if (alt.synergyImpact.impact === 'negative') {
+                        listHtml += '<span style="color:#f44336;font-weight:bold;margin-right:0.3rem;">\u2212</span>';
+                    }
+                }
+                listHtml += (isCurrent ? '\u2190 ' : '') + escapeHtml(alt.productName) + '</div>';
                 if (alt.reason) {
                     listHtml += '<div class="alt-item-reason">' + escapeHtml(alt.reason) + '</div>';
+                }
+                // Synergy impact text (task 7.2)
+                if (!isCurrent && alt.synergyImpact && alt.synergyImpact.impact !== 'neutral') {
+                    listHtml += '<div style="font-size:0.75rem;color:' + (alt.synergyImpact.impact === 'positive' ? '#4caf50' : '#f44336') + ';margin-top:0.2rem;">' + escapeHtml(alt.synergyImpact.text) + '</div>';
                 }
                 listHtml += '</div>';
             }
@@ -12027,6 +12110,73 @@
                     var newProductName = item.getAttribute('data-product-name');
                     if (newProductId !== step.productId) {
                         currentPlan = AdjustmentEngine.recordSwap(currentPlan, stepId, step.productId, newProductId, newProductName);
+
+                        // Task 7.4: Re-evaluate downstream synergy after swap
+                        // Re-run optimizer with the swapped product fixed to see if downstream changes are suggested
+                        var swapStepIdx = -1;
+                        for (var si = 0; si < currentPlan.steps.length; si++) {
+                            if (currentPlan.steps[si].id === stepId) { swapStepIdx = si; break; }
+                        }
+                        if (swapStepIdx >= 0) {
+                            var state2 = StateManager.getState();
+                            var inventory2 = state2.inventory || [];
+                            var sealActive2 = (state2.sealState && state2.sealState.active) || false;
+                            var hardConstraints2 = sealActive2 ? ['nym-curl-talk-gel', 'got2b-ultra-glued', 'maui-curl-smoothie'] : [];
+
+                            // Build candidates with the swapped step fixed
+                            var reoptCandidates = [];
+                            for (var rc = 0; rc < currentPlan.steps.length; rc++) {
+                                if (rc === swapStepIdx) {
+                                    // Fixed — user chose this product
+                                    reoptCandidates.push([{ productId: newProductId, score: 100 }]);
+                                } else if (currentPlan.steps[rc].alternatives && currentPlan.steps[rc].alternatives.length > 1) {
+                                    var top3r = [];
+                                    var limitR = Math.min(3, currentPlan.steps[rc].alternatives.length);
+                                    for (var t3r = 0; t3r < limitR; t3r++) {
+                                        top3r.push({ productId: currentPlan.steps[rc].alternatives[t3r].productId, score: currentPlan.steps[rc].alternatives[t3r].score || 50 });
+                                    }
+                                    reoptCandidates.push(top3r);
+                                } else if (currentPlan.steps[rc].productId) {
+                                    reoptCandidates.push([{ productId: currentPlan.steps[rc].productId, score: 100 }]);
+                                } else {
+                                    reoptCandidates.push([]);
+                                }
+                            }
+
+                            var reoptResult = PlanOptimizer.optimize(reoptCandidates, InteractionLookup, PairBeliefTracker, { hardConstraints: hardConstraints2 });
+
+                            // Check if optimizer suggests different products for any downstream step
+                            if (reoptResult && reoptResult.plan) {
+                                for (var ro = 0; ro < reoptResult.plan.length; ro++) {
+                                    var reoptStep = reoptResult.plan[ro];
+                                    var planStep2 = currentPlan.steps[reoptStep.stepIndex];
+                                    if (reoptStep.stepIndex !== swapStepIdx && planStep2 && planStep2.productId !== reoptStep.productId) {
+                                        // Apply the downstream suggestion silently (update product)
+                                        var oldProd = planStep2.productId;
+                                        planStep2.productId = reoptStep.productId;
+                                        for (var inv2 = 0; inv2 < inventory2.length; inv2++) {
+                                            if (inventory2[inv2].id === reoptStep.productId) {
+                                                planStep2.productName = (inventory2[inv2].brand ? inventory2[inv2].brand + ' ' : '') + inventory2[inv2].name;
+                                                planStep2.inventoryName = planStep2.productName;
+                                                break;
+                                            }
+                                        }
+                                        planStep2.synergy = {
+                                            selectedOverHigherRank: true,
+                                            overriddenProduct: oldProd,
+                                            explanation: null,
+                                            chainMember: false
+                                        };
+                                        var swapExpl = SynergyExplainer.explainSelection(reoptStep.productId, reoptResult.plan, InteractionLookup);
+                                        if (swapExpl) {
+                                            planStep2.synergy.explanation = swapExpl.text;
+                                            planStep2.synergy.pairedWith = swapExpl.pairedWith;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         renderPlanView(currentPlan);
                     }
                     popup.classList.remove('visible');
