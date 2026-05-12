@@ -1,0 +1,13 @@
+{
+  "name": "hair-routine-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.0",
+    "fast-check": "^4.0.0"
+  }
+}
