@@ -1,29 +1,31 @@
 # Session Handoff — Hair Routine
 
 **Date:** May 12, 2026
-**Session focus:** Research drift audit complete — ingredient data corrected to match deep dives
+**Session focus:** Quick-log improvements — group count badges + quick-add for unlisted products
 
 ---
 
 ## What Was Done This Session
 
-### Research Drift Audit (COMPLETE)
+### Quick-Log Improvements (COMPLETE)
 
-Compared implemented code (DEFAULT_INVENTORY ingredients, notes, ranking logic) against all product deep dive research files. Found and corrected 5 discrepancies:
+Two changes committed together (`6d89151`):
 
-1. **Dove 10-in-1 Serum** — ingredients corrected from `['amodimethicone', 'dimethicone', 'cyclomethicone']` to `['aminopropyl dimethicone', 'dimethiconol', 'phenyl trimethicone', 'cyclopentasiloxane']`. Notes updated. Shine outcome bumped to 0.8.
-2. **EverPure Bond Conditioner** — updated from stale OLD formula (bis-cetearyl amodimethicone + dimethicone) to current May 2026 formula (amodimethicone only). Notes updated to "co-primary."
-3. **Garnier Color Repair Conditioner** — pseudoceramide INCI corrected from `'ceramide np'` to `'2-oleamido-1,3-octadecanediol'`. Added citric acid + arginine.
-4. **Elvive Total Repair 5 Balm** — same pseudoceramide correction.
-5. **Ranking logic** — ceramide boost check updated to match new INCI name.
+1. **Group count badges** — Each step group button in the quick-log now shows a green circular badge with the count of selected products from that group. Provides at-a-glance visibility without expanding every group. Also fixed a silent bug: `updateGroupCounts()` was called on every product toggle but never defined (threw ReferenceError after selection state was already updated — selection worked but counts never showed).
 
-Added 3 new ingredient dictionary entries: `aminopropyl dimethicone`, `phenyl trimethicone`, `2-oleamido-1,3-octadecanediol`.
+2. **Quick-add for unlisted products** (Product Intelligence spec task 4.3) — Dashed "Used something not listed?" button below the step groups. Expands to a compact form: brand (optional), product name (required), step category dropdown. On save:
+   - Creates product in inventory via `InventoryManager.addProduct()` with minimal intelligence stub
+   - Auto-selects it for the current wash log
+   - Refreshes inventory reference and re-renders the relevant group if open
+   - Shows brief green confirmation, then resets
+   - Product persists in inventory for future logs
 
-Commit: `a8a8242`
+### Research/Spec Status Clarifications
 
-### Adversarial Pass Status Confirmed
-
-All adversarial passes (A1–A7) were already complete from prior sessions. No A6 work needed this session.
+- **EverPure Bond Shampoo re-score:** Already complete (100% v2 score, noted "re-scored May 12" in RESEARCH_SCORES.md). No work needed.
+- **Daily Plan tasks.md:** Already fully written and all tasks marked complete. No work needed.
+- **Service Worker (Session 11):** Already fully implemented (`hair-sw.js` registered, v20 cache, network-first for HTML/API, cache-first for static assets). NEXT_STEPS.md is stale on this point.
+- **`stiff` in symptomMap:** NOT dead code. It's reachable from Layer 3 (detailed observations) via explicit routing at line ~11814. The Layer 1 entry in symptomMap is technically unreachable (no Layer 1 button for it) but harmless. The diagnostic engine's stiff handling (moisture deficit, gel cast) is fully functional.
 
 ---
 
@@ -40,18 +42,20 @@ All adversarial passes (A1–A7) were already complete from prior sessions. No A
 ## Known Issues
 
 1. **Mechanism check is binary (amodimethicone yes/no)** — confirmed correct for current product pairs
-2. **`stiff` in symptomMap is dead code** — Layer 1 has no stiff button
+2. **`stiff` in Layer 1 symptomMap is unreachable** — Layer 1 has no stiff button, but the entry is harmless and stiff IS handled via Layer 3
 3. **Product-aware interventions untested on device** — from prior session
 4. **Auto-scroll untested on device** — from prior session
 5. **Synergy system untested on device** — all logic verified via property tests but no iPad testing yet
-7. **Established decision needs update:** "Pre-shampoo treatment is marketing" is too broad — citric acid crosslinking (Garnier pre-shampoo) is a legitimate mechanism with peer-reviewed evidence
+6. **Quick-add products get minimal intelligence** — no mechanisms, no outcomes, no ingredients. They work for logging but won't contribute to attribution or synergy scoring until manually enriched via the inventory discovery form.
 
 ---
 
 ## Decisions Made
 
-- **Research drift corrections are data-only changes.** No logic changes were needed — the ranking algorithms and synergy system were already correct in their behavior. The drift was in metadata (ingredient names, notes text), not in the algorithms.
-- **EverPure Bond Conditioner is now "co-primary" with Garnier** (not "second-best"). Both are amodimethicone-only formulas. Garnier has the pseudoceramide edge; EverPure has betaine for moisture.
+- **Quick-add creates "supporting" tier products by default.** User can change tier later from inventory view.
+- **Quick-add auto-selects the new product** for the current log (saves a tap).
+- **Group count badges use green circular style** matching the existing selection highlight color.
+- **`stiff` is NOT dead code** — prior handoff note was misleading. Preserved as-is.
 
 ### Previous decisions (preserved):
 - **Olaplex 3 is Primary and irreplaceable.** Only product in inventory that repairs disulfide bonds.
@@ -61,6 +65,8 @@ All adversarial passes (A1–A7) were already complete from prior sessions. No A
 - **Synergy optimizer runs AFTER domain rules.**
 - **Normal conditioner step is NOT domain-locked.**
 - **PairBeliefTracker requires rating + 2+ products.**
+- **EverPure Bond Conditioner is "co-primary" with Garnier** (not "second-best").
+- **Research drift corrections are data-only changes** — algorithms were already correct.
 
 ---
 
@@ -69,10 +75,11 @@ All adversarial passes (A1–A7) were already complete from prior sessions. No A
 ### Immediate:
 1. **iPad testing** — synergy system in action (verify optimizer selections make sense, chain cards display, alternatives show +/- indicators, contradiction card works)
 2. **iPad testing** — ranking changes, product-aware timers, mask-replaces-conditioner display, dew point, no geolocation prompt
+3. **iPad testing** — quick-log improvements (group count badges visible, quick-add flow works with wet hands)
 
-### Still pending from prior sessions:
-3. Re-score everpure-bond-shampoo.md
-4. Verify-mode: ~~research drift audit~~ DONE
+### Still pending:
+4. Update NEXT_STEPS.md to reflect completed items (SW done, everpure re-score done, task 4.3 done)
+5. Product Intelligence spec — mark task 4.3 as complete, verify remaining checkpoints
 
 ---
 
@@ -82,18 +89,19 @@ All adversarial passes (A1–A7) were already complete from prior sessions. No A
 |------|--------|
 | adaptive-hair-routine | Complete (original, partially superseded) |
 | daily-plan | Complete (all tasks done) |
-| product-intelligence | Partially implemented |
+| product-intelligence | Nearly complete — task 4.3 done this session, only checkpoints 3/5/13 remain unchecked |
 | diagnostic-adjustment-engine | Complete (all tasks done, deployed locally) |
-| product-synergy-pairing | **Complete** — all tasks done, 81 tests passing |
+| product-synergy-pairing | Complete — 81 tests passing |
 
 ---
 
 ## Architecture Notes
 
 - **Geolocation:** Removed. Weather comes from `/api/location` (Cauldron) → Open-Meteo API. No browser permissions.
-- **Conditioning logic:** Mechanism-aware. Checks mask's `ingredients` array for `amodimethicone`. If present → mask replaces conditioner (same actives). If absent → both steps valid (different mechanisms).
+- **Conditioning logic:** Mechanism-aware. Checks mask's `ingredients` array for `amodimethicone`. If present → mask replaces conditioner. If absent → both steps valid.
 - **Product timers:** `intelligence.recommendedTime` (seconds) on deep_condition products. `getProductTime(productId, inventory)` helper returns it with 300s fallback.
-- **Synergy system:** InteractionLookup (precomputed pair map) → SynergyScorer (cross-step evaluation) → PlanOptimizer (bounded exhaustive search, max 729 combinations) → SynergyExplainer (user-facing text). PairBeliefTracker learns pair effectiveness from wash ratings (Normal-Normal conjugate, min 5 observations).
+- **Synergy system:** InteractionLookup → SynergyScorer → PlanOptimizer (bounded exhaustive, max 729 combos) → SynergyExplainer. PairBeliefTracker learns from wash ratings (Normal-Normal conjugate, min 5 observations).
 - **Synergy integration point:** After tiered conditioning logic in `buildPlan()`, before return. Domain-locked steps excluded. SYNERGY_WEIGHT = 15.
-- **Test infrastructure:** `hair-routine/tests/` — vitest + fast-check. `extract-modules.js` uses Node.js `vm` to sandbox-evaluate synergy modules from the HTML. `extractRealInventory()` pulls DEFAULT_INVENTORY for integration tests. Run with `cd hair-routine/tests && npx vitest run`.
+- **Test infrastructure:** `hair-routine/tests/` — vitest + fast-check. `extract-modules.js` uses Node.js `vm` to sandbox-evaluate synergy modules from the HTML. Run with `cd hair-routine/tests && npx vitest run`.
 - **Deployment:** Local only via Cauldron `static_apps`. Commits are live immediately. Do NOT push to origin.
+- **Quick-add products:** Created with minimal intelligence stub (no mechanisms/outcomes/ingredients). Appear in quick-log immediately. Can be enriched later via inventory discovery form.
