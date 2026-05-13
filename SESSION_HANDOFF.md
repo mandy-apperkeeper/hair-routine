@@ -1,52 +1,60 @@
 # Session Handoff — Erinyes (Hair Routine)
 
 **Date:** May 12, 2026
-**Session focus:** Quick-log improvements — group count badges + quick-add for unlisted products
+**Session focus:** Project rename to Erinyes + naming rationale
 
 ---
 
 ## What Was Done This Session
 
-### Quick-Log Improvements (COMPLETE)
+### Project Rename: Erinyes (commit `2e873e7`)
 
-Two changes committed together (`6d89151`):
+Renamed the hair routine project to **Erinyes** — after the Greek Furies, serpent-haired enforcers of natural law. The name reflects monster reclamation: what was called "monstrous" (wild, uncontrollable hair) is actually power that demands respect, not taming. Hair symbolism is literal — the Erinyes are depicted with serpents entwined in their hair.
 
-1. **Group count badges** — Each step group button in the quick-log now shows a green circular badge with the count of selected products from that group. Provides at-a-glance visibility without expanding every group. Also fixed a silent bug: `updateGroupCounts()` was called on every product toggle but never defined (threw ReferenceError after selection state was already updated — selection worked but counts never showed).
+**Subsystem codenames established:**
+- **Alecto** ("unceasing") — the diagnostic engine
+- **Megaera** ("grudging") — the cooldown system
+- **Tisiphone** ("avenger of destruction") — the synergy optimizer
 
-2. **Quick-add for unlisted products** (Product Intelligence spec task 4.3) — Dashed "Used something not listed?" button below the step groups. Expands to a compact form: brand (optional), product name (required), step category dropdown. On save:
-   - Creates product in inventory via `InventoryManager.addProduct()` with minimal intelligence stub
-   - Auto-selects it for the current wash log
-   - Refreshes inventory reference and re-renders the relevant group if open
-   - Shows brief green confirmation, then resets
-   - Product persists in inventory for future logs
+**Files updated:**
+- `manifest.json` → name/short_name: "Erinyes"
+- `index.html` → `<title>`, apple-mobile-web-app-title
+- `hair-sw.js` → cache name `erinyes-cache-v21`, consolidated old cache cleanup
+- Cauldron `config.json` → added `/erinyes/` path (keeps `/hair-routine/` during transition)
+- Project registry, session context steering, SESSION_HANDOFF, NEXT_STEPS, CHANGE_LOG headers
+- Product Intelligence spec tasks.md updated
 
-### Research/Spec Status Clarifications
+**Naming convention (until June 23, 2026):** "Erinyes (hair routine)" in docs/steering. After that date, drop the parenthetical.
 
-- **EverPure Bond Shampoo re-score:** Already complete (100% v2 score, noted "re-scored May 12" in RESEARCH_SCORES.md). No work needed.
-- **Daily Plan tasks.md:** Already fully written and all tasks marked complete. No work needed.
-- **Service Worker (Session 11):** Already fully implemented (`hair-sw.js` registered, v20 cache, network-first for HTML/API, cache-first for static assets). NEXT_STEPS.md is stale on this point.
-- **`stiff` in symptomMap:** NOT dead code. It's reachable from Layer 3 (detailed observations) via explicit routing at line ~11814. The Layer 1 entry in symptomMap is technically unreachable (no Layer 1 button for it) but harmless. The diagnostic engine's stiff handling (moisture deficit, gel cast) is fully functional.
+**NTFS junction created:** `c:\Users\Ben\Apper Keeper\erinyes\` → points to `hair-routine\`. Both paths work.
+
+### Previous Session Work (preserved from prior handoff)
+
+- **Group count badges** — green circular badges on step group buttons (commit `6d89151`)
+- **Quick-add for unlisted products** — task 4.3 complete (same commit)
 
 ---
 
 ## What's Live vs Pending
 
-- **Dev server (primary):** Served locally via Cauldron at `https://192.168.68.36:8443/hair-routine/` — commits are immediately live
+- **Dev server (primary):** Served locally via Cauldron at `https://192.168.68.36:8443/erinyes/` (also `/hair-routine/`)
 - **GitHub Pages:** DO NOT push to origin. Stale/archive only.
 - **Schema:** Version 15 (unchanged)
-- **SW Cache:** v20 (unchanged)
+- **SW Cache:** v21 (bumped for rename)
 - **Tests:** 81 tests passing across 5 files (`cd hair-routine/tests && npx vitest run`)
+- **Cauldron:** STOPPED (was stopped for rename attempt). Restart next session or manually.
 
 ---
 
 ## Known Issues
 
-1. **Mechanism check is binary (amodimethicone yes/no)** — confirmed correct for current product pairs
-2. **`stiff` in Layer 1 symptomMap is unreachable** — Layer 1 has no stiff button, but the entry is harmless and stiff IS handled via Layer 3
-3. **Product-aware interventions untested on device** — from prior session
-4. **Auto-scroll untested on device** — from prior session
-5. **Synergy system untested on device** — all logic verified via property tests but no iPad testing yet
-6. **Quick-add products get minimal intelligence** — no mechanisms, no outcomes, no ingredients. They work for logging but won't contribute to attribution or synergy scoring until manually enriched via the inventory discovery form.
+1. **Folder rename pending** — `hair-routine/` needs renaming to `erinyes/` on disk. Requires closing Kiro (file locks). Junction exists as bridge. After rename: update Cauldron config path from `../../hair-routine` to `../../erinyes`, remove junction.
+2. **Mechanism check is binary (amodimethicone yes/no)** — confirmed correct for current product pairs
+3. **`stiff` in Layer 1 symptomMap is unreachable** — harmless, stiff IS handled via Layer 3
+4. **Product-aware interventions untested on device** — from prior session
+5. **Auto-scroll untested on device** — from prior session
+6. **Synergy system untested on device** — all logic verified via property tests but no iPad testing yet
+7. **Quick-add products get minimal intelligence** — work for logging but won't contribute to attribution/synergy until enriched
 
 ---
 
@@ -73,13 +81,14 @@ Two changes committed together (`6d89151`):
 ## Next Session Priorities
 
 ### Immediate:
-1. **iPad testing** — synergy system in action (verify optimizer selections make sense, chain cards display, alternatives show +/- indicators, contradiction card works)
-2. **iPad testing** — ranking changes, product-aware timers, mask-replaces-conditioner display, dew point, no geolocation prompt
-3. **iPad testing** — quick-log improvements (group count badges visible, quick-add flow works with wet hands)
+1. **Folder rename** — close Kiro, rename `hair-routine/` → `erinyes/`, update Cauldron config path, remove junction, restart Cauldron
+2. **Restart Cauldron** — currently stopped from this session's rename attempt
+3. **iPad testing** — synergy system, ranking changes, product-aware timers, quick-log improvements (group count badges, quick-add flow)
 
 ### Still pending:
 4. Update NEXT_STEPS.md to reflect completed items (SW done, everpure re-score done, task 4.3 done)
 5. Product Intelligence spec — mark task 4.3 as complete, verify remaining checkpoints
+6. **June 23, 2026** — revisit naming convention, drop "(hair routine)" parenthetical from docs if Erinyes is fully internalized
 
 ---
 

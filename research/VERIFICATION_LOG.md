@@ -96,3 +96,5 @@ The verification is answering the right question: "Is the research corpus accura
 | "bis-aminopropyl diglycol dimaleate olaplex mechanism disulfide bonds" | Found Olaplex official, Lab Muffin, ACS, Wikipedia — confirmed Michael addition mechanism |
 | "amodimethicone selective deposition damaged hair self-limiting mechanism" | Found Lab Muffin article — confirmed selective binding via protonated amine groups |
 | "coconut oil hair penetration lauric acid protein loss Rele Mohile 2003" | Found PubMed 12715094, ResearchGate — confirmed "only oil found to reduce protein loss remarkably" |
+
+| 2026-05-12 | Hair app naming candidates — cultural appropriation risk | 9 | 8 | 1 | 0 | 1 | Usable with revision | Sedna refuted (Inuit sacred figure, closed practice). All European candidates verified safe. |
